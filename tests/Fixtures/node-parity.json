@@ -1,0 +1,172 @@
+{
+  "generatedBy": "apps/api/dist (real compiled modules)",
+  "argon2Params": {
+    "memoryCost": 19456,
+    "timeCost": 2,
+    "parallelism": 1
+  },
+  "passwords": [
+    {
+      "password": "CorrectHorseBattery7!",
+      "hash": "$argon2id$v=19$m=19456,t=2,p=1$nR8RXIwJ9oGBrgYFhMcxYA$2ETSn1iWM7mhmdqWy/BqMK5rQ6ztOCrsCAef+S+6J/I"
+    },
+    {
+      "password": "a-very-long-passphrase-with-émojis-🔐-and-spaces",
+      "hash": "$argon2id$v=19$m=19456,t=2,p=1$uWsNWyuE5vB2taej26NAGA$RUkwiY/vUtIB9aXYl4kbCQ5C9Qiwvk4Vb8tW4c8xo+A"
+    },
+    {
+      "password": "Zz9!Zz9!Zz9!Zz9!Zz9!Zz9!Zz9!Zz9!",
+      "hash": "$argon2id$v=19$m=19456,t=2,p=1$/gRVxhHcnSgzBkVVIXOVfQ$/jx0ntIv12szr/NP4mELirINtmzsBlRk3HYCUhcpDj8"
+    }
+  ],
+  "secretBox": {
+    "key": "yMTkTP/iOgvQNsRvcpM38z8hEUxo38sUxvq2LpekQRM=",
+    "version": "v1",
+    "cases": [
+      {
+        "plaintext": "JBSWY3DPEHPK3PXP",
+        "label": "admin-totp:42",
+        "sealed": "v1.4qzYFLws.hNbJBnDOsjQeQc8D.mkU-aftnKCG-aH3Vg9pCfQ.2I1TYw7Bp22wnFF2V9jP6w"
+      },
+      {
+        "plaintext": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "label": "admin-totp:1",
+        "sealed": "v1.4qzYFLws.8D2kCheF87n8a4dT.rPYmD6FAcVAntvA7TRVq_w.TsI6ACle-dNXNp9yYtiO6zEJysWw8uOcYfMJIC8A7vc"
+      },
+      {
+        "plaintext": "short",
+        "label": "admin-totp:999",
+        "sealed": "v1.4qzYFLws.2AwczME5hPpoSAVN.IDiHuO3rWmVyiqJuSMJPgw.GN6PsxQ"
+      }
+    ]
+  },
+  "totp": {
+    "digits": 6,
+    "period": 30,
+    "window": 1,
+    "cases": [
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 0,
+        "code": "282760"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 1,
+        "code": "996554"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 59,
+        "code": "663767"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 1111111109,
+        "code": "735827"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 1234567890,
+        "code": "796981"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 2000000000,
+        "code": "650077"
+      },
+      {
+        "secret": "JBSWY3DPEHPK3PXP",
+        "step": 37037036,
+        "code": "071271"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 0,
+        "code": "755224"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 1,
+        "code": "287082"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 59,
+        "code": "083773"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 1111111109,
+        "code": "510233"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 1234567890,
+        "code": "965462"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 2000000000,
+        "code": "054266"
+      },
+      {
+        "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
+        "step": 37037036,
+        "code": "081804"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 0,
+        "code": "462371"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 1,
+        "code": "765705"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 59,
+        "code": "641313"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 1111111109,
+        "code": "589715"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 1234567890,
+        "code": "272309"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 2000000000,
+        "code": "036672"
+      },
+      {
+        "secret": "MFRGGZDFMZTWQ2LK",
+        "step": 37037036,
+        "code": "319116"
+      }
+    ]
+  },
+  "razorpay": {
+    "paymentVerification": [
+      {
+        "providerOrderId": "order_ABC123",
+        "providerPaymentId": "pay_XYZ789",
+        "keySecret": "test_secret_value",
+        "signature": "8cb2e31ac81bc37d9faa311c2e3333e8f257f88c17768dc23100811ba09476e1"
+      }
+    ],
+    "webhook": [
+      {
+        "rawBody": "{\"event\":\"payment.captured\",\"payload\":{}}",
+        "webhookSecret": "wh_secret_value",
+        "signature": "a5b0867383d6a2cc5471d8ece2c6e31aef861d15c511a1afc7086d8868b37bfd"
+      }
+    ]
+  }
+}
