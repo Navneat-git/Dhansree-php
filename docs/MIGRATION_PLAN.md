@@ -190,7 +190,7 @@ Measured results:
   no equivalent of that boot-time invariant — it must be rebuilt deliberately, as a service-provider
   check or an architecture test. **A silently unprotected admin route is the single worst failure
   mode of this migration.**
-- 40 permissions with AND semantics and SUPER_ADMIN's `grantsAllPermissions`, including the
+- 39 permissions with AND semantics and SUPER_ADMIN's `grantsAllPermissions`, including the
   fail-closed rule that unknown codes in the database are ignored.
 - GST engine, coupon engine, inventory reservations with timed release, the payment and shipment
   ledgers, Shiprocket integration, audit logging with secret redaction, email templates, SEO
@@ -280,7 +280,7 @@ design exercise. That is the main reason it is months rather than a year.
 | #   | Phase                               | Scope                                                                                                                                                                         | Estimate                     |
 | --- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | 0   | **Pipeline fix + COD launch**       | PLATFORM_EVALUATION §5 Stage A, on the current stack                                                                                                                          | **hours**                    |
-| 1   | Foundation                          | Laravel skeleton, schema baseline, Eloquent models, **crypto parity fixtures**, response envelope, error vocabulary, admin auth + 40 permissions + the fail-closed boot check | 3–4 wk                       |
+| 1   | Foundation                          | Laravel skeleton, schema baseline, Eloquent models, **crypto parity fixtures**, response envelope, error vocabulary, admin auth + 39 permissions + the fail-closed boot check | 3–4 wk                       |
 | 2   | Catalogue + storefront reads        | Categories, products, variants, images, search, `storefront.service` equivalent                                                                                               | 3–4 wk                       |
 | 3   | Cart, checkout, GST, coupons        | `checkout.service` (690 lines), GST engine, coupon engine, COD                                                                                                                | 4–5 wk                       |
 | 4   | Orders + inventory                  | `orders.service`, `stock.service` (602), reservations with timed release                                                                                                      | 3–4 wk                       |
