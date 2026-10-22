@@ -102,6 +102,8 @@ return [
 
     'key' => env('APP_KEY'),
 
+    'secret_encryption_key' => env('SECRET_ENCRYPTION_KEY'),
+
     'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))

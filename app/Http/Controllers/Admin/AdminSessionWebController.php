@@ -111,6 +111,11 @@ class AdminSessionWebController extends Controller
             );
         } catch (ApiException $e) {
             return back()->withErrors(['code' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Admin 2FA verification error: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+            return back()->withErrors(['code' => 'Two-factor error: ' . $e->getMessage()]);
         }
 
         $request->session()->forget('admin_2fa_challenge_token');

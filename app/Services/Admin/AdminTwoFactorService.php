@@ -412,7 +412,23 @@ class AdminTwoFactorService
         }
 
         // TOTP verification
-        $secret = $this->secrets->open($credential->secret, "admin-totp:{$challenge->admin_user_id}");
+        try {
+            $secret = $this->secrets->open($credential->secret, "admin-totp:{$challenge->admin_user_id}");
+        } catch (\Throwable $e) {
+            $this->audit->log(
+                action: 'admin.2fa.failed',
+                actorType: AuditActorType::ADMIN,
+                actorId: $challenge->admin_user_id,
+                metadata: ['reason' => 'SECRET_DECRYPTION_FAILED', 'error' => $e->getMessage()],
+                request: $request
+            );
+            $adminEmail = AdminUser::find($challenge->admin_user_id)?->email ?? 'admin';
+            throw new ApiException(
+                code: 'SECRET_DECRYPTION_FAILED',
+                message: 'Two-factor secret decryption error (' . $e->getMessage() . '). To reset 2FA, run on server: php8.3 artisan admin:2fa:reset ' . $adminEmail,
+                status: 401
+            );
+        }
         $step = Totp::verify($secret, $code, time(), $credential->last_used_step);
 
         if ($step === null) {
