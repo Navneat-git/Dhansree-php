@@ -26,6 +26,11 @@ class AuditLog extends Model
         return $this->belongsTo(AdminUser::class, 'actor_admin_user_id', 'id');
     }
 
+    public function adminUser(): BelongsTo
+    {
+        return $this->belongsTo(AdminUser::class, 'actor_admin_user_id', 'id');
+    }
+
     public function actorCustomer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'actor_customer_id', 'id');
