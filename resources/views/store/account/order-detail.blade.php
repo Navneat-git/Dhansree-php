@@ -3,7 +3,24 @@
 @section('title', 'Order ' . $order->order_number . ' - Dhansree')
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-8">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 space-y-8" x-data="{
+    reviewModalOpen: false,
+    selectedItemId: null,
+    productName: '',
+    variantTitle: '',
+    rating: 5,
+    title: '',
+    body: '',
+    openReviewModal(id, name, variant) {
+        this.selectedItemId = id;
+        this.productName = name;
+        this.variantTitle = variant;
+        this.rating = 5;
+        this.title = '';
+        this.body = '';
+        this.reviewModalOpen = true;
+    }
+}">
     <!-- Breadcrumb / Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-light-gold">
         <div>
@@ -104,10 +121,28 @@
                                 </p>
                             </div>
 
-                            <div class="text-right shrink-0">
+                            <div class="text-right shrink-0 flex flex-col items-end">
                                 <span class="font-bold text-sm text-rich-black tabular-nums">
                                     ₹{{ number_format($item->line_total_paise / 100, 2) }}
                                 </span>
+
+                                @if($order->status->value === 'DELIVERED')
+                                    @if($item->review)
+                                        <div class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-200/50 text-maroon-900 border border-gold-400 text-xs font-medium">
+                                            <span class="text-gold-700 font-bold">★ {{ $item->review->rating }}</span>
+                                            <span class="text-rich-black/30">•</span>
+                                            <span>{{ $item->review->status->label() }}</span>
+                                        </div>
+                                    @else
+                                        <button
+                                            type="button"
+                                            @click="openReviewModal({{ $item->id }}, '{{ addslashes($item->product_name) }}', '{{ addslashes($item->variant_title ?? '') }}')"
+                                            class="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-maroon-800 hover:bg-maroon-900 text-white text-xs font-semibold shadow-xs transition-colors"
+                                        >
+                                            ★ Write a Review
+                                        </button>
+                                    @endif
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -187,6 +222,102 @@
                     </div>
                 </div>
             @endif
+        </div>
+    </div>
+
+    <!-- Write Review Modal -->
+    <div
+        x-show="reviewModalOpen"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto bg-black/70 flex items-center justify-center p-4"
+    >
+        <div
+            @click.away="reviewModalOpen = false"
+            class="w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl space-y-4 border border-light-gold"
+        >
+            <div class="flex items-center justify-between border-b border-light-gold/60 pb-3">
+                <div>
+                    <h3 class="font-serif text-lg font-bold text-rich-black">Review Product</h3>
+                    <p class="text-xs text-rich-black/60 mt-0.5" x-text="productName + (variantTitle ? ' (' + variantTitle + ')' : '')"></p>
+                </div>
+                <button type="button" @click="reviewModalOpen = false" class="text-rich-black/40 hover:text-rich-black">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form action="{{ route('storefront.account.reviews.store') }}" method="POST" class="space-y-4">
+                @csrf
+                <input type="hidden" name="order_item_id" :value="selectedItemId">
+
+                <!-- Star Rating -->
+                <div>
+                    <label class="block text-xs font-semibold text-rich-black mb-1.5">Rating (1 to 5 Stars)</label>
+                    <div class="flex items-center gap-2">
+                        <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
+                            <button
+                                type="button"
+                                @click="rating = star"
+                                class="text-2xl transition-transform hover:scale-110"
+                                :class="star <= rating ? 'text-gold-500' : 'text-zinc-300'"
+                            >
+                                ★
+                            </button>
+                        </template>
+                        <input type="hidden" name="rating" :value="rating">
+                        <span class="text-xs font-bold text-rich-black/70 ml-2" x-text="rating + ' of 5 Stars'"></span>
+                    </div>
+                </div>
+
+                <!-- Review Title -->
+                <div>
+                    <label for="review_title" class="block text-xs font-semibold text-rich-black mb-1">Headline (Optional)</label>
+                    <input
+                        type="text"
+                        id="review_title"
+                        name="title"
+                        x-model="title"
+                        maxlength="80"
+                        placeholder="e.g. Gorgeous kurta with rich embroidery"
+                        class="w-full px-3 py-2 text-xs border border-light-gold rounded-xl focus:outline-none focus:border-maroon-700 text-rich-black"
+                    >
+                </div>
+
+                <!-- Review Body -->
+                <div>
+                    <label for="review_body" class="block text-xs font-semibold text-rich-black mb-1">Your Review (Min 10 characters)</label>
+                    <textarea
+                        id="review_body"
+                        name="body"
+                        x-model="body"
+                        rows="4"
+                        required
+                        minlength="10"
+                        maxlength="2000"
+                        placeholder="Tell others about the fabric, fitting, finish, and overall quality..."
+                        class="w-full px-3 py-2 text-xs border border-light-gold rounded-xl focus:outline-none focus:border-maroon-700 text-rich-black"
+                    ></textarea>
+                    <div class="flex items-center justify-between text-[11px] text-rich-black/50 mt-1">
+                        <span>Minimum 10 characters</span>
+                        <span x-text="body.length + ' / 2000'"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        @click="reviewModalOpen = false"
+                        class="px-4 py-2 text-xs font-semibold text-rich-black/60 hover:text-rich-black"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-5 py-2 text-xs font-semibold text-white bg-maroon-800 hover:bg-maroon-900 rounded-xl transition-colors shadow-sm"
+                    >
+                        Submit Review
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

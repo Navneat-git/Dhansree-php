@@ -16,6 +16,10 @@
            class="py-3 px-1 border-b-2 whitespace-nowrap transition-colors {{ request()->routeIs('storefront.account.profile*') ? 'border-maroon-700 text-maroon-800 font-semibold' : 'border-transparent text-rich-black/60 hover:text-rich-black hover:border-rich-black/30' }}">
             Profile
         </a>
+        <a href="{{ route('storefront.account.reviews') }}"
+           class="py-3 px-1 border-b-2 whitespace-nowrap transition-colors {{ request()->routeIs('storefront.account.reviews*') ? 'border-maroon-700 text-maroon-800 font-semibold' : 'border-transparent text-rich-black/60 hover:text-rich-black hover:border-rich-black/30' }}">
+            My Reviews
+        </a>
         <form action="{{ route('storefront.account.logout') }}" method="POST" class="ml-auto shrink-0 py-2">
             @csrf
             <button type="submit" class="text-xs font-semibold text-rich-black/50 hover:text-rose-600 transition-colors py-1 px-2.5 rounded-lg border border-rich-black/10 hover:border-rose-200">

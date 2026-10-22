@@ -18,6 +18,7 @@ class StorefrontController extends Controller
     public function __construct(
         protected CatalogBrowsingService $catalogService,
         protected SeoRedirectService $seoRedirectService,
+        protected \App\Services\Review\ReviewService $reviewService,
     ) {}
 
     /**
@@ -95,11 +96,16 @@ class StorefrontController extends Controller
         $data = $this->catalogService->getProductDetailPageData($slug);
         $product = $data['product'];
 
+        $reviewsData = $this->reviewService->publicForProduct($product->id, 1, 10);
+
         return view('store.product', [
             'product' => $product,
             'relatedProducts' => $data['relatedProducts'],
             'isSmartLivingHub' => $data['isSmartLiving'],
             'store' => $data['store'],
+            'reviewSummary' => $reviewsData['summary'],
+            'initialReviews' => $reviewsData['reviews'],
+            'reviewsTotal' => $reviewsData['total_items'],
             'seoTitle' => $product->seo_title ?: "{$product->name} | Dhansree",
             'seoDescription' => $product->seo_description ?: $product->short_description ?: $product->description,
         ]);

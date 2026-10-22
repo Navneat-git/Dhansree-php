@@ -49,4 +49,29 @@ class Review extends Model
     {
         return $this->belongsTo(Product::class, 'product_id', 'id');
     }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', \App\Enums\ReviewStatus::APPROVED);
+    }
+
+    public function getAuthorNameAttribute(): string
+    {
+        $name = $this->customer?->name;
+        if (!$name) {
+            return 'Verified Buyer';
+        }
+        $parts = preg_split('/\s+/', trim($name));
+        $first = $parts[0] ?? 'Verified';
+        $second = $parts[1] ?? '';
+        return $second !== '' ? "{$first} " . strtoupper(mb_substr($second, 0, 1)) . '.' : $first;
+    }
+
+    public function isEditable(): bool
+    {
+        if (!$this->created_at) {
+            return false;
+        }
+        return $this->created_at->diffInDays(now()) <= 30;
+    }
 }

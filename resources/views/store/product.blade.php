@@ -3,25 +3,55 @@
 @push('head')
 <!-- Product Schema.org JSON-LD -->
 <script type="application/ld+json">
-{!! json_encode([
-    '@context' => 'https://schema.org/',
-    '@type' => 'Product',
-    'name' => $product->name,
-    'image' => $product->images->pluck('url')->all(),
-    'description' => strip_tags((string) ($product->short_description ?? $product->description)),
-    'sku' => $product->variants->first()?->sku ?? $product->slug,
-    'brand' => [
-        '@type' => 'Brand',
-        'name' => $product->brand ?? 'Dhansree',
-    ],
-    'offers' => [
-        '@type' => 'Offer',
-        'url' => url()->current(),
-        'priceCurrency' => 'INR',
-        'price' => $product->min_price_rupees ?? 0,
-        'availability' => 'https://schema.org/InStock',
-    ],
-], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+@php
+    $schemaData = [
+        '@context' => 'https://schema.org/',
+        '@type' => 'Product',
+        'name' => $product->name,
+        'image' => $product->images->pluck('url')->all(),
+        'description' => strip_tags((string) ($product->short_description ?? $product->description)),
+        'sku' => $product->variants->first()?->sku ?? $product->slug,
+        'brand' => [
+            '@type' => 'Brand',
+            'name' => $product->brand ?? 'Dhansree',
+        ],
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => url()->current(),
+            'priceCurrency' => 'INR',
+            'price' => $product->min_price_rupees ?? 0,
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ];
+
+    if (!empty($reviewSummary)) {
+        $schemaData['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => $reviewSummary['average'],
+            'reviewCount' => $reviewSummary['count'],
+            'bestRating' => 5,
+            'worstRating' => 1,
+        ];
+        if (!empty($initialReviews)) {
+            $schemaData['review'] = collect($initialReviews)->take(5)->map(fn($r) => [
+                '@type' => 'Review',
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => $r['rating'],
+                    'bestRating' => 5,
+                    'worstRating' => 1,
+                ],
+                'author' => [
+                    '@type' => 'Person',
+                    'name' => $r['author_name'],
+                ],
+                'reviewBody' => $r['body'],
+                'datePublished' => $r['published_at'],
+            ])->all();
+        }
+    }
+@endphp
+{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
 </script>
 @endpush
 
@@ -111,6 +141,22 @@
                 <h1 class="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-rich-black leading-snug">
                     {{ $product->name }}
                 </h1>
+                @if(!empty($reviewSummary))
+                    <div class="flex items-center gap-2 pt-1 text-xs">
+                        <div class="flex items-center text-amber-500 text-sm">
+                            @for($i = 1; $i <= 5; $i++)
+                                <svg class="w-4 h-4 {{ $i <= round($reviewSummary['average']) ? 'fill-amber-400 text-amber-400' : 'text-zinc-300' }}" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            @endfor
+                        </div>
+                        <span class="font-bold text-rich-black">{{ number_format($reviewSummary['average'], 1) }}</span>
+                        <span class="text-rich-black/30">•</span>
+                        <a href="#customer-reviews" class="text-maroon-800 hover:underline font-medium">
+                            {{ $reviewSummary['count'] }} {{ Str::plural('Review', $reviewSummary['count']) }}
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <!-- Price and Discount -->
@@ -266,6 +312,117 @@
             <img :src="activeImage" alt="{{ $product->name }}" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl">
         </div>
     </div>
+
+    <!-- Customer Reviews Section -->
+    <section id="customer-reviews" class="mt-16 md:mt-24 pt-12 border-t border-light-gold">
+        <div class="space-y-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-widest text-gold-600 font-semibold">Verified Feedback</p>
+                    <h2 class="font-serif text-3xl text-maroon-800 font-normal">Customer Reviews</h2>
+                </div>
+                <div>
+                    @if(auth('customer')->check())
+                        <a href="{{ route('storefront.account.orders') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold-200/50 hover:bg-gold-200 text-maroon-900 border border-gold-400 text-xs font-semibold transition-colors">
+                            <span>★ Write a Review for Your Purchase</span>
+                        </a>
+                    @else
+                        <a href="{{ route('storefront.account.login') }}?next={{ urlencode(request()->getRequestUri()) }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold-200/50 hover:bg-gold-200 text-maroon-900 border border-gold-400 text-xs font-semibold transition-colors">
+                            <span>Sign in to Review Purchases</span>
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            @if(!empty($reviewSummary))
+                <!-- Rating Breakdown Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 sm:p-8 rounded-3xl bg-white border border-light-gold shadow-xs items-center">
+                    <div class="md:col-span-4 text-center md:border-r md:border-light-gold/80 md:pr-6 space-y-2">
+                        <div class="font-serif text-5xl font-bold text-maroon-800">
+                            {{ number_format($reviewSummary['average'], 1) }}
+                        </div>
+                        <div class="flex items-center justify-center text-amber-400 text-lg">
+                            @for($i = 1; $i <= 5; $i++)
+                                <span>{{ $i <= round($reviewSummary['average']) ? '★' : '☆' }}</span>
+                            @endfor
+                        </div>
+                        <div class="text-xs text-rich-black/60 font-medium">
+                            Based on {{ $reviewSummary['count'] }} verified {{ Str::plural('rating', $reviewSummary['count']) }}
+                        </div>
+                    </div>
+
+                    <!-- Breakdown Bars -->
+                    <div class="md:col-span-8 space-y-2">
+                        @foreach([5, 4, 3, 2, 1] as $star)
+                            @php
+                                $starCount = $reviewSummary['breakdown'][$star] ?? 0;
+                                $percentage = $reviewSummary['count'] > 0 ? round(($starCount / $reviewSummary['count']) * 100) : 0;
+                            @endphp
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="w-12 text-rich-black/70 shrink-0 font-medium">{{ $star }} Stars</span>
+                                <div class="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                                    <div class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: {{ $percentage }}%"></div>
+                                </div>
+                                <span class="w-10 text-right text-rich-black/50 tabular-nums shrink-0">{{ $starCount }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Reviews List -->
+                <div class="space-y-4">
+                    @foreach($initialReviews as $rev)
+                        <div class="p-6 rounded-2xl bg-white border border-light-gold/60 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-maroon-50 border border-maroon-200 text-maroon-800 font-bold text-xs flex items-center justify-center">
+                                        {{ mb_substr($rev['author_name'], 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-xs text-rich-black">
+                                            {{ $rev['author_name'] }}
+                                        </div>
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            Verified Purchase
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-[11px] text-rich-black/40">
+                                    {{ \Carbon\Carbon::parse($rev['published_at'])->format('d M Y') }}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-1 text-amber-400 text-sm">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <span>{{ $i <= $rev['rating'] ? '★' : '☆' }}</span>
+                                @endfor
+                                @if(!empty($rev['variant_title']))
+                                    <span class="text-xs text-rich-black/40 ml-2">Variant: {{ $rev['variant_title'] }}</span>
+                                @endif
+                            </div>
+
+                            @if(!empty($rev['title']))
+                                <h4 class="font-bold text-rich-black text-sm">{{ $rev['title'] }}</h4>
+                            @endif
+
+                            <p class="text-xs text-rich-black/75 leading-relaxed whitespace-pre-line">{{ $rev['body'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="p-8 text-center rounded-2xl bg-white border border-light-gold/60 space-y-3">
+                    <div class="w-12 h-12 mx-auto rounded-full bg-gold-200/40 text-gold-600 flex items-center justify-center font-bold text-xl">
+                        ★
+                    </div>
+                    <h3 class="font-serif text-base font-semibold text-rich-black">No Reviews Yet</h3>
+                    <p class="text-xs text-rich-black/60 max-w-md mx-auto">
+                        Be the first to review this product once your order is delivered to your doorstep.
+                    </p>
+                </div>
+            @endif
+        </div>
+    </section>
 
     <!-- Related Products -->
     @if($relatedProducts->isNotEmpty())

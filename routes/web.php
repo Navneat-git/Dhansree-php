@@ -65,6 +65,9 @@ Route::prefix('account')->name('storefront.account.')->group(function () {
         Route::delete('/addresses/{id}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'deleteAddress'])->name('addresses.delete');
         Route::get('/profile', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'profile'])->name('profile');
         Route::put('/profile', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/reviews', [\App\Http\Controllers\Storefront\ReviewController::class, 'index'])->name('reviews');
+        Route::post('/reviews', [\App\Http\Controllers\Storefront\ReviewController::class, 'submit'])->name('reviews.store');
+        Route::put('/reviews/{id}', [\App\Http\Controllers\Storefront\ReviewController::class, 'update'])->name('reviews.update');
     });
 });
 
@@ -90,8 +93,9 @@ Route::prefix('store/account')->group(function () {
 // ─── Search ────────────────────────────────────────────────────────────────
 Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');
 
-// ─── Product Detail ────────────────────────────────────────────────────────
+// ─── Product Detail & Reviews ──────────────────────────────────────────────
 Route::get('/product/{slug}', [StorefrontController::class, 'product'])->name('store.product');
+Route::get('/product/{slug}/reviews', [\App\Http\Controllers\Storefront\ReviewController::class, 'productReviews'])->name('store.product.reviews');
 
 // ─── Static Pages & Policies ───────────────────────────────────────────────
 Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
@@ -196,6 +200,23 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'index'])->name('index');
             Route::get('/{customer}', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'show'])->name('show');
             Route::post('/{customer}/status', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'updateStatus'])->name('status');
+        });
+
+        // Reviews Moderation
+        Route::prefix('reviews')->name('admin.reviews.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminReviewWebController::class, 'index'])->name('index');
+            Route::post('/{id}/moderate', [\App\Http\Controllers\Admin\AdminReviewWebController::class, 'moderate'])->name('moderate');
+        });
+
+        // Coupons Management
+        Route::prefix('coupons')->name('admin.coupons.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'store'])->name('store');
+            Route::get('/{coupon}/edit', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'edit'])->name('edit');
+            Route::put('/{coupon}', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'update'])->name('update');
+            Route::post('/{coupon}/toggle', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'toggle'])->name('toggle');
+            Route::delete('/{coupon}', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'destroy'])->name('destroy');
         });
     });
 });

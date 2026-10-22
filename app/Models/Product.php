@@ -121,6 +121,11 @@ class Product extends Model
         return $this->hasMany(Review::class, 'product_id', 'id');
     }
 
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->where('status', \App\Enums\ReviewStatus::APPROVED);
+    }
+
     public function wishlistItems(): HasMany
     {
         return $this->hasMany(WishlistItem::class, 'product_id', 'id');
