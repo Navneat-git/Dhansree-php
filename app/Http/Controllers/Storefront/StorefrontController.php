@@ -79,6 +79,8 @@ class StorefrontController extends Controller
             'products' => $data['products'],
             'isSmartLivingHub' => $data['isSmartLiving'],
             'filters' => $data['filters'],
+            'availableOptions' => $data['availableOptions'] ?? [],
+            'selectedOptions' => $data['selectedOptions'] ?? [],
             'store' => StoreSettings::current(),
             'seoTitle' => $category->seo_title ?: "{$category->name} | Dhansree",
             'seoDescription' => $category->seo_description ?: $category->description ?: "Shop our latest {$category->name} collection.",

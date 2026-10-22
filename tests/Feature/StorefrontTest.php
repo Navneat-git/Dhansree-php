@@ -53,6 +53,44 @@ class StorefrontTest extends TestCase
         $response->assertSee('Price Range');
     }
 
+    public function test_category_page_sorting_low_high_and_dynamic_variation_filters(): void
+    {
+        // 1. Verify Price: High to Low with empty min/max does not throw 500 error
+        $responseDesc = $this->get('/women-two-piece-sets-co-ord?sort=price_desc&min_price=&max_price=');
+        $responseDesc->assertStatus(200);
+        $responseDesc->assertSee('Price: High to Low');
+
+        // 2. Verify Price: Low to High does not throw 500 error
+        $responseAsc = $this->get('/women-two-piece-sets-co-ord?sort=price_asc&min_price=&max_price=');
+        $responseAsc->assertStatus(200);
+        $responseAsc->assertSee('Price: Low to High');
+
+        // 3. Dynamic options: women-two-piece-sets-co-ord has products with Color and Size options
+        $responseDesc->assertSee('Color');
+        $responseDesc->assertSee('Pink');
+        $responseDesc->assertSee('Size');
+        $responseDesc->assertSee('M');
+
+        // 4. Filtering by specific color works
+        $colorFilterResponse = $this->get('/women-two-piece-sets-co-ord?color=Pink');
+        $colorFilterResponse->assertStatus(200);
+        $colorFilterResponse->assertSee('Active:');
+        $colorFilterResponse->assertSee('Color:');
+        $colorFilterResponse->assertSee('Pink');
+
+        // 5. Filtering by size works
+        $sizeFilterResponse = $this->get('/women-two-piece-sets-co-ord?size=M');
+        $sizeFilterResponse->assertStatus(200);
+        $sizeFilterResponse->assertSee('Active:');
+        $sizeFilterResponse->assertSee('Size:');
+        $sizeFilterResponse->assertSee('M');
+
+        // 6. Categories without Size/Color options (e.g. smart-gadgets) dynamically omit them
+        $gadgetResponse = $this->get('/smart-gadgets');
+        $gadgetResponse->assertStatus(200);
+        $gadgetResponse->assertDontSee('<h3 class="text-xs font-bold uppercase tracking-wider text-rich-black/80">Size</h3>', false);
+    }
+
     public function test_product_detail_page_renders_with_schema_and_sizing(): void
     {
         $kurtiProduct = Product::find(3);

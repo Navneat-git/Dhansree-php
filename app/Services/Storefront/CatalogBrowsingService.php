@@ -7,11 +7,14 @@ namespace App\Services\Storefront;
 use App\Enums\ProductStatus;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductOption;
+use App\Models\ProductVariant;
 use App\Models\SizeChart;
 use App\Models\StoreSettings;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class CatalogBrowsingService
 {
@@ -175,7 +178,96 @@ class CatalogBrowsingService
 
         $categoryIds = array_merge([$category->id], $subIds);
 
-        $query = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images'])
+        // Fetch all active product IDs in this category and its subcategories
+        $baseActiveProductIds = Product::where('status', ProductStatus::ACTIVE)
+            ->whereIn('category_id', $categoryIds)
+            ->pluck('id');
+
+        // Dynamically discover all option dimensions and their distinct values present in this category
+        $options = ProductOption::whereIn('product_id', $baseActiveProductIds)
+            ->with(['values' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->orderBy('position')
+            ->get();
+
+        $availableOptions = [];
+        foreach ($options as $opt) {
+            $rawName = trim((string) $opt->name);
+            if ($rawName === '') {
+                continue;
+            }
+            $dimName = ucfirst($rawName);
+            if (!isset($availableOptions[$dimName])) {
+                $availableOptions[$dimName] = collect();
+            }
+            foreach ($opt->values as $valObj) {
+                $vStr = trim((string) $valObj->value);
+                if ($vStr !== '') {
+                    $availableOptions[$dimName]->push($vStr);
+                }
+            }
+        }
+
+        // De-duplicate and order values per option dimension
+        foreach ($availableOptions as $dimName => $vals) {
+            $uniqueVals = $vals->unique()->values()->all();
+            if (in_array(strtolower($dimName), ['size', 'sizes', 'fit'])) {
+                $sizeOrder = ['XXS' => 1, 'XS' => 2, 'S' => 3, 'M' => 4, 'L' => 5, 'XL' => 6, 'XXL' => 7, '2XL' => 7, '3XL' => 8, '4XL' => 9, '5XL' => 10, 'Free Size' => 11];
+                usort($uniqueVals, function ($a, $b) use ($sizeOrder) {
+                    $aOrder = $sizeOrder[strtoupper(trim($a))] ?? 99;
+                    $bOrder = $sizeOrder[strtoupper(trim($b))] ?? 99;
+                    if ($aOrder !== $bOrder) {
+                        return $aOrder <=> $bOrder;
+                    }
+                    return strnatcasecmp($a, $b);
+                });
+            } else {
+                natcasesort($uniqueVals);
+                $uniqueVals = array_values($uniqueVals);
+            }
+            $availableOptions[$dimName] = $uniqueVals;
+        }
+        $availableOptions = array_filter($availableOptions, fn($vals) => !empty($vals));
+
+        // Parse and validate selected option filters from request
+        $selectedOptions = [];
+        foreach ($availableOptions as $dimName => $availVals) {
+            $paramVal = null;
+            $lowerDim = strtolower($dimName);
+            $slugDim = Str::slug($dimName, '_');
+
+            if (isset($filters['options'][$dimName])) {
+                $paramVal = $filters['options'][$dimName];
+            } elseif (isset($filters['options'][$lowerDim])) {
+                $paramVal = $filters['options'][$lowerDim];
+            } elseif (isset($filters[$lowerDim])) {
+                $paramVal = $filters[$lowerDim];
+            } elseif (isset($filters[$slugDim])) {
+                $paramVal = $filters[$slugDim];
+            } elseif (isset($filters[$dimName])) {
+                $paramVal = $filters[$dimName];
+            }
+
+            if ($paramVal !== null && $paramVal !== '') {
+                $rawVals = is_array($paramVal) ? $paramVal : explode(',', (string) $paramVal);
+                $cleanVals = array_filter(array_map('trim', $rawVals), fn($v) => $v !== '');
+                if (!empty($cleanVals)) {
+                    $validSelected = [];
+                    foreach ($availVals as $av) {
+                        foreach ($cleanVals as $cv) {
+                            if (strcasecmp($av, $cv) === 0) {
+                                $validSelected[] = $av;
+                                break;
+                            }
+                        }
+                    }
+                    if (!empty($validSelected)) {
+                        $selectedOptions[$dimName] = array_values(array_unique($validSelected));
+                    }
+                }
+            }
+        }
+
+        $query = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images', 'options.values'])
             ->where('status', ProductStatus::ACTIVE)
             ->whereIn('category_id', $categoryIds);
 
@@ -193,6 +285,16 @@ class CatalogBrowsingService
         if (!empty($filters['in_stock'])) {
             $query->whereHas('variants.inventoryLevels', function (Builder $iq) {
                 $iq->whereRaw('(on_hand - reserved) > 0');
+            });
+        }
+
+        // Apply dynamic option filters (e.g. Color, Size, etc.)
+        foreach ($selectedOptions as $dimName => $vals) {
+            $query->whereHas('options', function (Builder $oq) use ($dimName, $vals) {
+                $oq->whereRaw('LOWER(name) = ?', [strtolower($dimName)])
+                   ->whereHas('values', function (Builder $vq) use ($vals) {
+                       $vq->whereIn('value', $vals);
+                   });
             });
         }
 
@@ -214,7 +316,7 @@ class CatalogBrowsingService
             default => $query->orderByDesc('id'),
         };
 
-        $products = $query->paginate(16);
+        $products = $query->paginate(16)->withQueryString();
 
         $isSmartLiving = $this->isSmartLivingCategory($category);
 
@@ -223,6 +325,8 @@ class CatalogBrowsingService
             'products' => $products,
             'isSmartLiving' => $isSmartLiving,
             'filters' => $filters,
+            'availableOptions' => $availableOptions,
+            'selectedOptions' => $selectedOptions,
         ];
     }
 
@@ -403,7 +507,42 @@ class CatalogBrowsingService
                 }
             });
 
-        return $query->paginate(16);
+        // Price range filter
+        if (!empty($filters['min_price'])) {
+            $minPaise = (int) round(((float) $filters['min_price']) * 100);
+            $query->whereHas('variants', fn($vq) => $vq->where('price_paise', '>=', $minPaise));
+        }
+        if (!empty($filters['max_price'])) {
+            $maxPaise = (int) round(((float) $filters['max_price']) * 100);
+            $query->whereHas('variants', fn($vq) => $vq->where('price_paise', '<=', $maxPaise));
+        }
+
+        // In-stock only filter
+        if (!empty($filters['in_stock'])) {
+            $query->whereHas('variants.inventoryLevels', function (Builder $iq) {
+                $iq->whereRaw('(on_hand - reserved) > 0');
+            });
+        }
+
+        // Sort
+        match ($filters['sort'] ?? 'relevance') {
+            'price_asc' => $query->orderBy(
+                ProductVariant::select('price_paise')
+                    ->whereColumn('product_variants.product_id', 'products.id')
+                    ->orderBy('price_paise', 'asc')
+                    ->limit(1)
+            ),
+            'price_desc' => $query->orderByDesc(
+                ProductVariant::select('price_paise')
+                    ->whereColumn('product_variants.product_id', 'products.id')
+                    ->orderBy('price_paise', 'desc')
+                    ->limit(1)
+            ),
+            'newest' => $query->orderByDesc('published_at'),
+            default => $query->orderByDesc('id'),
+        };
+
+        return $query->paginate(16)->withQueryString();
     }
 
     /**
