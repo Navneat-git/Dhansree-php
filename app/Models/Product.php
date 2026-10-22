@@ -125,4 +125,43 @@ class Product extends Model
     {
         return $this->hasMany(WishlistItem::class, 'product_id', 'id');
     }
+
+    public function getPrimaryImageUrlAttribute(): ?string
+    {
+        $img = $this->primaryImage ?? $this->images->first();
+        return $img?->url;
+    }
+
+    public function getMinPriceRupeesAttribute(): ?float
+    {
+        $min = $this->variants->whereNull('archived_at')->min('price_paise');
+        return $min !== null ? $min / 100 : null;
+    }
+
+    public function getMaxPriceRupeesAttribute(): ?float
+    {
+        $max = $this->variants->whereNull('archived_at')->max('price_paise');
+        return $max !== null ? $max / 100 : null;
+    }
+
+    public function getMrpRupeesAttribute(): ?float
+    {
+        $mrp = $this->variants->whereNull('archived_at')->max('mrp_paise');
+        return $mrp !== null ? $mrp / 100 : null;
+    }
+
+    public function getFormattedPriceAttribute(): string
+    {
+        $min = $this->min_price_rupees;
+        $max = $this->max_price_rupees;
+
+        if ($min === null) {
+            return '₹0';
+        }
+        if ($min === $max || $max === null) {
+            return '₹' . number_format($min, 0);
+        }
+
+        return '₹' . number_format($min, 0) . ' - ₹' . number_format($max, 0);
+    }
 }

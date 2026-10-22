@@ -84,4 +84,18 @@ class Category extends Model
     {
         return $this->hasMany(SizeChart::class, 'category_id', 'id');
     }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_storage_key) {
+            return null;
+        }
+
+        $base = config('store.media_base_url');
+        if ($base) {
+            return rtrim($base, '/') . '/' . ltrim($this->image_storage_key, '/');
+        }
+
+        return asset('storage/media/' . ltrim($this->image_storage_key, '/'));
+    }
 }

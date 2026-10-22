@@ -43,4 +43,23 @@ class ProductImage extends Model
     {
         return $this->hasMany(ProductImageVariant::class, 'image_id', 'id');
     }
+
+    public function getUrlAttribute(): string
+    {
+        if (!$this->storage_key) {
+            return '';
+        }
+
+        $base = config('store.media_base_url');
+        if ($base) {
+            return rtrim($base, '/') . '/' . ltrim($this->storage_key, '/');
+        }
+
+        return asset('storage/media/' . ltrim($this->storage_key, '/'));
+    }
+
+    public function getIsPrimaryAttribute(): bool
+    {
+        return (int) $this->position === 0;
+    }
 }

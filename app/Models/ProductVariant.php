@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
@@ -63,6 +64,11 @@ class ProductVariant extends Model
         return $this->mrp_paise ? $this->mrp_paise / 100 : null;
     }
 
+    public function getCostRupeesAttribute(): ?float
+    {
+        return $this->cost_paise !== null ? $this->cost_paise / 100 : null;
+    }
+
     public function getDiscountPercentageAttribute(): ?int
     {
         if (!$this->mrp_paise || $this->mrp_paise <= $this->price_paise) {
@@ -70,6 +76,15 @@ class ProductVariant extends Model
         }
 
         return (int) round((($this->mrp_paise - $this->price_paise) / $this->mrp_paise) * 100);
+    }
+
+    public function getStockOnHandAttribute(): int
+    {
+        if ($this->relationLoaded('inventoryLevels')) {
+            return (int) $this->inventoryLevels->sum(fn($l) => $l->on_hand - $l->reserved);
+        }
+
+        return (int) $this->inventoryLevels()->sum(DB::raw('on_hand - reserved'));
     }
 
     public function orderItems(): HasMany

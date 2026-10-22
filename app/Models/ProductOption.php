@@ -31,6 +31,11 @@ class ProductOption extends Model
         return $this->hasMany(ProductOptionValue::class, 'option_id', 'id');
     }
 
+    public function values(): HasMany
+    {
+        return $this->productOptionValues();
+    }
+
     public function productVariantOptionValues(): HasMany
     {
         return $this->hasMany(ProductVariantOptionValue::class, 'option_id', 'id');
