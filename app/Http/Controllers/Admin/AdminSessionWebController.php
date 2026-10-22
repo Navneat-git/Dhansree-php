@@ -50,7 +50,10 @@ class AdminSessionWebController extends Controller
 
         if ($outcome['status'] === 'CODE_REQUIRED') {
             $cookieName = AdminSessionManager::getChallengeCookieName();
-            $isSecure = ($cookieName === AdminSessionManager::CHALLENGE_COOKIE_NAME_PROD);
+            $isSecure = ($cookieName === AdminSessionManager::CHALLENGE_COOKIE_NAME_PROD && $request->isSecure());
+
+            // Always store challenge token in session for reliable web flow across HTTP/HTTPS
+            $request->session()->put('admin_2fa_challenge_token', $outcome['challenge_token']);
 
             $challengeCookie = new Cookie(
                 name: $cookieName,
@@ -68,6 +71,8 @@ class AdminSessionWebController extends Controller
                 ->withCookie($challengeCookie)
                 ->with('status', 'Please enter the 6-digit code from your authenticator app or a recovery code.');
         }
+
+        $request->session()->put('admin_session_token', $outcome['token']);
 
         return redirect()->intended('/admin/dashboard')
             ->withCookie($outcome['cookie'])
@@ -108,6 +113,9 @@ class AdminSessionWebController extends Controller
             return back()->withErrors(['code' => $e->getMessage()]);
         }
 
+        $request->session()->forget('admin_2fa_challenge_token');
+        $request->session()->put('admin_session_token', $result['token']);
+
         $clearChallenge = cookie()->forget(AdminSessionManager::getChallengeCookieName(), '/', null);
 
         return redirect()->intended('/admin/dashboard')
@@ -144,7 +152,9 @@ class AdminSessionWebController extends Controller
             return back()->withErrors(['currentPassword' => $e->getMessage()]);
         }
 
-        return redirect('/admin/dashboard')
+        $request->session()->put('admin_session_token', $result['token']);
+
+        return redirect()->intended('/admin/dashboard')
             ->withCookie($result['cookie'])
             ->with('success', 'Password updated successfully.');
     }
@@ -153,6 +163,8 @@ class AdminSessionWebController extends Controller
     {
         $token = AdminSessionManager::extractTokenFromRequest($request);
         $this->authService->logout($token, $request);
+
+        $request->session()->forget(['admin_session_token', 'admin_2fa_challenge_token']);
 
         $clearSession = cookie()->forget(AdminSessionManager::getCookieName(), '/', null);
         $clearChallenge = cookie()->forget(AdminSessionManager::getChallengeCookieName(), '/', null);

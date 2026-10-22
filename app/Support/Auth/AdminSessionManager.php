@@ -21,7 +21,8 @@ class AdminSessionManager
     public static function getCookieName(): string
     {
         $appEnv = config('app.env', 'local');
-        return ($appEnv === 'production' || $appEnv === 'staging')
+        $isSecure = request()?->isSecure() ?? false;
+        return (($appEnv === 'production' || $appEnv === 'staging') && $isSecure)
             ? self::COOKIE_NAME_PROD
             : self::COOKIE_NAME_DEV;
     }
@@ -29,15 +30,19 @@ class AdminSessionManager
     public static function getChallengeCookieName(): string
     {
         $appEnv = config('app.env', 'local');
-        return ($appEnv === 'production' || $appEnv === 'staging')
+        $isSecure = request()?->isSecure() ?? false;
+        return (($appEnv === 'production' || $appEnv === 'staging') && $isSecure)
             ? self::CHALLENGE_COOKIE_NAME_PROD
             : self::CHALLENGE_COOKIE_NAME_DEV;
     }
 
     public static function extractTokenFromRequest(Request $request): ?string
     {
-        return $request->cookie(self::getCookieName())
+        $sessionToken = $request->hasSession() ? $request->session()->get('admin_session_token') : null;
+        return $sessionToken
+            ?? $request->cookie(self::getCookieName())
             ?? $request->cookie(self::COOKIE_NAME_DEV)
+            ?? $request->cookie(self::COOKIE_NAME_PROD)
             ?? $request->cookie('dhansree_admin')
             ?? $request->cookie('__Host-dhansree_admin')
             ?? $request->bearerToken();
@@ -45,8 +50,13 @@ class AdminSessionManager
 
     public static function extractChallengeTokenFromRequest(Request $request): ?string
     {
-        return $request->cookie(self::getChallengeCookieName())
+        $sessionChallenge = $request->hasSession() ? $request->session()->get('admin_2fa_challenge_token') : null;
+        return $sessionChallenge
+            ?? $request->cookie(self::getChallengeCookieName())
             ?? $request->cookie(self::CHALLENGE_COOKIE_NAME_DEV)
+            ?? $request->cookie(self::CHALLENGE_COOKIE_NAME_PROD)
+            ?? $request->cookie('dhansree_admin_2fa')
+            ?? $request->cookie('__Host-dhansree_admin_2fa')
             ?? $request->cookie('dhansree_admin_2fa_challenge')
             ?? $request->cookie('__Host-dhansree_admin_2fa_challenge')
             ?? $request->header('X-Challenge-Token');
@@ -96,7 +106,7 @@ class AdminSessionManager
         ]);
 
         $cookieName = self::getCookieName();
-        $isSecure = ($cookieName === self::COOKIE_NAME_PROD);
+        $isSecure = ($cookieName === self::COOKIE_NAME_PROD && (request()?->isSecure() ?? false));
 
         $cookie = new Cookie(
             name: $cookieName,

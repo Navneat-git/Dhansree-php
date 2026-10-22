@@ -37,7 +37,7 @@ class AdminAuthController extends Controller
 
         if ($outcome['status'] === 'CODE_REQUIRED') {
             $cookieName = AdminSessionManager::getChallengeCookieName();
-            $isSecure = ($cookieName === AdminSessionManager::CHALLENGE_COOKIE_NAME_PROD);
+            $isSecure = ($cookieName === AdminSessionManager::CHALLENGE_COOKIE_NAME_PROD && $request->isSecure());
 
             $challengeCookie = new Cookie(
                 name: $cookieName,

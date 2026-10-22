@@ -22,15 +22,19 @@ class CustomerSessionManager
     public static function getCookieName(): string
     {
         $appEnv = config('app.env', 'local');
-        return ($appEnv === 'production' || $appEnv === 'staging')
+        $isSecure = request()?->isSecure() ?? false;
+        return (($appEnv === 'production' || $appEnv === 'staging') && $isSecure)
             ? self::COOKIE_NAME_PROD
             : self::COOKIE_NAME_DEV;
     }
 
     public static function extractTokenFromRequest(Request $request): ?string
     {
-        return $request->cookie(self::getCookieName())
+        $sessionToken = $request->hasSession() ? $request->session()->get('customer_session_token') : null;
+        return $sessionToken
+            ?? $request->cookie(self::getCookieName())
             ?? $request->cookie(self::COOKIE_NAME_DEV)
+            ?? $request->cookie(self::COOKIE_NAME_PROD)
             ?? $request->bearerToken();
     }
 
