@@ -4,9 +4,41 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminSessionWebController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+use App\Http\Controllers\Storefront\CartController;
+use App\Http\Controllers\Storefront\NewsletterController;
+use App\Http\Controllers\Storefront\StorefrontController;
+
+// ─── Storefront Hubs ────────────────────────────────────────────────────────
+Route::get('/', [StorefrontController::class, 'home'])->name('store.home');
+Route::get('/smart-living', [StorefrontController::class, 'smartLiving'])->name('store.smart-living');
+
+// ─── Shopping Bag / Cart ───────────────────────────────────────────────────
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/data', [CartController::class, 'data'])->name('cart.data');
+    Route::post('/add', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/update', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/remove', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/clear', [CartController::class, 'clear'])->name('cart.clear');
 });
+
+// ─── Newsletter Subscription ───────────────────────────────────────────────
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+
+// ─── Search ────────────────────────────────────────────────────────────────
+Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');
+
+// ─── Product Detail ────────────────────────────────────────────────────────
+Route::get('/product/{slug}', [StorefrontController::class, 'product'])->name('store.product');
+
+// ─── Static Pages & Policies ───────────────────────────────────────────────
+Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
+Route::get('/contact', [StorefrontController::class, 'contact'])->name('store.contact');
+Route::get('/faq', [StorefrontController::class, 'faq'])->name('store.faq');
+Route::get('/privacy-policy', [StorefrontController::class, 'privacyPolicy'])->name('store.privacy-policy');
+Route::get('/return-policy', [StorefrontController::class, 'returnPolicy'])->name('store.return-policy');
+Route::get('/shipping-policy', [StorefrontController::class, 'shippingPolicy'])->name('store.shipping-policy');
+Route::get('/terms', [StorefrontController::class, 'terms'])->name('store.terms');
 
 // ─── Media Route (Local storage with CDN fallback) ─────────────────────────
 Route::get('/media/{path}', function (string $path) {
@@ -86,3 +118,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/catalog/images/{image}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryImage'])->name('admin.images.set-primary');
     });
 });
+
+// ─── Dynamic Category Collection Route (Placed last to prevent collisions) ───
+Route::get('/{slug}', [StorefrontController::class, 'category'])->name('store.category');
+

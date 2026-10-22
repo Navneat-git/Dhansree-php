@@ -6,18 +6,48 @@
 
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Cormorant Garamond', Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-display: 'Cormorant Garamond', Georgia, Cambria, serif;
+    
+    --color-maroon-50: #FDF2F2;
+    --color-maroon-100: #FDE8E8;
+    --color-maroon-600: #B91C1C;
     --color-maroon-700: #991B1B;
     --color-maroon-800: #7B1C1C;
     --color-maroon-900: #581212;
+    --color-maroon-950: #3E0C0C;
+    
+    --color-gold-100: #FDF9EC;
+    --color-gold-200: #FBF4D9;
     --color-gold-300: #F3E5AB;
     --color-gold-400: #DFCA7D;
     --color-gold-500: #C9A84C;
     --color-gold-600: #A88632;
+    --color-gold-700: #85671F;
+    --color-light-gold: #E8D5A3;
+
     --color-ivory: #FAF6F0;
+    --color-warm-beige: #F0E8D8;
+    --color-soft-peach: #F5DDD0;
+    --color-rich-black: #1A0808;
+
+    --color-tech-dark: #211610;
+    --color-tech-card: #2C1E16;
+    --color-tech-border: #3D2B20;
+
     --color-ink: #0F172A;
     --color-ink-light: #1E293B;
     --color-ink-muted: #64748B;
     --color-surface: #FFFFFF;
     --color-line: #E2E8F0;
     --color-subtle: #F8FAFC;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Custom smooth transitions */
+.transition-smooth {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }

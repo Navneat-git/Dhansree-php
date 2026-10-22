@@ -164,4 +164,28 @@ class Product extends Model
 
         return '₹' . number_format($min, 0) . ' - ₹' . number_format($max, 0);
     }
+
+    public function getFormattedMrpAttribute(): ?string
+    {
+        $mrp = $this->mrp_rupees;
+        $price = $this->min_price_rupees;
+
+        if ($mrp !== null && $price !== null && $mrp > $price) {
+            return '₹' . number_format($mrp, 0);
+        }
+
+        return null;
+    }
+
+    public function getDiscountPercentageAttribute(): ?int
+    {
+        $mrp = $this->mrp_rupees;
+        $price = $this->min_price_rupees;
+
+        if ($mrp !== null && $price !== null && $mrp > $price) {
+            return (int) round((($mrp - $price) / $mrp) * 100);
+        }
+
+        return null;
+    }
 }
