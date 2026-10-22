@@ -54,12 +54,26 @@ class ProductImage extends Model
             return '';
         }
 
-        $base = config('store.media_base_url');
-        if ($base) {
-            return rtrim($base, '/') . '/' . ltrim($this->storage_key, '/');
+        $cleanKey = ltrim($this->storage_key, '/');
+
+        // When accessed via IP address or localhost, use /media proxy route so image loads reliably
+        try {
+            if (request()->hasHeader('host')) {
+                $host = request()->getHost();
+                if (filter_var($host, FILTER_VALIDATE_IP) || in_array($host, ['localhost', '127.0.0.1'], true)) {
+                    return url('/media/' . $cleanKey);
+                }
+            }
+        } catch (\Throwable $e) {
+            // CLI or testing without HTTP request
         }
 
-        return asset('storage/media/' . ltrim($this->storage_key, '/'));
+        $base = config('store.media_base_url');
+        if ($base) {
+            return rtrim($base, '/') . '/' . $cleanKey;
+        }
+
+        return url('/media/' . $cleanKey);
     }
 
     public function getIsPrimaryAttribute(): bool

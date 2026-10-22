@@ -42,6 +42,7 @@ return [
     */
 
     'media_base_url' => env('MEDIA_PUBLIC_BASE_URL'),
+    'media_local_directory' => env('MEDIA_LOCAL_DIRECTORY', env('MEDIA_DISK_PATH')),
 
     /*
     |---------------------------------------------------------------------------

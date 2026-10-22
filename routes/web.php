@@ -114,6 +114,7 @@ Route::get('/robots.txt', [StorefrontController::class, 'robots'])->name('store.
 
 // ─── Media Route (Local storage with CDN fallback) ─────────────────────────
 Route::get('/media/{path}', function (string $path) {
+    // 1. Laravel public storage disk (storage/app/public/media/...)
     $localFile = storage_path('app/public/media/' . $path);
     if (file_exists($localFile)) {
         return response()->file($localFile, [
@@ -121,6 +122,17 @@ Route::get('/media/{path}', function (string $path) {
             'Cache-Control' => 'public, max-age=31536000',
         ]);
     }
+
+    // 2. Extra local directory if set (e.g. ds-assets/ds-web)
+    $mediaDir = config('store.media_local_directory');
+    if ($mediaDir && file_exists(rtrim($mediaDir, '/') . '/' . ltrim($path, '/'))) {
+        return response()->file(rtrim($mediaDir, '/') . '/' . ltrim($path, '/'), [
+            'Content-Type' => 'image/webp',
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
+    }
+
+    // 3. Fallback redirect to CDN
     $cdn = config('store.media_base_url', 'https://assets.dhansree.com/ds-web');
     return redirect()->away(rtrim($cdn, '/') . '/' . ltrim($path, '/'));
 })->where('path', '.*')->name('media.serve');
@@ -260,6 +272,52 @@ Route::prefix('admin')->group(function () {
         Route::prefix('subscribers')->name('admin.subscribers.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'index'])->name('index');
             Route::get('/export', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'export'])->name('export');
+        });
+
+        // Homepage Sections & Blocks
+        Route::prefix('homepage')->name('admin.homepage.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'index'])->name('index');
+            Route::post('/blocks/{id}/toggle', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'toggle'])->name('toggle');
+            Route::put('/blocks/{id}', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'update'])->name('update');
+            Route::post('/blocks/{id}/move/{direction}', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'move'])->name('move');
+        });
+
+        // Payments & Reconciliation
+        Route::prefix('payments')->name('admin.payments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminPaymentWebController::class, 'index'])->name('index');
+            Route::get('/{payment}', [\App\Http\Controllers\Admin\AdminPaymentWebController::class, 'show'])->name('show');
+            Route::post('/{payment}/record-offline', [\App\Http\Controllers\Admin\AdminPaymentWebController::class, 'recordOffline'])->name('record-offline');
+        });
+
+        // Store Settings
+        Route::prefix('settings')->name('admin.settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminSettingsWebController::class, 'index'])->name('index');
+            Route::put('/', [\App\Http\Controllers\Admin\AdminSettingsWebController::class, 'update'])->name('update');
+        });
+
+        // Audit Logs
+        Route::prefix('audit-logs')->name('admin.audit-logs.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminAuditLogWebController::class, 'index'])->name('index');
+        });
+
+        // Admin Users & Roles
+        Route::prefix('users')->name('admin.users.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminUserWebController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminUserWebController::class, 'store'])->name('store');
+            Route::put('/{user}', [\App\Http\Controllers\Admin\AdminUserWebController::class, 'update'])->name('update');
+            Route::post('/{user}/toggle-status', [\App\Http\Controllers\Admin\AdminUserWebController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{user}/reset-2fa', [\App\Http\Controllers\Admin\AdminUserWebController::class, 'resetTwoFactor'])->name('reset-2fa');
+        });
+
+        // Shipments & Fulfillment
+        Route::prefix('shipments')->name('admin.shipments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminShipmentWebController::class, 'index'])->name('index');
+        });
+
+        // Inventory Management
+        Route::prefix('inventory')->name('admin.inventory.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminInventoryWebController::class, 'index'])->name('index');
+            Route::post('/adjust/{variantId}', [\App\Http\Controllers\Admin\AdminInventoryWebController::class, 'adjust'])->name('adjust');
         });
     });
 });

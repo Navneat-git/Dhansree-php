@@ -46,6 +46,16 @@ class ProductImageService
             // Save to storage
             Storage::disk('public')->put('media/' . $storageKey, $processed['data']);
 
+            $extraDir = config('store.media_local_directory');
+            if ($extraDir) {
+                $targetFile = rtrim($extraDir, '/') . '/' . ltrim($storageKey, '/');
+                $targetDir = dirname($targetFile);
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0755, true);
+                }
+                @file_put_contents($targetFile, $processed['data']);
+            }
+
             $maxPos = ProductImage::where('product_id', $product->id)->max('position');
             $position = $maxPos !== null ? $maxPos + 1 : 0;
 
@@ -134,6 +144,14 @@ class ProductImageService
 
             // Delete physical file
             Storage::disk('public')->delete('media/' . $storageKey);
+
+            $extraDir = config('store.media_local_directory');
+            if ($extraDir) {
+                $targetFile = rtrim($extraDir, '/') . '/' . ltrim($storageKey, '/');
+                if (file_exists($targetFile)) {
+                    @unlink($targetFile);
+                }
+            }
 
             if ($adminUserId) {
                 AuditLogger::log(

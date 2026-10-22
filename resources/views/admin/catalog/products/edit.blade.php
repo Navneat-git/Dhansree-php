@@ -231,52 +231,92 @@
     <!-- TAB 2: VARIANTS & INVENTORY -->
     <div x-show="activeTab === 'variants'" class="space-y-6">
         <!-- Options Configurator Card -->
-        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        @php
+            $existingOptions = $product->options->map(function($o) {
+                return [
+                    'name' => (string) $o->name,
+                    'values' => (string) $o->values->pluck('value')->implode(', ')
+                ];
+            })->values()->all();
+            if (empty($existingOptions)) {
+                $existingOptions = [
+                    ['name' => 'Size', 'values' => 'S, M, L, XL']
+                ];
+            }
+        @endphp
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4" x-data="{
+            options: {{ json_encode($existingOptions) }},
+            addOption(name = '', values = '') {
+                if (this.options.length >= 3) {
+                    alert('Maximum 3 option types allowed per product (e.g. Size, Color, Style).');
+                    return;
+                }
+                this.options.push({ name: name, values: values });
+            },
+            removeOption(index) {
+                this.options.splice(index, 1);
+            }
+        }">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-3 gap-3">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Product Options</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Define options like Size, Color, or Material to generate multi-variant combinations.</p>
+                    <h2 class="text-base font-bold text-slate-900">Product Option Dimensions</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Define option types (e.g. Size, Color, Storage, Model) and values to create multi-variant matrices.</p>
                 </div>
+                <button type="button" @click="addOption('', '')"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-all shadow-2xs self-start sm:self-auto">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add Option Type
+                </button>
+            </div>
+
+            <!-- Quick option suggestions -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Quick Suggestions:</span>
+                <button type="button" @click="addOption('Size', 'S, M, L, XL, XXL')" class="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-medium border border-slate-200">+ Size</button>
+                <button type="button" @click="addOption('Color', 'Black, White, Blue, Red')" class="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-medium border border-slate-200">+ Color</button>
+                <button type="button" @click="addOption('Material', 'Leather, Fabric, Silicone')" class="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-medium border border-slate-200">+ Material</button>
+                <button type="button" @click="addOption('Model', 'iPhone 15, iPhone 16')" class="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-medium border border-slate-200">+ Model</button>
+                <button type="button" @click="addOption('Capacity', '64GB, 128GB, 256GB')" class="px-2 py-0.5 rounded text-[11px] bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-medium border border-slate-200">+ Capacity</button>
             </div>
 
             <form method="POST" action="{{ route('admin.products.sync-options', $product) }}" class="space-y-4">
                 @csrf
                 <div class="space-y-3" id="options-container">
-                    @forelse($product->options as $index => $option)
-                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 option-row">
-                            <div class="w-1/3">
+                    <template x-for="(opt, index) in options" :key="index">
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <span class="text-xs font-mono font-bold text-slate-400 w-5 text-center" x-text="index + 1"></span>
+                            <div class="w-1/3 min-w-[140px]">
                                 <label class="block text-[11px] font-semibold text-slate-700 mb-1">Option Name</label>
-                                <input type="text" name="options[{{ $index }}][name]" value="{{ $option->name }}" placeholder="e.g. Size" required
-                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
+                                <input type="text" :name="'options[' + index + '][name]'" x-model="opt.name" placeholder="e.g. Size or Color" required
+                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-900 shadow-2xs">
                             </div>
                             <div class="flex-1">
-                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Values (comma separated)</label>
-                                <input type="text" name="options[{{ $index }}][values]" value="{{ $option->values->pluck('value')->implode(', ') }}" placeholder="S, M, L, XL" required
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Values (comma-separated)</label>
+                                <input type="text" :name="'options[' + index + '][values]'" x-model="opt.values" placeholder="e.g. S, M, L, XL or Black, Blue, Gold" required
                                        class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
                             </div>
+                            <button type="button" @click="removeOption(index)"
+                                    class="p-1.5 mt-4 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors" title="Remove this option type">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
+                            </button>
                         </div>
-                    @empty
-                        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 option-row">
-                            <div class="flex items-center gap-3">
-                                <div class="w-1/3">
-                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Option Name</label>
-                                    <input type="text" name="options[0][name]" value="Size" placeholder="e.g. Size"
-                                           class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
-                                </div>
-                                <div class="flex-1">
-                                    <label class="block text-[11px] font-semibold text-slate-700 mb-1">Values (comma separated)</label>
-                                    <input type="text" name="options[0][values]" value="S, M, L, XL" placeholder="S, M, L, XL"
-                                           class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
-                                </div>
-                            </div>
-                        </div>
-                    @endforelse
+                    </template>
+
+                    <div x-show="options.length === 0" class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                        <p class="text-sm font-medium text-slate-600">No option types configured</p>
+                        <p class="text-xs text-slate-400 mt-1">Click "Add Option Type" to add dimensions like Color, Style, or Size.</p>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
                     <button type="submit" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition-colors shadow-2xs">
                         Save Options
                     </button>
+                    <span class="text-xs text-slate-500" x-text="options.length + ' option type(s)'"></span>
                 </div>
             </form>
 
@@ -472,47 +512,91 @@
     </div>
 
     <!-- TAB 4: SPECIFICATIONS -->
-    <div x-show="activeTab === 'attributes'" class="space-y-6">
-        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+    @php
+        $existingSpecs = $product->productAttributes->map(function($a) {
+            return ['label' => (string) $a->label, 'value' => (string) $a->value];
+        })->values()->all();
+        if (empty($existingSpecs)) {
+            $existingSpecs = [
+                ['label' => 'Fabric', 'value' => 'Pure Cotton'],
+                ['label' => 'Country of Origin', 'value' => 'India'],
+                ['label' => 'Pattern', 'value' => 'Solid / Printed'],
+                ['label' => 'Wash Care', 'value' => 'Hand Wash Separately'],
+            ];
+        }
+    @endphp
+    <div x-show="activeTab === 'attributes'" class="space-y-6" x-data="{
+        specs: {{ json_encode($existingSpecs) }},
+        addSpec(label = '', value = '') {
+            this.specs.push({ label: label, value: value });
+        },
+        removeSpec(index) {
+            this.specs.splice(index, 1);
+        }
+    }">
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-4 gap-3">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Product Specifications</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Key-value attributes shown on the product details page (e.g. Fabric, Pattern, Occasion).</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Attributes shown on the product page (e.g. Fabric, Country of Origin, Material, Care). Add or remove rows dynamically.</p>
+                </div>
+                <button type="button" @click="addSpec('', '')"
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs tracking-wide uppercase transition-all shadow-2xs shrink-0 self-start sm:self-auto">
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add Specification
+                </button>
+            </div>
+
+            <!-- Quick Add Chips -->
+            <div>
+                <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Quick Add Common Fields:</p>
+                <div class="flex flex-wrap gap-1.5">
+                    <template x-for="chip in ['Fabric', 'Country of Origin', 'Pattern', 'Fit', 'Sleeve Length', 'Neckline', 'Occasion', 'Wash Care', 'Material', 'Warranty', 'Compatible Devices', 'Package Contents', 'Battery Capacity', 'Dimensions']" :key="chip">
+                        <button type="button" @click="addSpec(chip, '')"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 text-[11px] font-medium transition-colors border border-slate-200/60">
+                            <span class="text-amber-600 font-bold">+</span> <span x-text="chip"></span>
+                        </button>
+                    </template>
                 </div>
             </div>
 
             <form method="POST" action="{{ route('admin.products.update-attributes', $product) }}" class="space-y-4">
                 @csrf
-                <div class="space-y-3" id="specs-container">
-                    @php
-                        $attrs = $product->productAttributes;
-                        if ($attrs->isEmpty()) {
-                            $attrs = collect([
-                                (object) ['label' => 'Fabric', 'value' => 'Pure Cotton'],
-                                (object) ['label' => 'Pattern', 'value' => 'Handblock Print'],
-                                (object) ['label' => 'Occasion', 'value' => 'Ethnic Casual / Festive'],
-                                (object) ['label' => 'Wash Care', 'value' => 'Hand Wash Separately'],
-                            ]);
-                        }
-                    @endphp
-
-                    @foreach($attrs as $idx => $attr)
-                        <div class="flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="w-1/3">
-                                <input type="text" name="attributes[{{ $idx }}][label]" value="{{ $attr->label }}" placeholder="Label (e.g. Fabric)"
-                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
+                <div class="space-y-2.5" id="specs-container">
+                    <template x-for="(spec, index) in specs" :key="index">
+                        <div class="flex items-center gap-3 p-2.5 bg-slate-50/80 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                            <span class="text-xs font-mono font-semibold text-slate-400 w-6 text-center select-none" x-text="index + 1"></span>
+                            <div class="w-1/3 min-w-[140px]">
+                                <input type="text" :name="'attributes[' + index + '][label]'" x-model="spec.label" placeholder="Attribute Title (e.g. Fabric)" required
+                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs">
                             </div>
                             <div class="flex-1">
-                                <input type="text" name="attributes[{{ $idx }}][value]" value="{{ $attr->value }}" placeholder="Value (e.g. 100% Cotton)"
-                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
+                                <input type="text" :name="'attributes[' + index + '][value]'" x-model="spec.value" placeholder="Attribute Value (e.g. 100% Pure Cotton)" required
+                                       class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs">
                             </div>
+                            <button type="button" @click="removeSpec(index)"
+                                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors" title="Delete this row">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
+                            </button>
                         </div>
-                    @endforeach
+                    </template>
+
+                    <div x-show="specs.length === 0" class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                        <p class="text-sm font-medium text-slate-600">No specifications added yet</p>
+                        <p class="text-xs text-slate-400 mt-1">Click the button above or any quick-add chip to add your first specification.</p>
+                    </div>
                 </div>
 
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-colors">
-                    Save Specifications
-                </button>
+                <div class="flex items-center justify-between pt-2">
+                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-colors">
+                        Save Specifications
+                    </button>
+                    <span class="text-xs text-slate-500" x-text="specs.length + ' specifications configured'"></span>
+                </div>
             </form>
         </div>
     </div>
