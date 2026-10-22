@@ -11,6 +11,18 @@ enum PaymentStatus: string
     case REFUNDED = 'REFUNDED';
     case AUTHORIZED = 'AUTHORIZED';
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::PENDING => 'Pending',
+            self::PAID => 'Paid',
+            self::FAILED => 'Failed',
+            self::VOIDED => 'Voided',
+            self::REFUNDED => 'Refunded',
+            self::AUTHORIZED => 'Authorized',
+        };
+    }
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

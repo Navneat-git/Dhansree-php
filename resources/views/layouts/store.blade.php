@@ -133,6 +133,16 @@
                         </svg>
                     </button>
 
+                    <!-- Customer Account Link -->
+                    <a href="{{ auth('customer')->check() ? route('storefront.account.dashboard') : route('storefront.account.login') }}"
+                       class="p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
+                       aria-label="{{ auth('customer')->check() ? 'My Account' : 'Sign in' }}"
+                       title="{{ auth('customer')->check() ? 'My Account (' . auth('customer')->user()->name . ')' : 'Sign In' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </a>
+
                     <!-- Cart Drawer Trigger with Dynamic Badge -->
                     <button type="button"
                             @click="cartDrawerOpen = true"
@@ -228,6 +238,12 @@
                         </div>
                     </div>
                 @endif
+
+                <a href="{{ auth('customer')->check() ? route('storefront.account.dashboard') : route('storefront.account.login') }}"
+                   class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl bg-gold-200/50 border border-gold-400 text-maroon-900 text-xs font-semibold">
+                    <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span>{{ auth('customer')->check() ? 'My Account (' . (auth('customer')->user()->name) . ')' : 'Sign In / My Account' }}</span>
+                </a>
 
                 <hr class="border-light-gold/60">
 

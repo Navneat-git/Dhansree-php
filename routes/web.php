@@ -45,6 +45,47 @@ Route::post('/api/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\Shiprock
 // ─── Newsletter Subscription ───────────────────────────────────────────────
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
+// ─── Customer Passwordless Auth & Portal ──────────────────────────────────
+Route::prefix('account')->name('storefront.account.')->group(function () {
+    // Guest Auth Routes
+    Route::get('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp'])->name('send-otp');
+    Route::get('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showVerify'])->name('verify');
+    Route::post('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp'])->name('verify.submit');
+    Route::post('/logout', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'logout'])->name('logout');
+
+    // Authenticated Customer Area
+    Route::middleware('customer.auth')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'dashboard'])->name('dashboard');
+        Route::get('/orders', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'orders'])->name('orders');
+        Route::get('/orders/{orderNumber}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'orderDetail'])->name('order-detail');
+        Route::get('/addresses', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'addresses'])->name('addresses');
+        Route::post('/addresses', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'storeAddress'])->name('addresses.store');
+        Route::put('/addresses/{id}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'updateAddress'])->name('addresses.update');
+        Route::delete('/addresses/{id}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'deleteAddress'])->name('addresses.delete');
+        Route::get('/profile', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'profile'])->name('profile');
+        Route::put('/profile', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'updateProfile'])->name('profile.update');
+    });
+});
+
+// JSON API Storefront Endpoints for Customer Account
+Route::prefix('store/account')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp']);
+    Route::post('/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp']);
+    Route::post('/logout', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'logout']);
+
+    Route::middleware('customer.auth')->group(function () {
+        Route::get('/overview', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'dashboard']);
+        Route::get('/orders', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'orders']);
+        Route::get('/orders/{orderNumber}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'orderDetail']);
+        Route::get('/addresses', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'addresses']);
+        Route::post('/addresses', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'storeAddress']);
+        Route::put('/addresses/{id}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'updateAddress']);
+        Route::delete('/addresses/{id}', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'deleteAddress']);
+        Route::put('/profile', [\App\Http\Controllers\Storefront\CustomerAccountController::class, 'updateProfile']);
+    });
+});
+
 
 // ─── Search ────────────────────────────────────────────────────────────────
 Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');
@@ -148,6 +189,13 @@ Route::prefix('admin')->group(function () {
             Route::post('/{order}/shipments/{shipment}/dispatch', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'dispatch'])->name('dispatch');
             Route::post('/{order}/cancel', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'cancel'])->name('cancel');
             Route::get('/{order}/invoice', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'invoice'])->name('invoice');
+        });
+
+        // Customers Management
+        Route::prefix('customers')->name('admin.customers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'index'])->name('index');
+            Route::get('/{customer}', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'show'])->name('show');
+            Route::post('/{customer}/status', [\App\Http\Controllers\Admin\AdminCustomerWebController::class, 'updateStatus'])->name('status');
         });
     });
 });

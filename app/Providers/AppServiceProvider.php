@@ -24,5 +24,9 @@ class AppServiceProvider extends ServiceProvider
         Auth::extend('admin-session', function ($app, $name, array $config) {
             return new AdminGuard($app['request']);
         });
+
+        Auth::extend('customer-session', function ($app, $name, array $config) {
+            return new \App\Support\Auth\CustomerGuard($app['request']);
+        });
     }
 }

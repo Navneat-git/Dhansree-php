@@ -12,6 +12,19 @@ enum OrderStatus: string
     case CANCELLED = 'CANCELLED';
     case EXPIRED = 'EXPIRED';
 
+    public function label(): string
+    {
+        return match ($this) {
+            self::PENDING_PAYMENT => 'Payment Pending',
+            self::CONFIRMED => 'Confirmed',
+            self::PROCESSING => 'Processing',
+            self::SHIPPED => 'Shipped',
+            self::DELIVERED => 'Delivered',
+            self::CANCELLED => 'Cancelled',
+            self::EXPIRED => 'Expired',
+        };
+    }
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

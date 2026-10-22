@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth' => \App\Http\Middleware\RequireAdminAuth::class,
             'admin.permission' => \App\Http\Middleware\RequireAdminPermission::class,
             'admin.fail_closed' => \App\Http\Middleware\AdminFailClosedGuard::class,
+            'customer.auth' => \App\Http\Middleware\RequireCustomerAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

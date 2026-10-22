@@ -47,6 +47,11 @@ class OrderItem extends Model
         return $this->belongsTo(ProductVariant::class, 'variant_id', 'id');
     }
 
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class, 'order_item_id', 'id');
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class, 'order_item_id', 'id');
