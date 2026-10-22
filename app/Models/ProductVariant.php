@@ -93,6 +93,33 @@ class ProductVariant extends Model
         return (int) $this->inventoryLevels()->sum(DB::raw('on_hand - reserved'));
     }
 
+    public function getSizeOptionAttribute(): ?string
+    {
+        $this->loadMissing('optionValues.option');
+
+        $sizeOption = $this->optionValues->first(function ($ov) {
+            $name = strtolower($ov->option?->name ?? '');
+            return in_array($name, ['size', 'sizes', 'apparel size', 'fit']);
+        });
+
+        return $sizeOption?->value;
+    }
+
+    public function getDisplayOptionLabelAttribute(): string
+    {
+        if ($this->size_option) {
+            return $this->size_option;
+        }
+
+        $this->loadMissing('optionValues');
+        $values = $this->optionValues->pluck('value')->filter()->values();
+        if ($values->isEmpty()) {
+            return 'Standard';
+        }
+
+        return (string) $values->last();
+    }
+
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'variant_id', 'id');

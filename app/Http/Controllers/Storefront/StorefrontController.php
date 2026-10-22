@@ -11,6 +11,7 @@ use App\Services\Catalog\SeoRedirectService;
 use App\Services\Storefront\CatalogBrowsingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class StorefrontController extends Controller
@@ -173,6 +174,11 @@ class StorefrontController extends Controller
             ->orderBy('position')
             ->get();
 
+        $ungroupedEntries = \App\Models\FaqEntry::where('is_visible', true)
+            ->whereNull('group_id')
+            ->orderBy('position')
+            ->get();
+
         $page = \App\Models\ContentPage::with(['contentPageSections' => fn($q) => $q->orderBy('position')])
             ->where('key', 'FAQ')
             ->where('is_visible', true)
@@ -181,10 +187,88 @@ class StorefrontController extends Controller
         return view('store.pages.faq', [
             'page' => $page,
             'faqGroups' => $faqGroups,
+            'ungroupedEntries' => $ungroupedEntries,
             'store' => StoreSettings::current(),
             'isSmartLivingHub' => false,
             'seoTitle' => 'Frequently Asked Questions (FAQ) | Dhansree',
             'seoDescription' => 'Find instant answers to questions regarding orders, payments, shipping times, returns, exchanges, and sizing for Dhansree Trends.',
+        ]);
+    }
+
+    public function sitemap(): Response
+    {
+        $products = \App\Models\Product::where('status', 'ACTIVE')->orderBy('updated_at', 'desc')->get();
+        $categories = \App\Models\Category::where('is_visible', true)->whereNull('archived_at')->orderBy('position')->get();
+
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+
+        // Core Static Pages
+        $staticRoutes = [
+            ['url' => url('/'), 'priority' => '1.0', 'freq' => 'daily'],
+            ['url' => url('/smart-living'), 'priority' => '0.9', 'freq' => 'daily'],
+            ['url' => url('/faq'), 'priority' => '0.7', 'freq' => 'weekly'],
+            ['url' => url('/about'), 'priority' => '0.6', 'freq' => 'monthly'],
+            ['url' => url('/contact'), 'priority' => '0.6', 'freq' => 'monthly'],
+            ['url' => url('/privacy-policy'), 'priority' => '0.5', 'freq' => 'monthly'],
+            ['url' => url('/terms-of-service'), 'priority' => '0.5', 'freq' => 'monthly'],
+            ['url' => url('/returns-and-exchanges'), 'priority' => '0.5', 'freq' => 'monthly'],
+            ['url' => url('/shipping-policy'), 'priority' => '0.5', 'freq' => 'monthly'],
+        ];
+
+        foreach ($staticRoutes as $r) {
+            $xml .= "  <url>\n";
+            $xml .= '    <loc>' . htmlspecialchars($r['url']) . "</loc>\n";
+            $xml .= '    <changefreq>' . $r['freq'] . "</changefreq>\n";
+            $xml .= '    <priority>' . $r['priority'] . "</priority>\n";
+            $xml .= "  </url>\n";
+        }
+
+        // Categories
+        foreach ($categories as $cat) {
+            $xml .= "  <url>\n";
+            $xml .= '    <loc>' . htmlspecialchars(url('/' . $cat->slug)) . "</loc>\n";
+            $xml .= '    <lastmod>' . ($cat->updated_at ? $cat->updated_at->toAtomString() : now()->toAtomString()) . "</lastmod>\n";
+            $xml .= "    <changefreq>weekly</changefreq>\n";
+            $xml .= "    <priority>0.8</priority>\n";
+            $xml .= "  </url>\n";
+        }
+
+        // Active Products
+        foreach ($products as $prod) {
+            $xml .= "  <url>\n";
+            $xml .= '    <loc>' . htmlspecialchars(url('/product/' . $prod->slug)) . "</loc>\n";
+            $xml .= '    <lastmod>' . ($prod->updated_at ? $prod->updated_at->toAtomString() : now()->toAtomString()) . "</lastmod>\n";
+            $xml .= "    <changefreq>weekly</changefreq>\n";
+            $xml .= "    <priority>0.9</priority>\n";
+            if ($prod->primary_image_url) {
+                $xml .= "    <image:image>\n";
+                $xml .= '      <image:loc>' . htmlspecialchars($prod->primary_image_url) . "</image:loc>\n";
+                $xml .= '      <image:title>' . htmlspecialchars($prod->name) . "</image:title>\n";
+                $xml .= "    </image:image>\n";
+            }
+            $xml .= "  </url>\n";
+        }
+
+        $xml .= '</urlset>';
+
+        return response($xml, 200, [
+            'Content-Type' => 'application/xml',
+        ]);
+    }
+
+    public function robots(): Response
+    {
+        $txt = "User-agent: *\n";
+        $txt .= "Allow: /\n";
+        $txt .= "Disallow: /admin/\n";
+        $txt .= "Disallow: /checkout\n";
+        $txt .= "Disallow: /account/\n";
+        $txt .= "Disallow: /order-confirmed/\n\n";
+        $txt .= 'Sitemap: ' . url('/sitemap.xml') . "\n";
+
+        return response($txt, 200, [
+            'Content-Type' => 'text/plain',
         ]);
     }
 

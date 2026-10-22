@@ -26,11 +26,19 @@ class RazorpayService
 
     public function isEnabled(): bool
     {
-        $enabled = (bool) config('store.razorpay_enabled', $this->enabled);
         $keyId = $this->getKeyId();
         $keySecret = $this->getKeySecret();
 
-        return $enabled && !empty($keyId) && !empty($keySecret);
+        if (empty($keyId) || empty($keySecret)) {
+            return false;
+        }
+
+        $explicit = config('store.razorpay_enabled', env('RAZORPAY_ENABLED'));
+        if ($explicit === false || $explicit === 'false' || $explicit === '0' || $explicit === 0) {
+            return false;
+        }
+
+        return true;
     }
 
     public function getKeyId(): string

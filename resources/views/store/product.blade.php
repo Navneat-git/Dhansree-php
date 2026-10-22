@@ -266,7 +266,7 @@
                     <div class="flex flex-wrap gap-2.5">
                         @foreach($product->variants->whereNull('archived_at') as $variant)
                             @php
-                                $valName = $variant->optionValues->first()?->value ?? 'Standard';
+                                $valName = $variant->display_option_label;
                                 $pRupees = '₹' . number_format($variant->price_rupees, 0);
                                 $mRupees = $variant->mrp_rupees ? '₹' . number_format($variant->mrp_rupees, 0) : '';
                                 $disc = $variant->discount_percentage ? $variant->discount_percentage . '% OFF' : '';
@@ -274,7 +274,7 @@
                             <button type="button"
                                     @click="selectVariant({{ $variant->id }}, '{{ $pRupees }}', '{{ $mRupees }}', '{{ $disc }}')"
                                     :class="selectedVariantId === {{ $variant->id }} ? 'border-maroon-800 bg-maroon-50 text-maroon-800 ring-1 ring-maroon-800 font-bold' : 'border-light-gold text-rich-black hover:border-maroon-800/50'"
-                                    class="min-w-12 h-11 px-3.5 rounded-lg border text-xs flex items-center justify-center transition-all bg-white shadow-xs">
+                                    class="{{ strlen($valName) <= 3 ? 'min-w-11 px-3' : 'px-4' }} h-11 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all bg-white shadow-xs">
                                 {{ $valName }}
                             </button>
                         @endforeach

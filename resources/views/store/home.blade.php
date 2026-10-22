@@ -28,6 +28,8 @@
     <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] overflow-hidden bg-warm-beige flex items-center">
         @foreach($banners as $idx => $b)
             @php
+                $veiled = ($b->word_mode === 'ON_LIGHTENED');
+                $light = ($b->word_mode === 'LIGHT_ON_PICTURE');
                 $hasWords = !empty($b->title) || !empty($b->eyebrow) || !empty($b->subtitle);
             @endphp
             <div x-show="active === {{ $idx }}"
@@ -53,9 +55,19 @@
                     </picture>
                 @endif
 
-                <!-- Readability Overlay ONLY if banner has real text overlay -->
+                <!-- Readability Overlays: Zero desktop veil for ON_PICTURE and LIGHT_ON_PICTURE -->
                 @if($hasWords)
-                    <div class="absolute inset-0 {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-gradient-to-r from-slate-950/70 via-slate-950/30 to-transparent' : ($b->word_mode === 'ON_LIGHTENED' ? 'bg-white/60' : 'bg-gradient-to-r from-warm-beige/80 via-ivory/50 to-transparent sm:w-2/3') }}"></div>
+                    {{-- Mobile scrim for cropped 4:5 phone screens --}}
+                    @if($light)
+                        <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent sm:hidden pointer-events-none"></div>
+                    @else
+                        <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-ivory/85 via-ivory/35 to-transparent sm:hidden pointer-events-none"></div>
+                    @endif
+
+                    {{-- Desktop veil ONLY for ON_LIGHTENED mode --}}
+                    @if($veiled)
+                        <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none"></div>
+                    @endif
 
                     <!-- Text Overlay Content -->
                     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full z-10">

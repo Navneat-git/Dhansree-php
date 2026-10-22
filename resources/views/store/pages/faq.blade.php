@@ -1,5 +1,44 @@
 @extends('layouts.store')
 
+@push('head')
+    @php
+        $allFaqs = collect();
+        if ($faqGroups->isNotEmpty()) {
+            foreach ($faqGroups as $g) {
+                foreach ($g->faqEntries as $e) {
+                    $allFaqs->push($e);
+                }
+            }
+        }
+        if (!empty($ungroupedEntries)) {
+            foreach ($ungroupedEntries as $e) {
+                $allFaqs->push($e);
+            }
+        }
+
+        $faqSchema = null;
+        if ($allFaqs->isNotEmpty()) {
+            $faqSchema = [
+                '@context' => 'https://schema.org',
+                '@type' => 'FAQPage',
+                'mainEntity' => $allFaqs->map(fn($f) => [
+                    '@type' => 'Question',
+                    'name' => $f->question,
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => $f->answer,
+                    ],
+                ])->values()->all(),
+            ];
+        }
+    @endphp
+    @if($faqSchema)
+        <script type="application/ld+json">
+        {!! json_encode($faqSchema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+    @endif
+@endpush
+
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
     
@@ -59,6 +98,39 @@
                 @endif
             @endforeach
         </div>
+    @endif
+
+    <!-- Ungrouped FAQ Entries (from admin panel) -->
+    @if(!empty($ungroupedEntries) && $ungroupedEntries->isNotEmpty())
+        <section class="space-y-4 mb-12">
+            @if($faqGroups->isNotEmpty())
+                <h2 class="font-serif text-xl sm:text-2xl text-maroon-800 font-semibold border-b border-light-gold/60 pb-2">
+                    General Questions
+                </h2>
+            @endif
+
+            <div class="space-y-3">
+                @foreach($ungroupedEntries as $entry)
+                    <div class="rounded-xl border border-light-gold bg-ivory overflow-hidden transition-all shadow-2xs"
+                         x-data="{ open: false }">
+                        <button type="button"
+                                @click="open = !open"
+                                class="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-medium text-xs sm:text-sm text-rich-black hover:text-maroon-800 transition-colors cursor-pointer">
+                            <span class="font-semibold">{{ $entry->question }}</span>
+                            <span class="size-6 rounded-full bg-warm-beige flex items-center justify-center shrink-0 transition-transform text-xs text-maroon-800"
+                                  :class="{ 'rotate-180': open }">
+                                ▼
+                            </span>
+                        </button>
+                        <div x-show="open"
+                             x-cloak
+                             class="px-4 pb-5 sm:px-5 sm:pb-6 text-xs sm:text-sm text-rich-black/75 leading-relaxed border-t border-light-gold/40 pt-4 bg-white/50 whitespace-pre-line">
+                            {{ $entry->answer }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
     @endif
 
     <!-- Content Page Sections (if any) -->

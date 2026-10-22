@@ -103,8 +103,14 @@ Route::get('/contact', [StorefrontController::class, 'contact'])->name('store.co
 Route::get('/faq', [StorefrontController::class, 'faq'])->name('store.faq');
 Route::get('/privacy-policy', [StorefrontController::class, 'privacyPolicy'])->name('store.privacy-policy');
 Route::get('/return-policy', [StorefrontController::class, 'returnPolicy'])->name('store.return-policy');
+Route::get('/returns-and-exchanges', [StorefrontController::class, 'returnPolicy'])->name('store.returns-and-exchanges');
 Route::get('/shipping-policy', [StorefrontController::class, 'shippingPolicy'])->name('store.shipping-policy');
 Route::get('/terms', [StorefrontController::class, 'terms'])->name('store.terms');
+Route::get('/terms-of-service', [StorefrontController::class, 'terms'])->name('store.terms-of-service');
+
+// ─── Search Engine Optimization & Crawlers ────────────────────────────────
+Route::get('/sitemap.xml', [StorefrontController::class, 'sitemap'])->name('store.sitemap');
+Route::get('/robots.txt', [StorefrontController::class, 'robots'])->name('store.robots');
 
 // ─── Media Route (Local storage with CDN fallback) ─────────────────────────
 Route::get('/media/{path}', function (string $path) {

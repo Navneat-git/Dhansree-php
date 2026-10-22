@@ -38,6 +38,41 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
+    @if(config('services.google.site_verification'))
+        <meta name="google-site-verification" content="{{ config('services.google.site_verification') }}">
+    @endif
+
+    @if(config('services.google.analytics_id'))
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ config('services.google.analytics_id') }}');
+        </script>
+    @endif
+
+    @if(config('services.meta.pixel_id'))
+        <!-- Meta Pixel Code -->
+        <script>
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '{{ config('services.meta.pixel_id') }}');
+            fbq('track', 'PageView');
+        </script>
+        <noscript>
+            <img height="1" width="1" style="display:none"
+                 src="https://www.facebook.com/tr?id={{ config('services.meta.pixel_id') }}&ev=PageView&noscript=1"/>
+        </noscript>
+    @endif
+
     @stack('head')
 </head>
 <body class="min-h-full flex flex-col font-sans antialiased text-rich-black bg-ivory selection:bg-gold-500 selection:text-white"
@@ -66,14 +101,16 @@
         </div>
     </div>
 
-    <!-- Main Navigation Header -->
+    <!-- Main Navigation Header (Two distinct rows on wide screens) -->
     <header class="sticky top-0 z-40 bg-ivory/95 backdrop-blur-md border-b border-light-gold/60 transition-shadow duration-300"
             :class="{ 'shadow-sm': scrolled }">
+        
+        <!-- Top Row: Brand Logo Lockup, Centered Search Bar, Account & Cart -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20 gap-4">
+            <div class="flex h-16 sm:h-20 items-center justify-between gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr]">
 
-                <!-- Left: Mobile Menu Toggle & Brand Logo -->
-                <div class="flex items-center gap-3 lg:gap-8 shrink-0">
+                <!-- Column 1: Mobile Hamburger + Official Brand Logo Lockup -->
+                <div class="flex items-center gap-3 shrink-0">
                     <!-- Mobile hamburger -->
                     <button type="button"
                             @click="mobileNavOpen = true"
@@ -84,79 +121,41 @@
                         </svg>
                     </button>
 
-                    <!-- Brand Logo -->
-                    <a href="{{ url('/') }}" class="flex items-center group py-1" aria-label="Dhansree Home">
-                        <img src="{{ asset('brand/logo-header.png') }}"
-                             alt="Dhansree - Ethnic Elegance"
-                             class="h-8 sm:h-9 lg:h-10 w-auto object-contain transition-transform group-hover:scale-102">
+                    <!-- Professional Brand Lockup -->
+                    <a href="{{ url('/') }}" class="flex items-center gap-2.5 sm:gap-3 group py-1" aria-label="Dhansree Home">
+                        <!-- High-res Monogram Emblem -->
+                        <div class="relative size-9 sm:size-10 rounded-full bg-gradient-to-br from-maroon-800 to-maroon-950 p-0.5 shadow-xs ring-1 ring-gold-400/50 group-hover:ring-gold-400 transition-all flex items-center justify-center shrink-0">
+                            <span class="font-serif text-xl sm:text-2xl font-bold text-gold-300 select-none tracking-tighter">d</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-serif text-xl sm:text-2xl lg:text-[1.65rem] font-bold tracking-[0.18em] text-maroon-900 group-hover:text-maroon-800 transition-colors uppercase leading-none">
+                                DHANSREE
+                            </span>
+                            <span class="text-[0.5625rem] sm:text-[0.625rem] tracking-[0.25em] font-sans font-semibold text-gold-600 uppercase mt-0.5 leading-none">
+                                ETHNIC ELEGANCE
+                            </span>
+                        </div>
                     </a>
                 </div>
 
-                <!-- Center: Hub Megamenu Navigation -->
-                <nav class="hidden lg:flex items-center gap-6 xl:gap-8">
-                    @if(!($isSmartLivingHub ?? false))
-                        <!-- Women Fashion Hub Nav Links -->
-                        <a href="{{ url('/kurta-set') }}" class="text-sm font-medium hover:text-maroon-800 transition-colors {{ request()->is('kurta-set*') ? 'text-maroon-800 font-semibold' : 'text-rich-black/80' }}">
-                            Kurta Sets
-                        </a>
-                        <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="text-sm font-medium hover:text-maroon-800 transition-colors {{ request()->is('women-two-piece-sets-co-ord*') ? 'text-maroon-800 font-semibold' : 'text-rich-black/80' }}">
-                            Co-ord Sets
-                        </a>
-                        <a href="{{ url('/women-suit-set') }}" class="text-sm font-medium hover:text-maroon-800 transition-colors {{ request()->is('women-suit-set*') ? 'text-maroon-800 font-semibold' : 'text-rich-black/80' }}">
-                            Suit Sets
-                        </a>
-                        <a href="{{ url('/women-fashion') }}" class="text-sm font-medium hover:text-maroon-800 transition-colors {{ request()->is('women-fashion*') ? 'text-maroon-800 font-semibold' : 'text-rich-black/80' }}">
-                            All Ethnic Wear
-                        </a>
-
-                        <!-- Cross-hub link to Smart Living -->
-                        <a href="{{ url('/smart-living') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gold-200/60 text-maroon-900 border border-gold-400/80 hover:bg-gold-300 hover:border-gold-500 transition-all shadow-xs">
-                            <span class="text-amber-600">⚡</span>
-                            <span>Smart Living &amp; Gadgets</span>
-                            <span class="text-xs">➔</span>
-                        </a>
-                    @else
-                        <!-- Smart Living Hub Nav Links -->
-                        <a href="{{ url('/smart-gadgets') }}" class="text-sm font-medium hover:text-amber-800 transition-colors {{ request()->is('smart-gadgets*') ? 'text-amber-800 font-semibold' : 'text-rich-black/80' }}">
-                            Smart Gadgets
-                        </a>
-                        <a href="{{ url('/mobile-accessories') }}" class="text-sm font-medium hover:text-amber-800 transition-colors {{ request()->is('mobile-accessories*') ? 'text-amber-800 font-semibold' : 'text-rich-black/80' }}">
-                            Mobile Accessories
-                        </a>
-                        <a href="{{ url('/home-and-lifestyle') }}" class="text-sm font-medium hover:text-amber-800 transition-colors {{ request()->is('home-and-lifestyle*') ? 'text-amber-800 font-semibold' : 'text-rich-black/80' }}">
-                            Home &amp; Lifestyle
-                        </a>
-                        <a href="{{ url('/car-accessories') }}" class="text-sm font-medium hover:text-amber-800 transition-colors {{ request()->is('car-accessories*') ? 'text-amber-800 font-semibold' : 'text-rich-black/80' }}">
-                            Car Accessories
-                        </a>
-
-                        <!-- Cross-hub link to Women's Fashion -->
-                        <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-maroon-50 text-maroon-800 border border-maroon-200 hover:bg-maroon-100 transition-all shadow-xs">
-                            <span class="text-maroon-700">🌸</span>
-                            <span>Women's Ethnic Fashion</span>
-                            <span class="text-xs">➔</span>
-                        </a>
-                    @endif
-                </nav>
-
-                <!-- Center/Right: Desktop Search Input -->
-                <form action="{{ url('/search') }}" method="GET" class="hidden md:flex items-center w-64 lg:w-80 relative">
+                <!-- Column 2: Centered Search Bar (Desktop) -->
+                <form action="{{ url('/search') }}" method="GET" class="hidden lg:flex items-center w-[25rem] xl:w-[28rem] relative">
                     <input type="text"
                            name="q"
                            value="{{ request('q') }}"
-                           placeholder="Search kurties, suit sets, gadgets..."
-                           class="w-full pl-9 pr-4 py-2 rounded-lg border border-light-gold/80 bg-white/90 text-xs text-rich-black placeholder-rich-black/40 focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 outline-none shadow-2xs transition-all">
-                    <svg class="w-4 h-4 text-rich-black/40 absolute left-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           placeholder="Search kurties, suit sets, smart gadgets..."
+                           class="w-full pl-10 pr-4 py-2.5 rounded-full border border-light-gold/80 bg-white/95 text-xs text-rich-black placeholder-rich-black/45 focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 outline-none shadow-2xs transition-all">
+                    <svg class="w-4 h-4 text-rich-black/45 absolute left-3.5 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
                     </svg>
                 </form>
 
-                <!-- Right: Utility Actions (Search on mobile, Account, Cart Drawer) -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <!-- Search Trigger (Mobile) -->
+                <!-- Column 3: Utility Actions (Mobile search trigger, Account, Cart Drawer) -->
+                <div class="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+                    <!-- Search Trigger (Mobile only) -->
                     <button type="button"
                             @click="searchOpen = true; $nextTick(() => $refs.searchInput.focus())"
-                            class="md:hidden p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors"
+                            class="lg:hidden p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors"
                             aria-label="Search catalog">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
@@ -190,6 +189,57 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bottom Row: Dedicated Desktop Category Navigation Bar -->
+        <nav class="hidden lg:block border-t border-light-gold/50 bg-ivory/80">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-center gap-8 xl:gap-12 h-12">
+                    @if(!($isSmartLivingHub ?? false))
+                        <!-- Women Fashion Hub Nav Links -->
+                        <a href="{{ url('/kurta-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('kurta-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                            Kurta Sets
+                        </a>
+                        <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-two-piece-sets-co-ord*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                            Co-ord Sets
+                        </a>
+                        <a href="{{ url('/women-suit-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-suit-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                            Suit Sets
+                        </a>
+                        <a href="{{ url('/women-fashion') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-fashion*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                            All Ethnic Wear
+                        </a>
+
+                        <!-- Cross-hub link to Smart Living -->
+                        <a href="{{ url('/smart-living') }}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gold-200/70 text-maroon-900 border border-gold-400/80 hover:bg-gold-300 hover:border-gold-500 transition-all shadow-xs ml-4">
+                            <span class="text-amber-600">⚡</span>
+                            <span>Smart Living &amp; Gadgets</span>
+                            <span class="text-xs">➔</span>
+                        </a>
+                    @else
+                        <!-- Smart Living Hub Nav Links -->
+                        <a href="{{ url('/smart-gadgets') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('smart-gadgets*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
+                            Smart Gadgets
+                        </a>
+                        <a href="{{ url('/mobile-accessories') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('mobile-accessories*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
+                            Mobile Accessories
+                        </a>
+                        <a href="{{ url('/home-and-lifestyle') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('home-and-lifestyle*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
+                            Home &amp; Lifestyle
+                        </a>
+                        <a href="{{ url('/car-accessories') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('car-accessories*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
+                            Car Accessories
+                        </a>
+
+                        <!-- Cross-hub link to Women's Fashion -->
+                        <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-maroon-50 text-maroon-800 border border-maroon-200 hover:bg-maroon-100 transition-all shadow-xs ml-4">
+                            <span class="text-maroon-700">🌸</span>
+                            <span>Women's Ethnic Fashion</span>
+                            <span class="text-xs">➔</span>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </nav>
     </header>
 
     <!-- Mobile Drawer Navigation -->

@@ -149,6 +149,7 @@ class AdminFaqService
         $entry->update([
             'question' => $question,
             'answer' => $answer,
+            'group_id' => array_key_exists('group_id', $data) ? ($data['group_id'] ? (int) $data['group_id'] : null) : $entry->group_id,
             'position' => isset($data['position']) ? max(0, (int) $data['position']) : $entry->position,
             'is_visible' => isset($data['is_visible']) ? (bool) $data['is_visible'] : $entry->is_visible,
             'category_id' => array_key_exists('category_id', $data) ? ($data['category_id'] ? (int) $data['category_id'] : null) : $entry->category_id,

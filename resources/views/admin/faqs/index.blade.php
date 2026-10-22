@@ -50,7 +50,7 @@
 
     <!-- Groups & Entries Accordion / Cards -->
     <div class="space-y-4">
-        @if($groups->isEmpty())
+        @if($groups->isEmpty() && (!isset($ungroupedEntries) || $ungroupedEntries->isEmpty()))
             <div class="bg-white rounded-xl border border-slate-200/80 p-12 text-center shadow-xs">
                 <div class="size-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
                     <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -170,6 +170,64 @@
                     </div>
                 </div>
             @endforeach
+        @endif
+
+        @if(!empty($ungroupedEntries) && $ungroupedEntries->isNotEmpty())
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden" x-data="{ expanded: true }">
+                <div class="p-4 sm:p-5 bg-slate-50/75 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="expanded = !expanded" class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                            <svg class="size-4.5 transition-transform" :class="{ 'rotate-90': expanded }" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                            </svg>
+                        </button>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-900 text-sm sm:text-base">General &amp; Ungrouped FAQs</h3>
+                                <span class="text-[0.625rem] px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-800">
+                                    Storefront Active
+                                </span>
+                                <span class="text-[0.6875rem] text-slate-500 font-medium">({{ $ungroupedEntries->count() }} questions)</span>
+                            </div>
+                            <p class="text-[0.6875rem] text-slate-400 mt-0.5">These questions appear directly on your customer FAQ page.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="expanded" class="divide-y divide-slate-100">
+                    @foreach($ungroupedEntries as $entry)
+                        <div class="p-4 sm:p-5 hover:bg-slate-50/50 transition-colors flex items-start justify-between gap-4">
+                            <div class="space-y-1.5 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-800">Q: {{ $entry->question }}</span>
+                                    @if(!$entry->is_visible)
+                                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-semibold">Hidden</span>
+                                    @endif
+                                    <span class="text-[0.625rem] text-slate-400">#{{ $entry->id }} (pos: {{ $entry->position }})</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{{ $entry->answer }}</p>
+                            </div>
+
+                            @if($canManage)
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button"
+                                        @click="editEntry({{ json_encode($entry) }})"
+                                        class="px-2 py-1 rounded text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer">
+                                    Edit
+                                </button>
+                                <form method="POST" action="{{ route('admin.faqs.entries.destroy', $entry->id) }}" class="inline" onsubmit="return confirm('Delete this question?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-2 py-1 rounded text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 transition-colors cursor-pointer">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
         @endif
     </div>
 

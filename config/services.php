@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'google' => [
+        'site_verification' => env('GOOGLE_SITE_VERIFICATION', env('GOOGLE_SEARCH_CONSOLE')),
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID', env('GA_MEASUREMENT_ID')),
+    ],
+
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID', env('FACEBOOK_PIXEL_ID')),
+    ],
+
 ];

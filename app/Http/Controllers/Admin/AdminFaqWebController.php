@@ -32,10 +32,12 @@ class AdminFaqWebController extends Controller
         }
 
         $groups = $this->faqService->listGroupsWithEntries();
+        $ungroupedEntries = \App\Models\FaqEntry::whereNull('group_id')->orderBy('position')->get();
         $categories = Category::whereNull('archived_at')->orderBy('name')->get();
 
         return view('admin.faqs.index', [
             'groups' => $groups,
+            'ungroupedEntries' => $ungroupedEntries,
             'categories' => $categories,
             'canManage' => $admin->hasPermission(Permissions::SETTINGS_UPDATE) || $admin->hasSuperAdmin(),
         ]);
