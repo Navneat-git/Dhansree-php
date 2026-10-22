@@ -218,6 +218,42 @@ Route::prefix('admin')->group(function () {
             Route::post('/{coupon}/toggle', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'toggle'])->name('toggle');
             Route::delete('/{coupon}', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'destroy'])->name('destroy');
         });
+
+        // Banners Management
+        Route::prefix('banners')->name('admin.banners.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'store'])->name('store');
+            Route::get('/{banner}/edit', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'edit'])->name('edit');
+            Route::put('/{banner}', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'update'])->name('update');
+            Route::post('/{banner}/toggle', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'toggle'])->name('toggle');
+            Route::delete('/{banner}', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'destroy'])->name('destroy');
+        });
+
+        // FAQs Management
+        Route::prefix('faqs')->name('admin.faqs.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'index'])->name('index');
+            Route::post('/groups', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'storeGroup'])->name('groups.store');
+            Route::put('/groups/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'updateGroup'])->name('groups.update');
+            Route::delete('/groups/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'deleteGroup'])->name('groups.destroy');
+            Route::post('/groups/{groupId}/entries', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'storeEntry'])->name('entries.store');
+            Route::put('/entries/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'updateEntry'])->name('entries.update');
+            Route::delete('/entries/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'deleteEntry'])->name('entries.destroy');
+        });
+
+        // SEO Redirects Management
+        Route::prefix('seo')->name('admin.seo.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminSeoRedirectWebController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminSeoRedirectWebController::class, 'store'])->name('store');
+            Route::post('/{id}/toggle', [\App\Http\Controllers\Admin\AdminSeoRedirectWebController::class, 'toggle'])->name('toggle');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminSeoRedirectWebController::class, 'destroy'])->name('destroy');
+        });
+
+        // Newsletter Subscribers
+        Route::prefix('subscribers')->name('admin.subscribers.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'index'])->name('index');
+            Route::get('/export', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'export'])->name('export');
+        });
     });
 });
 

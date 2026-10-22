@@ -81,12 +81,25 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
+        $now = now();
+        $banners = \App\Models\HomepageBanner::where('is_active', true)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>', $now);
+            })
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get();
+
         $store = StoreSettings::current();
 
         return [
             'categories' => $womenCategories,
             'featuredProducts' => $featuredProducts,
             'smartLivingCategories' => $smartLivingCategories,
+            'banners' => $banners,
             'store' => $store,
         ];
     }

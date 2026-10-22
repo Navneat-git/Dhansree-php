@@ -1,7 +1,117 @@
 @extends('layouts.store')
 
 @section('content')
-<!-- Hero Section -->
+<!-- Hero Section (Dynamic Banners or Brand Fallback) -->
+@if(!empty($banners) && $banners->isNotEmpty())
+<section class="relative bg-warm-beige/40 border-b border-light-gold overflow-hidden"
+         x-data="{
+             active: 0,
+             total: {{ $banners->count() }},
+             timer: null,
+             start() {
+                 this.timer = setInterval(() => { this.next() }, 6000);
+             },
+             stop() {
+                 clearInterval(this.timer);
+             },
+             next() {
+                 this.active = (this.active + 1) % this.total;
+             },
+             prev() {
+                 this.active = (this.active - 1 + this.total) % this.total;
+             }
+         }"
+         x-init="start()"
+         @mouseenter="stop()"
+         @mouseleave="start()">
+    
+    <div class="relative w-full min-h-[460px] md:min-h-[540px] lg:min-h-[600px] flex items-center">
+        @foreach($banners as $idx => $b)
+            <div x-show="active === {{ $idx }}"
+                 x-transition:enter="transition ease-out duration-500"
+                 x-transition:enter-start="opacity-0 translate-x-4"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 x-transition:leave="transition ease-in duration-300"
+                 x-transition:leave-start="opacity-100 translate-x-0"
+                 x-transition:leave-end="opacity-0 -translate-x-4"
+                 class="absolute inset-0 w-full h-full flex items-center">
+                
+                <!-- Background Image -->
+                @if($b->image_storage_key)
+                    <picture class="absolute inset-0 w-full h-full">
+                        @if($b->mobile_storage_key)
+                            <source media="(max-width: 768px)" srcset="{{ asset('storage/media/' . $b->mobile_storage_key) }}">
+                        @endif
+                        <img src="{{ asset('storage/media/' . $b->image_storage_key) }}"
+                             alt="{{ $b->image_alt_text ?? $b->title }}"
+                             class="w-full h-full object-cover">
+                    </picture>
+                @endif
+
+                <!-- Overlay for readability based on word_mode -->
+                <div class="absolute inset-0 {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-gradient-to-r from-slate-950/80 via-slate-950/40 to-transparent' : ($b->word_mode === 'ON_LIGHTENED' ? 'bg-white/70 backdrop-blur-xs' : 'bg-gradient-to-r from-warm-beige/90 via-ivory/80 to-transparent') }}"></div>
+
+                <!-- Text Overlay Content -->
+                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full z-10">
+                    <div class="max-w-xl space-y-4 sm:space-y-6 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
+                        @if($b->eyebrow)
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
+                                <span>✨</span>
+                                <span>{{ $b->eyebrow }}</span>
+                            </div>
+                        @endif
+
+                        <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.15] tracking-tight">
+                            {{ $b->title }}
+                        </h1>
+
+                        @if($b->subtitle)
+                            <p class="text-xs sm:text-sm md:text-base leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }}">
+                                {{ $b->subtitle }}
+                            </p>
+                        @endif
+
+                        @if($b->link_path)
+                            <div class="pt-2">
+                                <a href="{{ url($b->link_path) }}"
+                                   class="inline-block px-8 py-3.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
+                                    {{ $b->cta_label ?: 'Shop Now' }}
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- Navigation Dots & Arrows -->
+    @if($banners->count() > 1)
+        <div class="absolute bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-2">
+            @foreach($banners as $idx => $b)
+                <button type="button"
+                        @click="active = {{ $idx }}"
+                        class="size-2.5 rounded-full transition-all cursor-pointer"
+                        :class="active === {{ $idx }} ? 'bg-amber-500 w-8' : 'bg-slate-400/60 hover:bg-slate-500'">
+                </button>
+            @endforeach
+        </div>
+        <button type="button"
+                @click="prev()"
+                class="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-white/80 hover:bg-white text-slate-800 items-center justify-center shadow-md backdrop-blur-xs transition-colors cursor-pointer"
+                title="Previous">
+            ‹
+        </button>
+        <button type="button"
+                @click="next()"
+                class="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 size-10 rounded-full bg-white/80 hover:bg-white text-slate-800 items-center justify-center shadow-md backdrop-blur-xs transition-colors cursor-pointer"
+                title="Next">
+            ›
+        </button>
+    @endif
+</section>
+@endif
+
 <section class="relative bg-gradient-to-b from-warm-beige/60 via-ivory to-ivory py-12 md:py-20 border-b border-light-gold/60 overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">

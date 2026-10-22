@@ -32,6 +32,7 @@ class StorefrontController extends Controller
             'categories' => $data['categories'],
             'featuredProducts' => $data['featuredProducts'],
             'smartLivingCategories' => $data['smartLivingCategories'],
+            'banners' => $data['banners'],
             'store' => $data['store'],
             'isSmartLivingHub' => false,
             'seoTitle' => 'Dhansree Trends — Ethnic Elegance. Timeless You.',
@@ -164,7 +165,25 @@ class StorefrontController extends Controller
 
     public function faq(): View
     {
-        return $this->renderContentPage('FAQ');
+        $faqGroups = \App\Models\FaqGroup::with(['faqEntries' => fn($q) => $q->where('is_visible', true)->orderBy('position')])
+            ->where('is_visible', true)
+            ->where('show_on_faq_page', true)
+            ->orderBy('position')
+            ->get();
+
+        $page = \App\Models\ContentPage::with(['contentPageSections' => fn($q) => $q->orderBy('position')])
+            ->where('key', 'FAQ')
+            ->where('is_visible', true)
+            ->first();
+
+        return view('store.pages.faq', [
+            'page' => $page,
+            'faqGroups' => $faqGroups,
+            'store' => StoreSettings::current(),
+            'isSmartLivingHub' => false,
+            'seoTitle' => 'Frequently Asked Questions (FAQ) | Dhansree',
+            'seoDescription' => 'Find instant answers to questions regarding orders, payments, shipping times, returns, exchanges, and sizing for Dhansree Trends.',
+        ]);
     }
 
     public function privacyPolicy(): View
