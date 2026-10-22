@@ -7,6 +7,7 @@ namespace App\Services\Storefront;
 use App\Enums\ProductStatus;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\SizeChart;
 use App\Models\StoreSettings;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -236,14 +237,104 @@ class CatalogBrowsingService
             ->take(4)
             ->get();
 
+        $sizeChart = $this->resolveSizeChartForCategory($product->category);
+
         $isSmartLiving = $this->isSmartLivingCategory($product->category);
         $store = StoreSettings::current();
 
         return [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
+            'sizeChart' => $sizeChart,
             'isSmartLiving' => $isSmartLiving,
             'store' => $store,
+        ];
+    }
+
+    /**
+     * Resolve size chart for a category, walking up parent category hierarchy.
+     */
+    public function resolveSizeChartForCategory(?Category $category): ?array
+    {
+        if (!$category) {
+            return null;
+        }
+
+        // Build chain of category IDs: leaf first, then parents up to root
+        $chainIds = [];
+        $currentId = $category->id;
+        while ($currentId) {
+            $chainIds[] = $currentId;
+            $parent = Category::where('id', $currentId)->value('parent_id');
+            $currentId = $parent ? (int) $parent : null;
+        }
+
+        if (empty($chainIds)) {
+            return null;
+        }
+
+        $charts = SizeChart::whereIn('category_id', $chainIds)
+            ->with(['rows' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->get()
+            ->keyBy('category_id');
+
+        if ($charts->isEmpty()) {
+            return null;
+        }
+
+        // Pick nearest category in chain (leaf first)
+        $found = null;
+        foreach ($chainIds as $catId) {
+            if ($charts->has($catId)) {
+                $found = $charts->get($catId);
+                break;
+            }
+        }
+
+        if (!$found) {
+            return null;
+        }
+
+        $columns = is_array($found->columns) ? $found->columns : (json_decode((string) ($found->columns ?? '[]'), true) ?: []);
+        $rawRows = $found->rows ?? collect();
+
+        $rows = [];
+        foreach ($rawRows as $row) {
+            $rowVals = is_array($row->values) ? $row->values : (json_decode((string) ($row->values ?? '[]'), true) ?: []);
+            $aligned = [];
+            foreach ($columns as $idx => $col) {
+                $val = isset($rowVals[$idx]) ? trim((string) $rowVals[$idx]) : '';
+                $aligned[] = $val;
+            }
+            $rows[] = [
+                'label' => $row->label,
+                'values' => $aligned,
+            ];
+        }
+
+        $image = null;
+        if ($found->image_url) {
+            $image = [
+                'url' => $found->image_url,
+                'alt_text' => $found->image_alt_text ?? $found->title,
+                'width' => $found->image_width,
+                'height' => $found->image_height,
+            ];
+        }
+
+        $hasTable = count($columns) > 0 && count($rows) > 0;
+        if (!$hasTable && !$image) {
+            return null;
+        }
+
+        return [
+            'id' => $found->id,
+            'title' => $found->title ?? 'Size guide',
+            'note' => $found->note,
+            'columns' => $columns,
+            'rows' => $rows,
+            'image' => $image,
+            'picture_is_the_chart' => (count($rows) === 0 && !empty($image)),
         ];
     }
 

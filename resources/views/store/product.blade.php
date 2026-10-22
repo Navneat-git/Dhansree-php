@@ -65,6 +65,7 @@
      x-data="{
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
+        sizeChartOpen: false,
         selectedVariantId: {{ $defaultVariant?->id ?? 'null' }},
         selectedVariantPrice: '{{ $defaultVariant?->price_rupees ? '₹' . number_format($defaultVariant->price_rupees, 0) : $product->formatted_price }}',
         selectedVariantMrp: '{{ $defaultVariant?->mrp_rupees ? '₹' . number_format($defaultVariant->mrp_rupees, 0) : $product->formatted_mrp }}',
@@ -94,45 +95,110 @@
         <span class="text-rich-black/80 font-medium truncate max-w-xs">{{ $product->name }}</span>
     </nav>
 
-    <!-- Main Product Grid: Gallery + Details -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
+    <!-- Main Product Grid: Gallery (2-column desktop grid / mobile swipe) + Details -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
         
-        <!-- Left: Image Gallery -->
-        <div class="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4 items-start">
+        <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
+        <div class="min-w-0"
+             x-data="{
+                activeIdx: 0,
+                expanded: false,
+                imageCount: {{ $product->images->count() }},
+                updateScroll(el) {
+                    const width = el.clientWidth;
+                    if (width > 0) {
+                        this.activeIdx = Math.round(el.scrollLeft / width);
+                    }
+                },
+                scrollToImage(idx) {
+                    const track = this.$refs.galleryTrack;
+                    if (track && track.clientWidth > 0) {
+                        track.scrollTo({ left: track.clientWidth * idx, behavior: 'smooth' });
+                        this.activeIdx = idx;
+                    }
+                }
+             }">
             
-            <!-- Thumbnail strip -->
-            <div class="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto w-full sm:w-20 shrink-0 pb-2 sm:pb-0">
-                @foreach($product->images as $img)
-                    <button type="button"
-                            @click="activeImage = '{{ $img->url }}'"
-                            :class="activeImage === '{{ $img->url }}' ? 'border-maroon-800 ring-2 ring-maroon-800/20' : 'border-light-gold hover:border-maroon-800/60'"
-                            class="relative w-16 sm:w-20 aspect-[3/4] rounded-lg overflow-hidden border bg-warm-beige shrink-0 transition-all">
-                        <img src="{{ $img->url }}" alt="{{ $img->alt_text ?? $product->name }}" class="w-full h-full object-cover">
-                    </button>
-                @endforeach
-            </div>
+            <ul x-ref="galleryTrack"
+                @scroll.passive="updateScroll($el)"
+                aria-label="{{ $product->name }} pictures"
+                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto {{ $product->images->count() === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }}">
+                
+                @php
+                    $imgCount = $product->images->count();
+                    $leadIsWide = ($imgCount > 1 && $imgCount % 2 === 1);
+                @endphp
 
-            <!-- Main Big Photo with Enlarge / Zoom -->
-            <div class="relative flex-1 aspect-[3/4] rounded-2xl overflow-hidden bg-warm-beige border border-light-gold shadow-md group">
-                <img :src="activeImage"
-                     alt="{{ $product->name }}"
-                     class="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-102"
-                     @click="zoomModalOpen = true">
+                @forelse($product->images as $position => $img)
+                    <li class="w-full shrink-0 snap-center {{ $leadIsWide && $position === 0 ? 'lg:col-span-2' : '' }}"
+                        @if($position >= 6)
+                            :class="expanded ? '' : 'lg:hidden'"
+                        @endif
+                    >
+                        <div class="relative aspect-[4/5] overflow-hidden rounded-2xl border border-light-gold/60 bg-white group cursor-zoom-in"
+                             x-data="{ isHovered: false, origin: '50% 50%' }"
+                             @mousemove="
+                                 if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                                     const box = $el.getBoundingClientRect();
+                                     const x = (($event.clientX - box.left) / box.width) * 100;
+                                     const y = (($event.clientY - box.top) / box.height) * 100;
+                                     origin = x + '% ' + y + '%';
+                                     isHovered = true;
+                                 }
+                             "
+                             @mouseleave="isHovered = false"
+                             @click="activeImage = '{{ $img->url }}'; zoomModalOpen = true;">
+                            
+                            <div class="absolute inset-0 transition-transform duration-200 ease-out"
+                                 :style="isHovered ? 'transform: scale(2.2); transform-origin: ' + origin + ';' : ''">
+                                <img src="{{ $img->url }}"
+                                     alt="{{ $img->alt_text ?? $product->name }}"
+                                     loading="{{ $position === 0 ? 'eager' : 'lazy' }}"
+                                     class="w-full h-full object-contain">
+                            </div>
+                        </div>
+                    </li>
+                @empty
+                    <li class="w-full lg:col-span-2 aspect-[4/5] rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
+                        <svg class="w-12 h-12 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
+                        </svg>
+                    </li>
+                @endforelse
+            </ul>
 
-                <!-- Zoom hint icon -->
+            <!-- View all photos button (Desktop, if more than 6 images) -->
+            @if($imgCount > 6)
                 <button type="button"
-                        @click="zoomModalOpen = true"
-                        class="absolute bottom-4 right-4 p-2.5 rounded-full bg-white/90 backdrop-blur-xs text-rich-black/80 hover:text-maroon-800 shadow-md transition-colors"
-                        aria-label="Enlarge image">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6"/>
-                    </svg>
+                        x-show="!expanded"
+                        @click="expanded = true"
+                        class="mt-3 w-full hidden lg:inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-light-gold bg-warm-beige/40 text-xs font-bold uppercase tracking-wider text-rich-black hover:bg-warm-beige transition-colors">
+                    View all {{ $imgCount }} photos
                 </button>
-            </div>
+            @endif
+
+            <!-- Mobile Dot Indicators -->
+            @if($imgCount > 1)
+                <ul aria-label="Choose a picture of {{ $product->name }}"
+                    class="mt-3 flex items-center justify-center gap-2 lg:hidden">
+                    @foreach($product->images as $position => $img)
+                        <li>
+                            <button type="button"
+                                    @click="scrollToImage({{ $position }})"
+                                    aria-label="Show picture {{ $position + 1 }} of {{ $imgCount }}"
+                                    class="grid h-11 w-6 place-items-center">
+                                <span aria-hidden
+                                      :class="activeIdx === {{ $position }} ? 'w-6 bg-maroon-800' : 'w-2 bg-stone-300'"
+                                      class="block h-2 rounded-full transition-all duration-300"></span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </div>
 
         <!-- Right: Details, Sizing, CTA -->
-        <div class="lg:col-span-5 space-y-6">
+        <div class="min-w-0 lg:self-start lg:sticky lg:top-24 space-y-6">
             
             <div class="space-y-2">
                 <p class="text-xs uppercase tracking-widest text-gold-600 font-bold">
@@ -183,7 +249,18 @@
                 <div class="space-y-3 pt-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold uppercase tracking-wider text-rich-black">Select Size / Option:</span>
-                        <span class="text-maroon-800 font-medium">Standard Indian Fit</span>
+                        @if(!empty($sizeChart))
+                            <button type="button"
+                                    @click="sizeChartOpen = true"
+                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-rich-black underline underline-offset-4 hover:text-maroon-800 transition-colors">
+                                <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Size chart
+                            </button>
+                        @else
+                            <span class="text-maroon-800 font-medium">Standard Indian Fit</span>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap gap-2.5">
@@ -202,6 +279,17 @@
                             </button>
                         @endforeach
                     </div>
+                </div>
+            @elseif(!empty($sizeChart))
+                <div class="pt-2">
+                    <button type="button"
+                            @click="sizeChartOpen = true"
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold text-rich-black underline underline-offset-4 hover:text-maroon-800 transition-colors">
+                        <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Size chart
+                    </button>
                 </div>
             @endif
 
@@ -456,6 +544,132 @@
                 @endforeach
             </div>
         </section>
+    @endif
+
+    @if(!empty($sizeChart))
+        <!-- Size Chart Modal Dialog -->
+        <div x-cloak
+             x-show="sizeChartOpen"
+             @keydown.escape.window="sizeChartOpen = false"
+             class="fixed inset-0 z-50 overflow-y-auto"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="size-chart-title">
+            
+            <!-- Backdrop -->
+            <div x-show="sizeChartOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:exit="ease-in duration-200"
+                 x-transition:exit-start="opacity-100"
+                 x-transition:exit-end="opacity-0"
+                 @click="sizeChartOpen = false"
+                 class="fixed inset-0 bg-rich-black/60 backdrop-blur-xs transition-opacity"></div>
+
+            <!-- Dialog Positioning Wrapper -->
+            <div class="min-h-full flex items-center justify-center p-4 sm:p-6 text-center">
+                <div x-show="sizeChartOpen"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:exit="ease-in duration-200"
+                     x-transition:exit-start="opacity-100 scale-100"
+                     x-transition:exit-end="opacity-0 scale-95"
+                     @click.stop
+                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full max-w-2xl border border-light-gold/60 max-h-[90vh] flex flex-col">
+                    
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-light-gold/40 flex items-start justify-between bg-warm-beige/30">
+                        <div>
+                            <h3 id="size-chart-title" class="font-serif text-xl sm:text-2xl font-bold text-maroon-900">
+                                {{ $sizeChart['title'] ?? 'Size guide' }}
+                            </h3>
+                            @if(!empty($sizeChart['note']))
+                                <p class="mt-1 text-xs text-rich-black/70">
+                                    {{ $sizeChart['note'] }}
+                                </p>
+                            @endif
+                        </div>
+                        <button type="button"
+                                @click="sizeChartOpen = false"
+                                class="p-1.5 rounded-lg text-rich-black/60 hover:text-maroon-800 hover:bg-warm-beige/50 transition-colors"
+                                aria-label="Close size chart">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal Content -->
+                    <div class="p-6 overflow-y-auto space-y-5 flex-1">
+                        @if(!empty($sizeChart['image']))
+                            @if($sizeChart['picture_is_the_chart'] ?? false)
+                                <!-- Image is the entire size chart -->
+                                <div class="max-h-[70vh] overflow-y-auto rounded-xl border border-light-gold bg-warm-beige/10">
+                                    <img src="{{ $sizeChart['image']['url'] }}"
+                                         alt="{{ $sizeChart['image']['alt_text'] ?? 'Size Chart' }}"
+                                         class="mx-auto h-auto w-full object-contain">
+                                </div>
+                            @else
+                                <!-- How to measure diagram image -->
+                                <div class="shrink-0 overflow-hidden rounded-xl border border-light-gold bg-warm-beige/10">
+                                    <img src="{{ $sizeChart['image']['url'] }}"
+                                         alt="{{ $sizeChart['image']['alt_text'] ?? 'How to measure' }}"
+                                         class="mx-auto h-auto max-h-[40vh] w-full object-contain">
+                                </div>
+                            @endif
+                        @endif
+
+                        @if(!($sizeChart['picture_is_the_chart'] ?? false) && !empty($sizeChart['rows']))
+                            <!-- Measurement Table with Sticky Headers -->
+                            <div class="overflow-x-auto rounded-xl border border-light-gold shadow-xs">
+                                <table class="w-full min-w-max border-separate border-spacing-0 text-xs">
+                                    <thead>
+                                        <tr class="text-left bg-warm-beige/60">
+                                            <th scope="col" class="sticky top-0 z-10 border-b border-light-gold py-3 px-4 font-bold text-maroon-900 uppercase tracking-wider">
+                                                Size
+                                            </th>
+                                            @foreach($sizeChart['columns'] as $col)
+                                                <th scope="col" class="sticky top-0 z-10 border-b border-light-gold py-3 px-4 font-bold text-maroon-900 uppercase tracking-wider">
+                                                    {{ $col }}
+                                                </th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($sizeChart['rows'] as $r)
+                                            <tr class="hover:bg-warm-beige/20 transition-colors odd:bg-white even:bg-warm-beige/10">
+                                                <th scope="row" class="border-b border-light-gold/40 py-2.5 px-4 font-bold text-rich-black text-left">
+                                                    {{ $r['label'] }}
+                                                </th>
+                                                @foreach($r['values'] as $val)
+                                                    <td class="border-b border-light-gold/40 py-2.5 px-4 font-medium text-rich-black/80 tabular-nums">
+                                                        {{ $val !== '' ? $val : '—' }}
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-[0.6875rem] text-rich-black/50 italic">
+                                * All measurements are in inches unless otherwise specified.
+                            </p>
+                        @endif
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-3 bg-warm-beige/20 border-t border-light-gold/40 flex justify-end">
+                        <button type="button"
+                                @click="sizeChartOpen = false"
+                                class="px-4 py-2 rounded-lg bg-maroon-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-colors shadow-xs">
+                            Got It
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
 </div>

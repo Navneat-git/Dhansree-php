@@ -102,6 +102,7 @@ class StorefrontController extends Controller
         return view('store.product', [
             'product' => $product,
             'relatedProducts' => $data['relatedProducts'],
+            'sizeChart' => $data['sizeChart'] ?? null,
             'isSmartLivingHub' => $data['isSmartLiving'],
             'store' => $data['store'],
             'reviewSummary' => $reviewsData['summary'],

@@ -85,6 +85,11 @@ class Category extends Model
         return $this->hasMany(SizeChart::class, 'category_id', 'id');
     }
 
+    public function sizeChart(): HasOne
+    {
+        return $this->hasOne(SizeChart::class, 'category_id', 'id');
+    }
+
     public function getImageUrlAttribute(): ?string
     {
         if (!$this->image_storage_key) {

@@ -68,6 +68,21 @@ class StorefrontTest extends TestCase
         $response->assertSee('Add to Bag');
         $response->assertSee('https://schema.org/');
         $response->assertSee('"@type": "Product"', false);
+        $response->assertSee('pictures');
+        $response->assertSee('lg:grid-cols-2');
+        $response->assertSee('scale(2.2)', false);
+
+        // Test kurti size chart modal
+        $kurtiProduct = Product::where('slug', 'women-solid-cotton-straight-short-kurta-with-v-notch-neckline-red')->first();
+        if ($kurtiProduct) {
+            $kurtiResponse = $this->get('/product/' . $kurtiProduct->slug);
+            $kurtiResponse->assertStatus(200);
+            $kurtiResponse->assertSee('Size chart');
+            $kurtiResponse->assertSee('Size guide');
+            $kurtiResponse->assertSee('Size Chart – Garment Measurements (in inches)');
+            $kurtiResponse->assertSee('Bust');
+            $kurtiResponse->assertSee('Waist');
+        }
     }
 
     public function test_cart_empty_state_and_ajax_lifecycle(): void
