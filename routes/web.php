@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminSessionWebController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Storefront\CartController;
+use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\StorefrontController;
 
@@ -21,6 +22,17 @@ Route::prefix('cart')->group(function () {
     Route::post('/remove', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/clear', [CartController::class, 'clear'])->name('cart.clear');
 });
+
+// ─── Express Checkout & Payment ─────────────────────────────────────────────
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
+Route::post('/checkout/place', [CheckoutController::class, 'placeOrder'])->name('checkout.place');
+Route::post('/checkout/razorpay/verify', [CheckoutController::class, 'razorpayVerify'])->name('checkout.razorpay.verify');
+Route::get('/order/{orderNumber}/confirmed', [CheckoutController::class, 'confirmation'])->name('order.confirmed');
+
+// ─── Payment Webhooks ───────────────────────────────────────────────────────
+Route::post('/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook'])->name('webhooks.razorpay');
+Route::post('/api/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook']);
 
 // ─── Newsletter Subscription ───────────────────────────────────────────────
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');

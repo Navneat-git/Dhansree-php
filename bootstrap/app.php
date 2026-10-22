@@ -33,6 +33,11 @@ return Application::configure(basePath: dirname(__DIR__))
             '__Host-dhansree_admin_2fa_challenge',
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'webhooks/*',
+        ]);
+
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\RequireAdminAuth::class,
             'admin.permission' => \App\Http\Middleware\RequireAdminPermission::class,

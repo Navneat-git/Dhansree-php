@@ -8,6 +8,9 @@ Route::get('/health', function () {
     return ApiResponse::success(['status' => 'healthy', 'timestamp' => now()->toISOString()]);
 });
 
+// ─── Payment Webhooks ───────────────────────────────────────────────────────
+Route::post('/webhooks/razorpay', [\App\Http\Controllers\Storefront\CheckoutController::class, 'razorpayWebhook']);
+
 // ─── Admin Authentication ───────────────────────────────────────────────────
 Route::prefix('admin/auth')->group(function () {
     // Public auth endpoints

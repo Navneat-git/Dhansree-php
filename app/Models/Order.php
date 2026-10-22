@@ -11,7 +11,9 @@ class Order extends Model
 {
     protected $table = 'orders';
     protected $primaryKey = 'id';
-    public $timestamps = false;
+    public $timestamps = true;
+    public const CREATED_AT = 'placed_at';
+    public const UPDATED_AT = 'updated_at';
 
     protected $guarded = [];
 
