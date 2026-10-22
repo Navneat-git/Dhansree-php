@@ -118,9 +118,9 @@
                     <label class="block text-xs font-semibold text-slate-700">
                         Desktop Image (Recommended: 1920x600 px)
                     </label>
-                    @if($banner->image_storage_key)
+                    @if($banner->image_url)
                         <div class="mb-2">
-                            <img src="{{ asset('storage/media/' . $banner->image_storage_key) }}"
+                            <img src="{{ $banner->image_url }}"
                                  alt="{{ $banner->image_alt_text }}"
                                  class="w-full h-28 object-cover rounded-lg border border-slate-200">
                             <p class="text-[0.6875rem] text-slate-500 mt-1">Current: {{ $banner->image_width }}x{{ $banner->image_height }} px</p>
@@ -145,9 +145,9 @@
                     <label class="block text-xs font-semibold text-slate-700">
                         Mobile Image (Recommended: 750x750 or 750x900 px)
                     </label>
-                    @if($banner->mobile_storage_key)
+                    @if($banner->mobile_image_url)
                         <div class="mb-2">
-                            <img src="{{ asset('storage/media/' . $banner->mobile_storage_key) }}"
+                            <img src="{{ $banner->mobile_image_url }}"
                                  alt="{{ $banner->mobile_alt_text }}"
                                  class="w-32 h-32 object-cover rounded-lg border border-slate-200">
                             <p class="text-[0.6875rem] text-slate-500 mt-1">Current: {{ $banner->mobile_width }}x{{ $banner->mobile_height }} px</p>

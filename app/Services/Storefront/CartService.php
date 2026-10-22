@@ -119,10 +119,10 @@ class CartService
         Session::put(self::SESSION_KEY, $rawCart);
 
         $store = StoreSettings::current();
-        $freeShippingThresholdPaise = (int) ($store->free_shipping_threshold_paise ?? 99900);
+        $freeShippingThresholdPaise = $store->free_shipping_threshold_paise !== null ? (int) $store->free_shipping_threshold_paise : null;
         $flatShippingPaise = (int) ($store->shipping_flat_rate_paise ?? 5000);
 
-        $isFreeShipping = ($subtotalPaise >= $freeShippingThresholdPaise);
+        $isFreeShipping = ($freeShippingThresholdPaise !== null && $subtotalPaise >= $freeShippingThresholdPaise);
         $shippingPaise = $isFreeShipping || $subtotalPaise === 0 ? 0 : $flatShippingPaise;
         $totalPaise = $subtotalPaise + $shippingPaise;
 

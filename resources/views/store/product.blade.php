@@ -96,10 +96,10 @@
     </nav>
 
     <!-- Main Product Grid: Gallery (2-column desktop grid / mobile swipe) + Details -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+    <div class="grid grid-cols-1 {{ $isSmartLivingHub ? 'lg:grid-cols-12' : 'lg:grid-cols-2' }} gap-8 lg:gap-12 items-start">
         
         <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
-        <div class="min-w-0"
+        <div class="min-w-0 {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
              x-data="{
                 activeIdx: 0,
                 expanded: false,
@@ -135,7 +135,7 @@
                             :class="expanded ? '' : 'lg:hidden'"
                         @endif
                     >
-                        <div class="relative aspect-[4/5] overflow-hidden rounded-2xl border border-light-gold/60 bg-white group cursor-zoom-in"
+                        <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white group cursor-zoom-in"
                              x-data="{ isHovered: false, origin: '50% 50%' }"
                              @mousemove="
                                  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
@@ -159,7 +159,7 @@
                         </div>
                     </li>
                 @empty
-                    <li class="w-full lg:col-span-2 aspect-[4/5] rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
+                    <li class="w-full lg:col-span-2 {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
                         <svg class="w-12 h-12 stroke-current" fill="none" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
                         </svg>
@@ -198,7 +198,7 @@
         </div>
 
         <!-- Right: Details, Sizing, CTA -->
-        <div class="min-w-0 lg:self-start lg:sticky lg:top-24 space-y-6">
+        <div class="min-w-0 lg:self-start lg:sticky lg:top-24 space-y-6 {{ $isSmartLivingHub ? 'lg:col-span-5' : '' }}">
             
             <div class="space-y-2">
                 <p class="text-xs uppercase tracking-widest text-gold-600 font-bold">
@@ -244,8 +244,8 @@
                 </p>
             @endif
 
-            <!-- Variant / Size Selector -->
-            @if($product->variants->count() > 0)
+            <!-- Variant / Size Selector (Only for Women's Fashion products) -->
+            @if(!$isSmartLivingHub && $product->variants->count() > 0)
                 <div class="space-y-3 pt-2">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold uppercase tracking-wider text-rich-black">Select Size / Option:</span>
@@ -280,7 +280,7 @@
                         @endforeach
                     </div>
                 </div>
-            @elseif(!empty($sizeChart))
+            @elseif(!$isSmartLivingHub && !empty($sizeChart))
                 <div class="pt-2">
                     <button type="button"
                             @click="sizeChartOpen = true"
@@ -340,7 +340,7 @@
                     </div>
                 </div>
 
-                <!-- Material & Care -->
+                <!-- Material & Care / Specifications -->
                 <div class="border border-light-gold rounded-xl overflow-hidden bg-white shadow-xs">
                     <button type="button"
                             @click="activeTab = (activeTab === 'specs' ? '' : 'specs')"
@@ -348,17 +348,31 @@
                         <span>Fabric, Specifications &amp; Care</span>
                         <span x-text="activeTab === 'specs' ? '−' : '+'" class="text-base text-gold-600 font-bold"></span>
                     </button>
-                    <div x-show="activeTab === 'specs'" class="p-4 pt-0 text-rich-black/75 leading-relaxed space-y-2">
-                        @if($product->productAttributes->isNotEmpty())
-                            <ul class="space-y-1.5">
-                                @foreach($product->productAttributes as $attr)
-                                    <li><strong>{{ $attr->name }}:</strong> {{ $attr->value }}</li>
+                    <div x-show="activeTab === 'specs'" class="p-4 pt-0 text-rich-black/75 leading-relaxed">
+                        @php
+                            $specs = collect();
+                            if (!empty($product->brand)) {
+                                $specs->push(['label' => 'Brand', 'value' => $product->brand]);
+                            }
+                            foreach ($product->productAttributes as $attr) {
+                                $specs->push(['label' => $attr->label, 'value' => $attr->value]);
+                            }
+                        @endphp
+                        @if($specs->isNotEmpty())
+                            <dl class="divide-y divide-light-gold/40 text-xs">
+                                @foreach($specs as $spec)
+                                    <div class="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-4 gap-y-0.5 py-2 first:pt-0">
+                                        <dt class="font-semibold text-rich-black/70">{{ $spec['label'] }}:</dt>
+                                        <dd class="font-medium text-rich-black">{{ $spec['value'] }}</dd>
+                                    </div>
                                 @endforeach
-                            </ul>
+                            </dl>
                         @else
-                            <p><strong>Fabric:</strong> 100% Breathable Pure Cotton</p>
-                            <p><strong>Fit:</strong> Regular Straight Fit</p>
-                            <p><strong>Care:</strong> Gentle hand wash or machine wash with mild detergent. Dry in shade.</p>
+                            <div class="space-y-1.5 text-xs">
+                                <p><strong>Fabric:</strong> 100% Breathable Pure Cotton</p>
+                                <p><strong>Fit:</strong> Regular Straight Fit</p>
+                                <p><strong>Care:</strong> Gentle hand wash or machine wash with mild detergent. Dry in shade.</p>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -546,7 +560,7 @@
         </section>
     @endif
 
-    @if(!empty($sizeChart))
+    @if(!$isSmartLivingHub && !empty($sizeChart))
         <!-- Size Chart Modal Dialog -->
         <div x-cloak
              x-show="sizeChartOpen"

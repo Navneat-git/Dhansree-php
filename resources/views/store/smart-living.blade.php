@@ -201,7 +201,7 @@
                 </div>
                 <div class="lg:col-span-4 flex justify-center">
                     <div class="w-48 h-60 rounded-xl overflow-hidden border-2 border-gold-400/40 shadow-xl bg-maroon-800">
-                        <img src="https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp" alt="Women Ethnic Wear" class="w-full h-full object-cover">
+                        <img src="{{ $featuredWomenProduct?->primary_image_url ?? 'https://assets.dhansree.com/ds-web/products/9/db0d853c-db93-491c-b61b-ddb626099456.webp' }}" alt="{{ $featuredWomenProduct?->name ?? 'Women Ethnic Wear' }}" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>

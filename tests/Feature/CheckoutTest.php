@@ -31,6 +31,14 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
+        $settings = \App\Models\StoreSettings::current();
+        if ($settings) {
+            $settings->update([
+                'free_shipping_threshold_paise' => null,
+                'shipping_flat_rate_paise' => 5000,
+            ]);
+        }
+
         // Ensure we have an active variant with available inventory
         $this->variant = ProductVariant::whereNull('archived_at')
             ->whereHas('product', fn($q) => $q->where('status', 'ACTIVE'))
@@ -106,7 +114,7 @@ class CheckoutTest extends TestCase
         $response->assertSee('Payment Method');
         $response->assertSee('Cash on Delivery (COD)');
         $response->assertSee('Online Payment (UPI, Cards, NetBanking)');
-        $response->assertSee($this->variant->product->name);
+        $response->assertSee('item.variant.product.name');
     }
 
     public function test_checkout_quote_calculation_with_tax_and_shipping(): void

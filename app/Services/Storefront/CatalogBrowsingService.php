@@ -41,15 +41,18 @@ class CatalogBrowsingService
             return false;
         }
 
-        if (in_array($category->slug, self::SMART_LIVING_SLUGS, true)) {
-            return true;
+        $current = $category;
+        while ($current) {
+            if (in_array($current->slug, self::WOMEN_FASHION_SLUGS, true)) {
+                return false;
+            }
+            if (in_array($current->slug, self::SMART_LIVING_SLUGS, true)) {
+                return true;
+            }
+            $current = $current->parent_id ? Category::find($current->parent_id) : null;
         }
 
-        if ($category->parent && in_array($category->parent->slug, self::SMART_LIVING_SLUGS, true)) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -134,12 +137,22 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
+        $featuredWomenProduct = Product::with(['primaryImage', 'images'])
+            ->where('status', ProductStatus::ACTIVE)
+            ->whereHas('category', function (Builder $cq) {
+                $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
+                   ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
+            })
+            ->latest('published_at')
+            ->first();
+
         $store = StoreSettings::current();
 
         return [
             'categories' => $smartCategories,
             'products' => $products,
             'womenCategories' => $womenCategories,
+            'featuredWomenProduct' => $featuredWomenProduct,
             'store' => $store,
         ];
     }
@@ -237,9 +250,8 @@ class CatalogBrowsingService
             ->take(4)
             ->get();
 
-        $sizeChart = $this->resolveSizeChartForCategory($product->category);
-
         $isSmartLiving = $this->isSmartLivingCategory($product->category);
+        $sizeChart = $isSmartLiving ? null : $this->resolveSizeChartForCategory($product->category);
         $store = StoreSettings::current();
 
         return [
@@ -269,26 +281,26 @@ class CatalogBrowsingService
             $currentId = $parent ? (int) $parent : null;
         }
 
-        if (empty($chainIds)) {
-            return null;
-        }
-
-        $charts = SizeChart::whereIn('category_id', $chainIds)
-            ->with(['rows' => fn($q) => $q->orderBy('position')->orderBy('id')])
-            ->get()
-            ->keyBy('category_id');
-
-        if ($charts->isEmpty()) {
-            return null;
-        }
-
-        // Pick nearest category in chain (leaf first)
         $found = null;
-        foreach ($chainIds as $catId) {
-            if ($charts->has($catId)) {
-                $found = $charts->get($catId);
-                break;
+        if (!empty($chainIds)) {
+            $charts = SizeChart::whereIn('category_id', $chainIds)
+                ->with(['rows' => fn($q) => $q->orderBy('position')->orderBy('id')])
+                ->get()
+                ->keyBy('category_id');
+
+            // Pick nearest category in chain (leaf first)
+            foreach ($chainIds as $catId) {
+                if ($charts->has($catId)) {
+                    $found = $charts->get($catId);
+                    break;
+                }
             }
+        }
+
+        // If no direct chart was found on this category/parent, but it is a Women's Fashion category,
+        // fall back to the default Women's ethnic wear size chart.
+        if (!$found && !$this->isSmartLivingCategory($category)) {
+            $found = SizeChart::with(['rows' => fn($q) => $q->orderBy('position')->orderBy('id')])->first();
         }
 
         if (!$found) {

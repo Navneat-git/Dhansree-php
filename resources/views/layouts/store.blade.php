@@ -673,11 +673,33 @@
             </div>
 
             <!-- Bottom Sub-footer -->
-            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[0.6875rem] text-rich-black/60">
+            <div class="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-[0.6875rem] text-rich-black/60">
                 <p>© {{ date('Y') }} Dhansree Trends. All rights reserved. Direct-to-Consumer Retail.</p>
-                <div class="flex items-center gap-3">
-                    <span class="px-2 py-1 bg-white rounded border border-light-gold text-[0.625rem] font-semibold text-rich-black/70">100% Safe Payments</span>
-                    <span>Razorpay • UPI • Cards • NetBanking • COD</span>
+                <div class="flex flex-wrap items-center gap-3 sm:gap-5">
+                    <span class="px-2.5 py-1 bg-white rounded-full border border-light-gold text-[0.6875rem] font-semibold text-rich-black/70 shrink-0">100% Safe Payments</span>
+                    @php
+                        $storeSettings = $store ?? \App\Models\StoreSettings::current();
+                    @endphp
+                    @if(!empty($storeSettings->payment_strip_url))
+                        <div class="h-6 max-w-[20rem] shrink-0">
+                            <img src="{{ $storeSettings->payment_strip_url }}" alt="Secure Payments" class="h-full w-auto object-contain">
+                        </div>
+                    @else
+                        <ul aria-label="Ways to pay" class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <li class="flex items-center"><img src="{{ asset('payments/visa.png') }}" alt="Visa" width="46" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" width="36" height="22" loading="lazy" class="h-4.5 sm:h-5 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/rupay.png') }}" alt="RuPay" width="56" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/upi.png') }}" alt="UPI" width="57" height="20" loading="lazy" class="h-4 sm:h-4.5 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" width="41" height="22" loading="lazy" class="h-4.5 sm:h-5 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" width="59" height="16" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
+                            <li class="flex items-center"><img src="{{ asset('payments/paytm.png') }}" alt="Paytm" width="48" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
+                            <li class="flex items-center">
+                                <span class="rounded-full border border-light-gold bg-white px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-rich-black uppercase">
+                                    Cash on delivery
+                                </span>
+                            </li>
+                        </ul>
+                    @endif
                 </div>
             </div>
         </div>

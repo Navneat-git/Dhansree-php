@@ -51,6 +51,7 @@ class StorefrontController extends Controller
             'categories' => $data['categories'],
             'products' => $data['products'],
             'womenCategories' => $data['womenCategories'],
+            'featuredWomenProduct' => $data['featuredWomenProduct'] ?? null,
             'store' => $data['store'],
             'isSmartLivingHub' => true,
             'seoTitle' => 'Smart Living & Tech Essentials | Dhansree Traders Direct',

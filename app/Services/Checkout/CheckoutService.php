@@ -135,9 +135,9 @@ class CheckoutService
         }
 
         // Shipping resolution
-        $freeShippingThreshold = (int) ($store->free_shipping_threshold_paise ?? 99900);
+        $freeShippingThreshold = $store->free_shipping_threshold_paise !== null ? (int) $store->free_shipping_threshold_paise : null;
         $flatShipping = (int) ($store->shipping_flat_rate_paise ?? 5000);
-        $isFreeShipping = ($subtotalPaise >= $freeShippingThreshold);
+        $isFreeShipping = ($freeShippingThreshold !== null && $subtotalPaise >= $freeShippingThreshold);
         $shippingPaise = $isFreeShipping ? 0 : $flatShipping;
 
         // Discounted taxable calculations per line

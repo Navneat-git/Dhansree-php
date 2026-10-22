@@ -37,12 +37,12 @@
                  class="absolute inset-0 w-full h-full flex items-center">
                 
                 <!-- Background Image -->
-                @if($b->image_storage_key)
+                @if($b->image_url)
                     <picture class="absolute inset-0 w-full h-full">
-                        @if($b->mobile_storage_key)
-                            <source media="(max-width: 768px)" srcset="{{ asset('storage/media/' . $b->mobile_storage_key) }}">
+                        @if($b->mobile_image_url)
+                            <source media="(max-width: 768px)" srcset="{{ $b->mobile_image_url }}">
                         @endif
-                        <img src="{{ asset('storage/media/' . $b->image_storage_key) }}"
+                        <img src="{{ $b->image_url }}"
                              alt="{{ $b->image_alt_text ?? $b->title }}"
                              class="w-full h-full object-cover">
                     </picture>

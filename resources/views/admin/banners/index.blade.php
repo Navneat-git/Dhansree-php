@@ -112,8 +112,8 @@
                                     {{ $banner->position }}
                                 </td>
                                 <td class="py-3 px-4">
-                                    @if($banner->image_storage_key)
-                                        <img src="{{ asset('storage/media/' . $banner->image_storage_key) }}"
+                                    @if($banner->image_url)
+                                        <img src="{{ $banner->image_url }}"
                                              alt="{{ $banner->image_alt_text ?? 'Banner' }}"
                                              class="w-24 h-12 object-cover rounded-md border border-slate-200">
                                     @else

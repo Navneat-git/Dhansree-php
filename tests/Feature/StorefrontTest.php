@@ -55,34 +55,37 @@ class StorefrontTest extends TestCase
 
     public function test_product_detail_page_renders_with_schema_and_sizing(): void
     {
-        $product = Product::where('status', 'ACTIVE')
-            ->has('variants')
-            ->first();
+        $kurtiProduct = Product::find(3);
+        $this->assertNotNull($kurtiProduct, 'Kurti product should exist in test database');
 
-        $this->assertNotNull($product);
+        $kurtiResponse = $this->get('/product/' . $kurtiProduct->slug);
+        $kurtiResponse->assertStatus(200);
+        $kurtiResponse->assertSee($kurtiProduct->name);
+        $kurtiResponse->assertSee('Add to Bag');
+        $kurtiResponse->assertSee('https://schema.org/');
+        $kurtiResponse->assertSee('"@type": "Product"', false);
+        $kurtiResponse->assertSee('pictures');
+        $kurtiResponse->assertSee('lg:grid-cols-2');
+        $kurtiResponse->assertSee('aspect-[4/5]', false);
+        $kurtiResponse->assertSee('Size chart');
+        $kurtiResponse->assertSee('Size guide');
+        $kurtiResponse->assertSee('Size Chart – Garment Measurements (in inches)');
+        $kurtiResponse->assertSee('Bust');
+        $kurtiResponse->assertSee('Waist');
+        $kurtiResponse->assertSee('Fabric');
+        $kurtiResponse->assertSee('Country of origin');
 
-        $response = $this->get('/product/' . $product->slug);
+        // 2. Test Smart Living product (Square cards, larger grid, no size chart, no select size option)
+        $smartProduct = Product::where('slug', 'vintage-t-9-trimmer')->first();
+        $this->assertNotNull($smartProduct, 'Smart living product should exist in test database');
 
-        $response->assertStatus(200);
-        $response->assertSee($product->name);
-        $response->assertSee('Add to Bag');
-        $response->assertSee('https://schema.org/');
-        $response->assertSee('"@type": "Product"', false);
-        $response->assertSee('pictures');
-        $response->assertSee('lg:grid-cols-2');
-        $response->assertSee('scale(2.2)', false);
-
-        // Test kurti size chart modal
-        $kurtiProduct = Product::where('slug', 'women-solid-cotton-straight-short-kurta-with-v-notch-neckline-red')->first();
-        if ($kurtiProduct) {
-            $kurtiResponse = $this->get('/product/' . $kurtiProduct->slug);
-            $kurtiResponse->assertStatus(200);
-            $kurtiResponse->assertSee('Size chart');
-            $kurtiResponse->assertSee('Size guide');
-            $kurtiResponse->assertSee('Size Chart – Garment Measurements (in inches)');
-            $kurtiResponse->assertSee('Bust');
-            $kurtiResponse->assertSee('Waist');
-        }
+        $smartResponse = $this->get('/product/' . $smartProduct->slug);
+        $smartResponse->assertStatus(200);
+        $smartResponse->assertSee($smartProduct->name);
+        $smartResponse->assertSee('aspect-square');
+        $smartResponse->assertSee('lg:grid-cols-12');
+        $smartResponse->assertDontSee('Size chart');
+        $smartResponse->assertDontSee('Select Size / Option:');
     }
 
     public function test_cart_empty_state_and_ajax_lifecycle(): void
@@ -221,7 +224,6 @@ class StorefrontTest extends TestCase
             '/contact',
             '/faq',
             '/privacy-policy',
-            '/return-policy',
             '/shipping-policy',
             '/terms',
         ];
@@ -232,5 +234,10 @@ class StorefrontTest extends TestCase
             $response->assertSee('DHANSREE');
             $response->assertSee('Email Support');
         }
+
+        // Return policy returns 200 if visible, or 404 if switched off by store owner
+        $returnPage = \App\Models\ContentPage::where('key', 'RETURN_POLICY')->first();
+        $expectedStatus = ($returnPage && $returnPage->is_visible) ? 200 : 404;
+        $this->get('/return-policy')->assertStatus($expectedStatus);
     }
 }
