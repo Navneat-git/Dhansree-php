@@ -59,5 +59,11 @@ return [
         'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET', ''),
     ],
     'shiprocket_enabled' => env('SHIPROCKET_ENABLED', false),
+    'shiprocket' => [
+        'email' => env('SHIPROCKET_EMAIL', ''),
+        'password' => env('SHIPROCKET_PASSWORD', ''),
+        'webhook_token' => env('SHIPROCKET_WEBHOOK_TOKEN', ''),
+        'api_base_url' => env('SHIPROCKET_API_BASE_URL', 'https://apiv2.shiprocket.in/v1/external'),
+    ],
 
 ];

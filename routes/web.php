@@ -30,12 +30,21 @@ Route::post('/checkout/place', [CheckoutController::class, 'placeOrder'])->name(
 Route::post('/checkout/razorpay/verify', [CheckoutController::class, 'razorpayVerify'])->name('checkout.razorpay.verify');
 Route::get('/order/{orderNumber}/confirmed', [CheckoutController::class, 'confirmation'])->name('order.confirmed');
 
-// ─── Payment Webhooks ───────────────────────────────────────────────────────
+// ─── Storefront Order Tracking ───────────────────────────────────────────
+Route::get('/track-order', [\App\Http\Controllers\Storefront\OrderTrackingController::class, 'index'])->name('store.track-order.index');
+Route::post('/track-order', [\App\Http\Controllers\Storefront\OrderTrackingController::class, 'lookup'])->name('store.track-order.lookup');
+Route::get('/order/{orderNumber}/track', [\App\Http\Controllers\Storefront\OrderTrackingController::class, 'show'])->name('store.track-order.show');
+Route::get('/track-order/{orderNumber}', [\App\Http\Controllers\Storefront\OrderTrackingController::class, 'show']);
+
+// ─── Payment & Shipping Webhooks ───────────────────────────────────────────
 Route::post('/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook'])->name('webhooks.razorpay');
 Route::post('/api/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook']);
+Route::post('/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle'])->name('webhooks.shiprocket');
+Route::post('/api/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle']);
 
 // ─── Newsletter Subscription ───────────────────────────────────────────────
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+
 
 // ─── Search ────────────────────────────────────────────────────────────────
 Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');
@@ -128,8 +137,21 @@ Route::prefix('admin')->group(function () {
 
         Route::delete('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'deleteImage'])->name('admin.images.delete');
         Route::post('/catalog/images/{image}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryImage'])->name('admin.images.set-primary');
+
+        // Orders & Fulfillment
+        Route::prefix('orders')->name('admin.orders.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'index'])->name('index');
+            Route::get('/{order}', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'show'])->name('show');
+            Route::post('/{order}/status', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'updateStatus'])->name('status');
+            Route::post('/{order}/notes', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'addNote'])->name('notes.store');
+            Route::post('/{order}/shipment', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'createShipment'])->name('shipment.store');
+            Route::post('/{order}/shipments/{shipment}/dispatch', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'dispatch'])->name('dispatch');
+            Route::post('/{order}/cancel', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'cancel'])->name('cancel');
+            Route::get('/{order}/invoice', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'invoice'])->name('invoice');
+        });
     });
 });
+
 
 // ─── Dynamic Category Collection Route (Placed last to prevent collisions) ───
 Route::get('/{slug}', [StorefrontController::class, 'category'])->name('store.category');
