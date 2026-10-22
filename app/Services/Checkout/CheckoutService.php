@@ -79,7 +79,7 @@ class CheckoutService
         }
 
         $variantIds = array_column($cartLines, 'variant_id');
-        $variants = ProductVariant::with(['product.images', 'optionValues', 'inventoryLevels'])
+        $variants = ProductVariant::with(['product.images', 'product.primaryImage', 'optionValues', 'inventoryLevels'])
             ->whereIn('id', $variantIds)
             ->whereNull('archived_at')
             ->get()
@@ -114,6 +114,7 @@ class CheckoutService
             $items[] = [
                 'variant' => $variant,
                 'quantity' => $qty,
+                'image_url' => $variant->product->primary_image_url ?? $variant->product->images->first()?->url,
                 'unit_price_paise' => $pricePaise,
                 'line_subtotal_paise' => $lineSubtotal,
                 'gst_rate_bps' => (int) ($variant->product->gst_rate_bps ?? 500),

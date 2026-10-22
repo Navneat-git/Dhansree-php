@@ -69,7 +69,7 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
-        $featuredProducts = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images'])
+        $featuredProducts = Product::with(['category', 'variants.inventoryLevels', 'variants.optionValues.option', 'primaryImage', 'images'])
             ->where('status', ProductStatus::ACTIVE)
             ->whereHas('category', function (Builder $cq) {
                 $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
@@ -192,7 +192,7 @@ class CatalogBrowsingService
         // In-stock only filter
         if (!empty($filters['in_stock'])) {
             $query->whereHas('variants.inventoryLevels', function (Builder $iq) {
-                $iq->selectRaw('SUM(on_hand - reserved)')->havingRaw('SUM(on_hand - reserved) > 0');
+                $iq->whereRaw('(on_hand - reserved) > 0');
             });
         }
 
@@ -356,16 +356,51 @@ class CatalogBrowsingService
     public function search(string $keyword, array $filters = []): LengthAwarePaginator
     {
         $clean = trim($keyword);
+        if ($clean === '') {
+            return new LengthAwarePaginator([], 0, 16);
+        }
+
         $term = '%' . $clean . '%';
+        $words = array_values(array_filter(explode(' ', $clean), fn($w) => mb_strlen($w) > 1));
 
         $query = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images'])
             ->where('status', ProductStatus::ACTIVE)
-            ->where(function (Builder $q) use ($term) {
+            ->where(function (Builder $q) use ($clean, $term, $words) {
+                // Exact phrase matching across product fields, category, or SKU
                 $q->where('name', 'like', $term)
                   ->orWhere('brand', 'like', $term)
                   ->orWhere('short_description', 'like', $term)
                   ->orWhere('description', 'like', $term)
-                  ->orWhereHas('variants', fn(Builder $vq) => $vq->where('sku', 'like', $term));
+                  ->orWhereHas('category', fn(Builder $cq) => $cq->where('name', 'like', $term)->orWhere('slug', 'like', $term))
+                  ->orWhereHas('variants', fn(Builder $vq) => $vq->where('sku', 'like', $term))
+                  ->orWhereHas('productAttributes', fn(Builder $aq) => $aq->where('value', 'like', $term));
+
+                // Multi-word matching: match all words in title/description/category
+                if (count($words) > 1) {
+                    $q->orWhere(function (Builder $sub) use ($words) {
+                        foreach ($words as $word) {
+                            $stem = preg_replace('/(ies|es|s)$/i', '', $word);
+                            $wTerm = '%' . (mb_strlen($stem) >= 3 ? $stem : $word) . '%';
+                            $sub->where(function (Builder $wq) use ($wTerm) {
+                                $wq->where('name', 'like', $wTerm)
+                                   ->orWhere('short_description', 'like', $wTerm)
+                                   ->orWhere('description', 'like', $wTerm)
+                                   ->orWhereHas('category', fn(Builder $cq) => $cq->where('name', 'like', $wTerm)->orWhere('slug', 'like', $wTerm));
+                            });
+                        }
+                    });
+                } else {
+                    // Single word plural/stem fallback (e.g. kurties -> kurt, suits -> suit)
+                    $single = $words[0] ?? $clean;
+                    $stem = preg_replace('/(ies|es|s)$/i', '', $single);
+                    if (mb_strlen($stem) >= 3 && strtolower($stem) !== strtolower($single)) {
+                        $sTerm = '%' . $stem . '%';
+                        $q->orWhere('name', 'like', $sTerm)
+                          ->orWhere('short_description', 'like', $sTerm)
+                          ->orWhere('description', 'like', $sTerm)
+                          ->orWhereHas('category', fn(Builder $cq) => $cq->where('name', 'like', $sTerm)->orWhere('slug', 'like', $sTerm));
+                    }
+                }
             });
 
         return $query->paginate(16);

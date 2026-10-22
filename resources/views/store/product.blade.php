@@ -345,7 +345,7 @@
                     <button type="button"
                             @click="activeTab = (activeTab === 'specs' ? '' : 'specs')"
                             class="w-full p-4 text-left font-bold text-rich-black flex items-center justify-between hover:bg-warm-beige/20 transition-colors">
-                        <span>Fabric, Specifications &amp; Care</span>
+                        <span>{{ $isSmartLivingHub ? 'Specifications' : 'Fabric, Specifications & Care' }}</span>
                         <span x-text="activeTab === 'specs' ? '−' : '+'" class="text-base text-gold-600 font-bold"></span>
                     </button>
                     <div x-show="activeTab === 'specs'" class="p-4 pt-0 text-rich-black/75 leading-relaxed">
@@ -367,6 +367,10 @@
                                     </div>
                                 @endforeach
                             </dl>
+                        @elseif($isSmartLivingHub)
+                            <div class="text-xs text-rich-black/60">
+                                <p>Standard specifications apply. Please refer to product description for details.</p>
+                            </div>
                         @else
                             <div class="space-y-1.5 text-xs">
                                 <p><strong>Fabric:</strong> 100% Breathable Pure Cotton</p>

@@ -25,8 +25,11 @@
          @mouseenter="stop()"
          @mouseleave="start()">
     
-    <div class="relative w-full min-h-[460px] md:min-h-[540px] lg:min-h-[600px] flex items-center">
+    <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] overflow-hidden bg-warm-beige flex items-center">
         @foreach($banners as $idx => $b)
+            @php
+                $hasWords = !empty($b->title) || !empty($b->eyebrow) || !empty($b->subtitle);
+            @endphp
             <div x-show="active === {{ $idx }}"
                  x-transition:enter="transition ease-out duration-500"
                  x-transition:enter-start="opacity-0 translate-x-4"
@@ -36,51 +39,58 @@
                  x-transition:leave-end="opacity-0 -translate-x-4"
                  class="absolute inset-0 w-full h-full flex items-center">
                 
-                <!-- Background Image -->
+                <!-- Background Image (Crisp & High Priority for First Slide) -->
                 @if($b->image_url)
                     <picture class="absolute inset-0 w-full h-full">
                         @if($b->mobile_image_url)
-                            <source media="(max-width: 768px)" srcset="{{ $b->mobile_image_url }}">
+                            <source media="(max-width: 640px)" srcset="{{ $b->mobile_image_url }}">
                         @endif
                         <img src="{{ $b->image_url }}"
                              alt="{{ $b->image_alt_text ?? $b->title }}"
-                             class="w-full h-full object-cover">
+                             class="w-full h-full object-cover"
+                             loading="{{ $idx === 0 ? 'eager' : 'lazy' }}"
+                             fetchpriority="{{ $idx === 0 ? 'high' : 'auto' }}">
                     </picture>
                 @endif
 
-                <!-- Overlay for readability based on word_mode -->
-                <div class="absolute inset-0 {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-gradient-to-r from-slate-950/80 via-slate-950/40 to-transparent' : ($b->word_mode === 'ON_LIGHTENED' ? 'bg-white/70 backdrop-blur-xs' : 'bg-gradient-to-r from-warm-beige/90 via-ivory/80 to-transparent') }}"></div>
+                <!-- Readability Overlay ONLY if banner has real text overlay -->
+                @if($hasWords)
+                    <div class="absolute inset-0 {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-gradient-to-r from-slate-950/70 via-slate-950/30 to-transparent' : ($b->word_mode === 'ON_LIGHTENED' ? 'bg-white/60' : 'bg-gradient-to-r from-warm-beige/80 via-ivory/50 to-transparent sm:w-2/3') }}"></div>
 
-                <!-- Text Overlay Content -->
-                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full z-10">
-                    <div class="max-w-xl space-y-4 sm:space-y-6 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
-                        @if($b->eyebrow)
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
-                                <span>✨</span>
-                                <span>{{ $b->eyebrow }}</span>
-                            </div>
-                        @endif
+                    <!-- Text Overlay Content -->
+                    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full z-10">
+                        <div class="max-w-xl space-y-3 sm:space-y-5 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
+                            @if($b->eyebrow)
+                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
+                                    <span>✨</span>
+                                    <span>{{ $b->eyebrow }}</span>
+                                </div>
+                            @endif
 
-                        <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.15] tracking-tight">
-                            {{ $b->title }}
-                        </h1>
+                            <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.15] tracking-tight">
+                                {{ $b->title }}
+                            </h1>
 
-                        @if($b->subtitle)
-                            <p class="text-xs sm:text-sm md:text-base leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }}">
-                                {{ $b->subtitle }}
-                            </p>
-                        @endif
+                            @if($b->subtitle)
+                                <p class="text-xs sm:text-sm md:text-base leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }}">
+                                    {{ $b->subtitle }}
+                                </p>
+                            @endif
 
-                        @if($b->link_path)
-                            <div class="pt-2">
-                                <a href="{{ url($b->link_path) }}"
-                                   class="inline-block px-8 py-3.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
-                                    {{ $b->cta_label ?: 'Shop Now' }}
-                                </a>
-                            </div>
-                        @endif
+                            @if($b->link_path)
+                                <div class="pt-2">
+                                    <a href="{{ url($b->link_path) }}"
+                                       class="inline-block px-8 py-3.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
+                                        {{ $b->cta_label ?: 'Shop Now' }}
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                @elseif($b->link_path)
+                    <!-- Entire slide is clickable if no explicit button -->
+                    <a href="{{ url($b->link_path) }}" class="absolute inset-0 z-10" aria-label="{{ $b->image_alt_text ?? 'Promotion' }}"></a>
+                @endif
             </div>
         @endforeach
     </div>
@@ -163,23 +173,29 @@
             <!-- Right Visual Collage / Featured Banner -->
             <div class="lg:col-span-5 relative">
                 <div class="relative mx-auto max-w-md lg:max-w-none">
-                    <div class="aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-gold-300 bg-warm-beige relative">
-                        @php
-                            $heroProd = $featuredProducts->first();
-                            $heroImg = $heroProd?->primary_image_url ?? 'https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp';
-                        @endphp
-                        <img src="{{ $heroImg }}"
-                             alt="Dhansree Festive Ethnic Collection"
-                             class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-t from-rich-black/70 via-transparent to-transparent"></div>
-                        <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
-                            <span class="text-[0.625rem] uppercase tracking-widest text-gold-300 font-semibold">Festive Signature Edit</span>
-                            <h3 class="font-serif text-xl sm:text-2xl font-normal leading-snug">Pure Cotton Flared Kurta &amp; Pant Set</h3>
-                            <p class="text-xs text-gold-200">From ₹1,199 • Inclusive of all taxes</p>
+                    @php
+                        $heroProd = $store->homeHeroProduct ?? $featuredProducts->first();
+                        $heroImg = $store->home_hero_image_url ?: ($heroProd?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp');
+                        $heroTag = $store->home_hero_subtitle ?: 'Festive Signature Edit';
+                        $heroTitle = $store->home_hero_title ?: ($heroProd?->name ?: 'Pure Cotton Flared Kurta & Pant Set');
+                        $heroPrice = $heroProd ? 'From ' . $heroProd->formatted_price : 'From ₹1,199';
+                        $heroLink = $heroProd ? url('/product/' . $heroProd->slug) : url('/women-cotton-suits-sets');
+                    @endphp
+                    <a href="{{ $heroLink }}" class="block group">
+                        <div class="aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-gold-300 bg-warm-beige relative">
+                            <img src="{{ $heroImg }}"
+                                 alt="{{ $heroTitle }}"
+                                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                            <div class="absolute inset-0 bg-gradient-to-t from-rich-black/75 via-transparent to-transparent"></div>
+                            <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
+                                <span class="text-[0.625rem] uppercase tracking-widest text-gold-300 font-semibold">{{ $heroTag }}</span>
+                                <h3 class="font-serif text-xl sm:text-2xl font-normal leading-snug group-hover:text-gold-200 transition-colors">{{ $heroTitle }}</h3>
+                                <p class="text-xs text-gold-200">{{ $heroPrice }} • Inclusive of all taxes</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                     <!-- Decorative badge -->
-                    <div class="absolute -bottom-4 -left-4 bg-ivory rounded-xl p-3 shadow-lg border border-light-gold flex items-center gap-2">
+                    <div class="absolute -bottom-4 -left-4 bg-ivory rounded-xl p-3 shadow-lg border border-light-gold flex items-center gap-2 pointer-events-none">
                         <span class="text-xl">🌸</span>
                         <div>
                             <p class="text-[0.6875rem] font-bold text-maroon-800">Direct From Artisans</p>
@@ -295,17 +311,22 @@
                             </div>
                         </div>
 
-                        <!-- Variant Selector if multiple -->
+                        <!-- Variant Selector (Sizes) -->
                         @if($hasMultipleVariants)
                             <div class="mt-2.5 flex flex-wrap gap-1">
-                                @foreach($product->variants->whereNull('archived_at')->take(4) as $v)
+                                @foreach($product->variants->whereNull('archived_at')->take(6) as $v)
                                     @php
-                                        $label = $v->optionValues->first()?->value ?? 'Std';
+                                        $sizeOption = $v->optionValues->first(function($ov) {
+                                            return strtolower($ov->option?->name ?? '') === 'size';
+                                        }) ?? $v->optionValues->first(function($ov) {
+                                            return !in_array(strtolower($ov->option?->name ?? ''), ['color', 'colour']);
+                                        }) ?? $v->optionValues->first();
+                                        $label = $sizeOption?->value ?? $v->title ?? 'Std';
                                     @endphp
                                     <button type="button"
                                             @click="selectedVariantId = {{ $v->id }}"
                                             :class="selectedVariantId === {{ $v->id }} ? 'border-maroon-800 bg-maroon-50 text-maroon-800 font-bold' : 'border-light-gold text-rich-black/70'"
-                                            class="px-2 py-0.5 text-[0.625rem] rounded border transition-colors">
+                                            class="px-2 py-0.5 text-[0.625rem] rounded border transition-colors font-medium">
                                         {{ $label }}
                                     </button>
                                 @endforeach

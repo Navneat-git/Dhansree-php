@@ -42,6 +42,187 @@
         </div>
     </div>
 
+    <!-- Hub Cross-Promotional Banners Configuration -->
+    <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-amber-500"></span>
+                    Hub Cross-Promotional Feature Cards
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">Configure the showcase product images and titles displayed on the Homepage hero card and the Smart Living banner.</p>
+            </div>
+            <span class="text-[0.6875rem] font-medium text-slate-500 bg-slate-200/70 px-2.5 py-1 rounded-full">Storefront Highlights</span>
+        </div>
+
+        @if($canUpdate)
+        <form method="POST" action="{{ route('admin.banners.promos.update') }}" enctype="multipart/form-data" class="p-5 space-y-6">
+            @csrf
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- 1. Homepage Hero Promo Card -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 rounded text-[0.625rem] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider mb-1">Homepage</span>
+                            <h3 class="text-sm font-bold text-slate-900">"Ethnic Elegance" Showcase Card</h3>
+                            <p class="text-xs text-slate-500">Appears next to the main hero headline on the storefront homepage.</p>
+                        </div>
+                        @php
+                            $homePreviewImg = $storeSettings->home_hero_image_url ?: ($storeSettings->homeHeroProduct?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp');
+                        @endphp
+                        <div class="w-16 h-20 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 shadow-xs">
+                            <img src="{{ $homePreviewImg }}" alt="Homepage Promo Preview" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Select Featured Product (Auto-loads product image)</label>
+                            <select name="home_hero_product_id" class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                                <option value="">-- None (Use Custom Image or Fallback) --</option>
+                                @foreach($products as $p)
+                                    <option value="{{ $p->id }}" {{ (string)$storeSettings->home_hero_product_id === (string)$p->id ? 'selected' : '' }}>
+                                        {{ $p->name }} ({{ $p->slug }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Custom Image URL (Overrides product image)</label>
+                            <input type="url"
+                                   name="home_hero_image_url"
+                                   value="{{ $storeSettings->home_hero_image_url ?? '' }}"
+                                   placeholder="https://assets.dhansree.com/..."
+                                   class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Or Upload Custom Image File</label>
+                            <input type="file"
+                                   name="home_hero_image_file"
+                                   accept="image/jpeg,image/png,image/webp,image/avif"
+                                   class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                        </div>
+
+                        @if($storeSettings->home_hero_image_url)
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="checkbox" id="home_hero_image_clear" name="home_hero_image_clear" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 size-3.5">
+                            <label for="home_hero_image_clear" class="text-xs text-rose-600 font-medium">Remove custom image (revert to product or default)</label>
+                        </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[0.6875rem] font-semibold text-slate-600 mb-1">Card Subtitle / Tag</label>
+                                <input type="text"
+                                       name="home_hero_subtitle"
+                                       value="{{ $storeSettings->home_hero_subtitle ?? '' }}"
+                                       placeholder="Festive Signature Edit"
+                                       class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-1.5">
+                            </div>
+                            <div>
+                                <label class="block text-[0.6875rem] font-semibold text-slate-600 mb-1">Card Title / Product Name</label>
+                                <input type="text"
+                                       name="home_hero_title"
+                                       value="{{ $storeSettings->home_hero_title ?? '' }}"
+                                       placeholder="Pure Cotton Flared Kurta &amp; Pant Set"
+                                       class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-1.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Smart Living Women's Fashion Promo Banner -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/30 space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <span class="inline-block px-2 py-0.5 rounded text-[0.625rem] font-bold bg-purple-100 text-purple-800 uppercase tracking-wider mb-1">Smart Living Page</span>
+                            <h3 class="text-sm font-bold text-slate-900">"Looking for Women's Fashion?" Banner</h3>
+                            <p class="text-xs text-slate-500">Cross-promotes Women's Fashion to tech &amp; smart living shoppers.</p>
+                        </div>
+                        @php
+                            $smartPreviewImg = $storeSettings->smart_living_promo_image_url ?: ($storeSettings->smartLivingPromoProduct?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/9/db0d853c-db93-491c-b61b-ddb626099456.webp');
+                        @endphp
+                        <div class="w-16 h-20 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 shadow-xs">
+                            <img src="{{ $smartPreviewImg }}" alt="Smart Living Promo Preview" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Select Featured Product (Auto-loads product image)</label>
+                            <select name="smart_living_promo_product_id" class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                                <option value="">-- None (Use Custom Image or Fallback) --</option>
+                                @foreach($products as $p)
+                                    <option value="{{ $p->id }}" {{ (string)$storeSettings->smart_living_promo_product_id === (string)$p->id ? 'selected' : '' }}>
+                                        {{ $p->name }} ({{ $p->slug }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Custom Image URL (Overrides product image)</label>
+                            <input type="url"
+                                   name="smart_living_promo_image_url"
+                                   value="{{ $storeSettings->smart_living_promo_image_url ?? '' }}"
+                                   placeholder="https://assets.dhansree.com/..."
+                                   class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Or Upload Custom Image File</label>
+                            <input type="file"
+                                   name="smart_living_promo_image_file"
+                                   accept="image/jpeg,image/png,image/webp,image/avif"
+                                   class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                        </div>
+
+                        @if($storeSettings->smart_living_promo_image_url)
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="checkbox" id="smart_living_promo_clear" name="smart_living_promo_clear" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 size-3.5">
+                            <label for="smart_living_promo_clear" class="text-xs text-rose-600 font-medium">Remove custom image (revert to product or default)</label>
+                        </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[0.6875rem] font-semibold text-slate-600 mb-1">Banner Heading</label>
+                                <input type="text"
+                                       name="smart_living_promo_title"
+                                       value="{{ $storeSettings->smart_living_promo_title ?? '' }}"
+                                       placeholder="Looking for Women's Fashion?"
+                                       class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-1.5">
+                            </div>
+                            <div>
+                                <label class="block text-[0.6875rem] font-semibold text-slate-600 mb-1">Banner Subheading</label>
+                                <input type="text"
+                                       name="smart_living_promo_subtitle"
+                                       value="{{ $storeSettings->smart_living_promo_subtitle ?? '' }}"
+                                       placeholder="Discover Pure Cotton Kurties &amp; Co-ords."
+                                       class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-1.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-900 text-white font-semibold text-xs tracking-wider uppercase hover:bg-slate-800 transition-colors shadow-sm">
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Save Promotional Banners
+                </button>
+            </div>
+        </form>
+        @endif
+    </div>
+
     <!-- Filter Bar -->
     <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
         <form method="GET" action="{{ route('admin.banners.index') }}" class="flex flex-wrap items-center gap-3">

@@ -361,4 +361,27 @@ class AdminCmsManagementTest extends TestCase
         $this->asReadOnlyAdmin()->get('/admin/subscribers')->assertStatus(403);
         $this->asReadOnlyAdmin()->get('/admin/subscribers/export')->assertStatus(403);
     }
+
+    public function test_admin_can_update_hub_promo_banners(): void
+    {
+        $res = $this->asAdmin()->post('/admin/banners/promos', [
+            'home_hero_title' => 'Custom Handcrafted Anarkali',
+            'home_hero_subtitle' => 'Exclusive Festive Edit',
+            'home_hero_image_url' => 'https://assets.dhansree.com/custom-home-banner.webp',
+            'smart_living_promo_title' => 'Festive Kurtas For You',
+            'smart_living_promo_subtitle' => 'Special Traditional Co-ords',
+            'smart_living_promo_image_url' => 'https://assets.dhansree.com/custom-smart-living.webp',
+        ]);
+
+        $res->assertRedirect('/admin/banners');
+        $res->assertSessionHas('success');
+
+        $settings = \App\Models\StoreSettings::current();
+        $this->assertEquals('Custom Handcrafted Anarkali', $settings->home_hero_title);
+        $this->assertEquals('Exclusive Festive Edit', $settings->home_hero_subtitle);
+        $this->assertEquals('https://assets.dhansree.com/custom-home-banner.webp', $settings->home_hero_image_url);
+        $this->assertEquals('Festive Kurtas For You', $settings->smart_living_promo_title);
+        $this->assertEquals('Special Traditional Co-ords', $settings->smart_living_promo_subtitle);
+        $this->assertEquals('https://assets.dhansree.com/custom-smart-living.webp', $settings->smart_living_promo_image_url);
+    }
 }

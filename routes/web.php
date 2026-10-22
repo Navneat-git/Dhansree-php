@@ -224,6 +224,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'store'])->name('store');
+            Route::post('/promos', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'updatePromos'])->name('promos.update');
             Route::get('/{banner}/edit', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'edit'])->name('edit');
             Route::put('/{banner}', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'update'])->name('update');
             Route::post('/{banner}/toggle', [\App\Http\Controllers\Admin\AdminBannerWebController::class, 'toggle'])->name('toggle');

@@ -26,6 +26,11 @@ class Product extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'primary_image_url',
+        'formatted_price',
+    ];
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', \App\Enums\ProductStatus::ACTIVE);

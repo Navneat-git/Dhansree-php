@@ -4,7 +4,7 @@
 <div class="bg-tech-dark text-white" x-data="{ activeFilter: 'all', searchQuery: '' }">
     
     <!-- Hero Section -->
-    <section class="relative py-12 md:py-20 border-b border-tech-border overflow-hidden bg-gradient-to-b from-[#180F0A] to-tech-dark">
+    <section class="relative py-12 md:py-20 border-b border-tech-border overflow-hidden bg-gradient-to-b from-rich-black via-[#231010] to-tech-dark">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                 
@@ -179,6 +179,13 @@
 
     <!-- Cross-Hub Banner to Women's Ethnic Wear -->
     <section class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-tech-border">
+        @php
+            $promoProd = $store->smartLivingPromoProduct ?? $featuredWomenProduct;
+            $promoImg = $store->smart_living_promo_image_url ?: ($promoProd?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/9/db0d853c-db93-491c-b61b-ddb626099456.webp');
+            $promoTitle = $store->smart_living_promo_title ?: "Looking for Women's Fashion?";
+            $promoSubtitle = $store->smart_living_promo_subtitle ?: 'Discover Pure Cotton Kurties & Co-ords.';
+            $promoLink = $promoProd ? url('/product/' . $promoProd->slug) : url('/');
+        @endphp
         <div class="rounded-2xl bg-gradient-to-r from-maroon-900 to-maroon-950 p-8 sm:p-12 border border-maroon-800 text-white relative overflow-hidden shadow-2xl">
             <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div class="lg:col-span-8 space-y-4">
@@ -186,23 +193,25 @@
                         🌸 Dhansree Ethnic Collections
                     </span>
                     <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight">
-                        Looking for Women's Fashion?<br>
-                        <span class="italic text-gold-300">Discover Pure Cotton Kurties &amp; Co-ords.</span>
+                        {{ $promoTitle }}<br>
+                        <span class="italic text-gold-300">{{ $promoSubtitle }}</span>
                     </h2>
                     <p class="text-sm text-white/75 max-w-xl leading-relaxed">
                         Handcrafted with love from pure breathable fabrics. Explore our complete range of Anarkalis, daily wear tunic sets, and festive outfits.
                     </p>
                     <div class="pt-2">
-                        <a href="{{ url('/') }}"
+                        <a href="{{ $promoLink }}"
                            class="inline-block px-8 py-3.5 rounded-lg bg-ivory text-maroon-900 text-xs font-bold uppercase tracking-wider hover:bg-white transition-all shadow-md">
                             Visit Women's Fashion Hub ➔
                         </a>
                     </div>
                 </div>
                 <div class="lg:col-span-4 flex justify-center">
-                    <div class="w-48 h-60 rounded-xl overflow-hidden border-2 border-gold-400/40 shadow-xl bg-maroon-800">
-                        <img src="{{ $featuredWomenProduct?->primary_image_url ?? 'https://assets.dhansree.com/ds-web/products/9/db0d853c-db93-491c-b61b-ddb626099456.webp' }}" alt="{{ $featuredWomenProduct?->name ?? 'Women Ethnic Wear' }}" class="w-full h-full object-cover">
-                    </div>
+                    <a href="{{ $promoLink }}" class="block group">
+                        <div class="w-48 h-60 rounded-xl overflow-hidden border-2 border-gold-400/40 shadow-xl bg-maroon-800 transition-transform duration-500 group-hover:scale-105">
+                            <img src="{{ $promoImg }}" alt="{{ $promoTitle }}" class="w-full h-full object-cover">
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

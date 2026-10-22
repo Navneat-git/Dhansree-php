@@ -192,6 +192,29 @@
                                     <span>⚡ Online Payment (UPI, Cards, NetBanking)</span>
                                 </div>
                                 <p class="text-[0.6875rem] text-rich-black/60">Instant verification via Razorpay • Google Pay, PhonePe, Paytm, Cards &amp; NetBanking.</p>
+                                <div class="pt-2 flex flex-wrap items-center gap-1.5">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/upi.png') }}" alt="UPI" class="h-3 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" class="h-3.5 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" class="h-3 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/paytm.png') }}" alt="Paytm" class="h-3 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/visa.png') }}" alt="Visa" class="h-2.5 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" class="h-3.5 w-auto object-contain">
+                                    </span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
+                                        <img src="{{ asset('payments/rupay.png') }}" alt="RuPay" class="h-2.5 w-auto object-contain">
+                                    </span>
+                                </div>
                             </div>
                         </label>
                     </div>
@@ -222,8 +245,9 @@
                         <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-12 h-14 rounded-lg bg-warm-beige overflow-hidden shrink-0 border border-light-gold">
-                                    <img :src="item.variant.product.primary_image_url || (item.variant.product.images[0] ? item.variant.product.images[0].url : '')"
-                                         class="w-full h-full object-cover">
+                                    <img :src="item.image_url || item.variant?.product?.primary_image_url || (item.variant?.product?.images && item.variant.product.images[0] ? item.variant.product.images[0].url : '')"
+                                         class="w-full h-full object-cover"
+                                         alt="">
                                 </div>
                                 <div class="min-w-0">
                                     <h4 class="font-semibold text-rich-black truncate" x-text="item.variant.product.name"></h4>
@@ -294,10 +318,18 @@
                     <span x-show="submitting">Processing your order...</span>
                 </button>
 
-                <!-- Trust Badges -->
-                <div class="pt-4 border-t border-light-gold/60 space-y-1.5 text-[0.6875rem] text-rich-black/60 text-center">
-                    <p>🔒 256-Bit SSL Encrypted Checkout</p>
-                    <p>📦 100% Authentic Quality Guaranteed</p>
+                <!-- Trust Badges & Supported Payment Marks -->
+                <div class="pt-4 border-t border-light-gold/60 space-y-3 text-[0.6875rem] text-rich-black/60 text-center">
+                    <p>🔒 256-Bit SSL Encrypted Checkout • 100% Authentic Quality Guaranteed</p>
+                    <div class="flex flex-wrap items-center justify-center gap-2 pt-1 opacity-80">
+                        <img src="{{ asset('payments/upi.png') }}" alt="UPI" class="h-3 w-auto object-contain">
+                        <img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" class="h-3.5 w-auto object-contain">
+                        <img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" class="h-3.5 w-auto object-contain">
+                        <img src="{{ asset('payments/paytm.png') }}" alt="Paytm" class="h-3.5 w-auto object-contain">
+                        <img src="{{ asset('payments/visa.png') }}" alt="Visa" class="h-2.5 w-auto object-contain">
+                        <img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" class="h-3.5 w-auto object-contain">
+                        <img src="{{ asset('payments/rupay.png') }}" alt="RuPay" class="h-2.5 w-auto object-contain">
+                    </div>
                 </div>
 
             </div>

@@ -29,6 +29,12 @@ class ProductVariant extends Model
         'weight_grams' => 'integer',
     ];
 
+    protected $appends = [
+        'price_rupees',
+        'mrp_rupees',
+        'discount_percentage',
+    ];
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id', 'id');

@@ -24,6 +24,10 @@ class ProductImage extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'url',
+    ];
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id', 'id');

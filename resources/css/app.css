@@ -31,9 +31,9 @@
     --color-soft-peach: #F5DDD0;
     --color-rich-black: #1A0808;
 
-    --color-tech-dark: #211610;
-    --color-tech-card: #2C1E16;
-    --color-tech-border: #3D2B20;
+    --color-tech-dark: #1A0808;
+    --color-tech-card: #261212;
+    --color-tech-border: #422323;
 
     --color-ink: #0F172A;
     --color-ink-light: #1E293B;
@@ -50,4 +50,24 @@
 /* Custom smooth transitions */
 .transition-smooth {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Continuous Announcement Bar Marquee */
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+.animate-marquee {
+    display: inline-flex;
+    animation: marquee 30s linear infinite;
+}
+
+.marquee-container:hover .animate-marquee,
+.marquee-container:focus-within .animate-marquee {
+    animation-play-state: paused;
 }

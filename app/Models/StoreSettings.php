@@ -67,4 +67,14 @@ class StoreSettings extends Model
 
         return asset('storage/media/' . ltrim($this->payment_strip_storage_key, '/'));
     }
+
+    public function homeHeroProduct(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'home_hero_product_id', 'id');
+    }
+
+    public function smartLivingPromoProduct(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'smart_living_promo_product_id', 'id');
+    }
 }
