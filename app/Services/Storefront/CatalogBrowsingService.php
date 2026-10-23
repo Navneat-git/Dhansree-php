@@ -25,6 +25,7 @@ class CatalogBrowsingService
         'women-two-piece-sets-co-ord',
         'women-two-piece-sets-co-ords',
         'women-suit-set',
+        'anarkali-kurta-sets',
     ];
 
     /** Slugs or names identifying Smart Living / Essentials categories */
@@ -33,6 +34,8 @@ class CatalogBrowsingService
         'mobile-accessories',
         'home-and-lifestyle',
         'car-accessories',
+        'home-essentials',
+        'kitchen-essentials',
     ];
 
     /**
@@ -163,6 +166,46 @@ class CatalogBrowsingService
     /**
      * Data for category collection page with filters.
      */
+    /**
+     * Resolves all category IDs for a given category (including all descendants and women's fashion umbrella).
+     */
+    public function getAllCategoryIds(Category $category): array
+    {
+        if ($category->slug === 'women-fashion') {
+            return Category::whereNull('archived_at')
+                ->where(function (Builder $q) use ($category) {
+                    $q->whereIn('slug', self::WOMEN_FASHION_SLUGS)
+                      ->orWhere('id', $category->id)
+                      ->orWhere('parent_id', $category->id)
+                      ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
+                })
+                ->pluck('id')
+                ->all();
+        }
+
+        $ids = [$category->id];
+        $currentParentIds = [$category->id];
+
+        while (!empty($currentParentIds)) {
+            $childIds = Category::whereIn('parent_id', $currentParentIds)
+                ->whereNull('archived_at')
+                ->pluck('id')
+                ->all();
+
+            if (empty($childIds)) {
+                break;
+            }
+
+            $ids = array_merge($ids, $childIds);
+            $currentParentIds = $childIds;
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Data for category collection page with filters.
+     */
     public function getCategoryPageData(string $slug, array $filters = []): array
     {
         $category = Category::with('parent')
@@ -170,20 +213,109 @@ class CatalogBrowsingService
             ->whereNull('archived_at')
             ->firstOrFail();
 
-        // Include subcategory IDs
-        $subIds = Category::where('parent_id', $category->id)
-            ->whereNull('archived_at')
-            ->pluck('id')
-            ->all();
+        $categoryIds = $this->getAllCategoryIds($category);
+        $listing = $this->executeListingQuery($categoryIds, $filters);
 
-        $categoryIds = array_merge([$category->id], $subIds);
+        return [
+            'category' => $category,
+            'products' => $listing['products'],
+            'isSmartLiving' => $this->isSmartLivingCategory($category),
+            'filters' => $filters,
+            'availableOptions' => $listing['availableOptions'],
+            'selectedOptions' => $listing['selectedOptions'],
+        ];
+    }
 
-        // Fetch all active product IDs in this category and its subcategories
+    /**
+     * Data for collection page with filters (gathers multiple categories).
+     */
+    public function getCollectionPageData(string $slug, array $filters = []): array
+    {
+        $collection = \App\Models\Collection::with('categories')
+            ->where('slug', $slug)
+            ->first();
+
+        if (!$collection) {
+            if ($slug === 'women-fashion') {
+                $collection = new \App\Models\Collection([
+                    'name' => 'Women Fashion',
+                    'slug' => 'women-fashion',
+                    'heading' => "Women's Ethnic Wear & Festive Edit",
+                    'intro' => 'Explore handcrafted pure cotton kurta sets, contemporary two-piece co-ords, regal anarkalis, and celebratory suit sets.',
+                    'is_visible' => true,
+                    'seo_title' => "Women's Ethnic Wear, Kurtis, Co-ords & Suits Online | Dhansree",
+                    'seo_description' => "Shop women's ethnic fashion online at Dhansree. Handcrafted cotton suits with dupattas, co-ords, anarkalis and kurta sets with free express shipping.",
+                ]);
+            } elseif ($slug === 'everyday-essentials') {
+                $collection = new \App\Models\Collection([
+                    'name' => 'Everyday Essentials',
+                    'slug' => 'everyday-essentials',
+                    'heading' => 'Everyday Essentials & Smart Living',
+                    'intro' => 'Discover quality-tested smart gadgets, fast chargers, multi-cables, and home essentials at factory-direct prices.',
+                    'is_visible' => true,
+                    'seo_title' => 'Everyday Essentials, Tech Accessories & Smart Gadgets | Dhansree',
+                    'seo_description' => 'Explore fast charging cables, compact steamers, lifestyle accessories, and smart home essentials with direct customer value.',
+                ]);
+            } else {
+                abort(404, 'Collection not found.');
+            }
+        }
+
+        $categoryIds = [];
+        if ($collection->relationLoaded('categories') && $collection->categories->isNotEmpty()) {
+            foreach ($collection->categories as $cat) {
+                $categoryIds = array_merge($categoryIds, $this->getAllCategoryIds($cat));
+            }
+        } elseif ($slug === 'women-fashion') {
+            $categoryIds = Category::whereNull('archived_at')
+                ->where(function (Builder $q) {
+                    $q->whereIn('slug', self::WOMEN_FASHION_SLUGS)
+                      ->orWhere('parent_id', 3)
+                      ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
+                })
+                ->pluck('id')
+                ->all();
+        } elseif ($slug === 'everyday-essentials') {
+            $categoryIds = Category::whereNull('archived_at')
+                ->where(function (Builder $q) {
+                    $q->whereIn('slug', self::SMART_LIVING_SLUGS)
+                      ->orWhere('parent_id', 4)
+                      ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::SMART_LIVING_SLUGS));
+                })
+                ->pluck('id')
+                ->all();
+        }
+
+        $categoryIds = array_values(array_unique($categoryIds));
+        $listing = $this->executeListingQuery($categoryIds, $filters);
+
+        $isSmartLiving = ($slug === 'everyday-essentials') || (
+            $collection->relationLoaded('categories') &&
+            $collection->categories->isNotEmpty() &&
+            $this->isSmartLivingCategory($collection->categories->first())
+        );
+
+        return [
+            'collection' => $collection,
+            'products' => $listing['products'],
+            'isSmartLiving' => $isSmartLiving,
+            'filters' => $filters,
+            'availableOptions' => $listing['availableOptions'],
+            'selectedOptions' => $listing['selectedOptions'],
+        ];
+    }
+
+    /**
+     * Executes the filtered, sorted, paginated product query and dynamic option aggregation for given category IDs.
+     */
+    protected function executeListingQuery(array $categoryIds, array $filters = []): array
+    {
+        // Fetch all active product IDs in these categories
         $baseActiveProductIds = Product::where('status', ProductStatus::ACTIVE)
             ->whereIn('category_id', $categoryIds)
             ->pluck('id');
 
-        // Dynamically discover all option dimensions and their distinct values present in this category
+        // Dynamically discover all option dimensions and their distinct values
         $options = ProductOption::whereIn('product_id', $baseActiveProductIds)
             ->with(['values' => fn($q) => $q->orderBy('position')->orderBy('id')])
             ->orderBy('position')
@@ -318,13 +450,8 @@ class CatalogBrowsingService
 
         $products = $query->paginate(16)->withQueryString();
 
-        $isSmartLiving = $this->isSmartLivingCategory($category);
-
         return [
-            'category' => $category,
             'products' => $products,
-            'isSmartLiving' => $isSmartLiving,
-            'filters' => $filters,
             'availableOptions' => $availableOptions,
             'selectedOptions' => $selectedOptions,
         ];

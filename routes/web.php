@@ -91,6 +91,9 @@ Route::prefix('store/account')->group(function () {
 });
 
 
+// ─── Curated Collections ───────────────────────────────────────────────────
+Route::get('/collections/{slug}', [StorefrontController::class, 'collection'])->name('store.collection');
+
 // ─── Search ────────────────────────────────────────────────────────────────
 Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');
 
@@ -168,6 +171,17 @@ Route::prefix('admin')->group(function () {
             Route::post('/{category}/restore', [\App\Http\Controllers\Admin\AdminCategoryWebController::class, 'restore'])->name('restore');
             Route::post('/{category}/image', [\App\Http\Controllers\Admin\AdminCategoryWebController::class, 'uploadImage'])->name('upload-image');
             Route::post('/{category}/image/remove', [\App\Http\Controllers\Admin\AdminCategoryWebController::class, 'removeImage'])->name('remove-image');
+        });
+
+        // Catalog: Collections
+        Route::prefix('catalog/collections')->name('admin.collections.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'store'])->name('store');
+            Route::get('/{collection}/edit', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'edit'])->name('edit');
+            Route::put('/{collection}', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'update'])->name('update');
+            Route::delete('/{collection}', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'destroy'])->name('destroy');
+            Route::post('/{collection}/visibility', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'toggleVisibility'])->name('toggle-visibility');
+            Route::post('/reorder', [\App\Http\Controllers\Admin\AdminCollectionWebController::class, 'reorder'])->name('reorder');
         });
 
         // Catalog: Products

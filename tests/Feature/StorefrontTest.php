@@ -278,4 +278,28 @@ class StorefrontTest extends TestCase
         $expectedStatus = ($returnPage && $returnPage->is_visible) ? 200 : 404;
         $this->get('/return-policy')->assertStatus($expectedStatus);
     }
+
+    public function test_women_fashion_page_renders_all_ethnic_clothing(): void
+    {
+        $response = $this->get('/women-fashion');
+        $response->assertStatus(200);
+        $response->assertSee("Women's Fashion", false);
+        $response->assertSee('Sort By');
+        $response->assertSee('Price Range');
+    }
+
+    public function test_collections_page_renders_curated_collection(): void
+    {
+        $response = $this->get('/collections/women-fashion');
+        $response->assertStatus(200);
+        $response->assertSee('Curated Collection');
+        $response->assertSee('Women Fashion');
+
+        $responseEveryday = $this->get('/collections/everyday-essentials');
+        $responseEveryday->assertStatus(200);
+        $responseEveryday->assertSee('Everyday Essentials');
+
+        $response404 = $this->get('/collections/non-existent-collection-slug');
+        $response404->assertStatus(404);
+    }
 }

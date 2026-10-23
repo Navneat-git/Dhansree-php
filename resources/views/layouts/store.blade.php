@@ -676,34 +676,6 @@
         @yield('content')
     </main>
 
-    <!-- Trust & Quality Strip -->
-    <section class="border-t border-b border-light-gold/60 bg-warm-beige/30 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                <div class="space-y-1">
-                    <div class="text-xl text-maroon-800">✨</div>
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">100% Authentic Quality</h4>
-                    <p class="text-[0.6875rem] text-rich-black/60">Finest pure cotton &amp; certified fabrics</p>
-                </div>
-                <div class="space-y-1">
-                    <div class="text-xl text-maroon-800">🚚</div>
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Free Express Delivery</h4>
-                    <p class="text-[0.6875rem] text-rich-black/60">On all prepaid orders over ₹999</p>
-                </div>
-                <div class="space-y-1">
-                    <div class="text-xl text-maroon-800">🔄</div>
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Easy 7-Day Returns</h4>
-                    <p class="text-[0.6875rem] text-rich-black/60">Hassle-free replacement &amp; return</p>
-                </div>
-                <div class="space-y-1">
-                    <div class="text-xl text-maroon-800">🛡️</div>
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Secure Checkout</h4>
-                    <p class="text-[0.6875rem] text-rich-black/60">UPI, Cards, NetBanking &amp; COD</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Luxury Store Footer -->
     <footer class="bg-warm-beige text-rich-black pt-16 pb-12 border-t border-light-gold">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

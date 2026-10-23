@@ -88,6 +88,33 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Curated collection page (gathers products from multiple categories)
+     */
+    public function collection(string $slug, Request $request): View|RedirectResponse
+    {
+        // 1. Check for SEO 301 redirects
+        $redirect = $this->seoRedirectService->findRedirect('/collections/' . $slug);
+        if ($redirect) {
+            return redirect()->to($redirect->destination_path, $redirect->status_code ?? 301);
+        }
+
+        $data = $this->catalogService->getCollectionPageData($slug, $request->all());
+        $collection = $data['collection'];
+
+        return view('store.collection', [
+            'collection' => $collection,
+            'products' => $data['products'],
+            'isSmartLivingHub' => $data['isSmartLiving'],
+            'filters' => $data['filters'],
+            'availableOptions' => $data['availableOptions'] ?? [],
+            'selectedOptions' => $data['selectedOptions'] ?? [],
+            'store' => StoreSettings::current(),
+            'seoTitle' => $collection->seo_title ?: "{$collection->name} | Dhansree",
+            'seoDescription' => $collection->seo_description ?: $collection->intro ?: "Shop our latest {$collection->name} collection.",
+        ]);
+    }
+
+    /**
      * Product detail page
      */
     public function product(string $slug): View|RedirectResponse

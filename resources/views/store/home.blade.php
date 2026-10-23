@@ -134,6 +134,34 @@
 </section>
 @endif
 
+<!-- Trust & Quality Strip (Positioned immediately below Hero Banner) -->
+<section class="border-b border-light-gold/60 bg-warm-beige/35 py-6 sm:py-7">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
+            <div class="p-3 rounded-xl bg-ivory/50 border border-light-gold/40 shadow-xs hover:border-gold-400 transition-colors">
+                <div class="text-xl sm:text-2xl text-maroon-800 mb-1">✨</div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">100% Authentic Quality</h4>
+                <p class="text-[0.6875rem] text-rich-black/65 mt-0.5">Finest pure cotton &amp; certified fabrics</p>
+            </div>
+            <div class="p-3 rounded-xl bg-ivory/50 border border-light-gold/40 shadow-xs hover:border-gold-400 transition-colors">
+                <div class="text-xl sm:text-2xl text-maroon-800 mb-1">🚚</div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Free Express Delivery</h4>
+                <p class="text-[0.6875rem] text-rich-black/65 mt-0.5">On all prepaid orders over ₹999</p>
+            </div>
+            <div class="p-3 rounded-xl bg-ivory/50 border border-light-gold/40 shadow-xs hover:border-gold-400 transition-colors">
+                <div class="text-xl sm:text-2xl text-maroon-800 mb-1">🔄</div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Easy 7-Day Returns</h4>
+                <p class="text-[0.6875rem] text-rich-black/65 mt-0.5">Hassle-free replacement &amp; return</p>
+            </div>
+            <div class="p-3 rounded-xl bg-ivory/50 border border-light-gold/40 shadow-xs hover:border-gold-400 transition-colors">
+                <div class="text-xl sm:text-2xl text-maroon-800 mb-1">🛡️</div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-rich-black">Secure Checkout</h4>
+                <p class="text-[0.6875rem] text-rich-black/65 mt-0.5">UPI, Cards, NetBanking &amp; COD</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="relative bg-gradient-to-b from-warm-beige/60 via-ivory to-ivory py-12 md:py-20 border-b border-light-gold/60 overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
