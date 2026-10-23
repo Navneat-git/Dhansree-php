@@ -96,11 +96,37 @@ class Category extends Model
             return null;
         }
 
-        $base = config('store.media_base_url');
-        if ($base) {
-            return rtrim($base, '/') . '/' . ltrim($this->image_storage_key, '/');
+        if (str_starts_with($this->image_storage_key, 'http://') || str_starts_with($this->image_storage_key, 'https://')) {
+            return $this->image_storage_key;
         }
 
-        return asset('storage/media/' . ltrim($this->image_storage_key, '/'));
+        $cleanKey = ltrim($this->image_storage_key, '/');
+
+        // Check if file exists in local public storage
+        $localFile = storage_path('app/public/media/' . $cleanKey);
+        if (file_exists($localFile)) {
+            return url('/media/' . $cleanKey);
+        }
+
+        try {
+            if (request()->hasHeader('host')) {
+                $host = request()->getHost();
+                if (filter_var($host, FILTER_VALIDATE_IP) || in_array($host, ['localhost', '127.0.0.1'], true)) {
+                    return url('/media/' . $cleanKey);
+                }
+            }
+        } catch (\Throwable $e) {
+            // CLI or testing without HTTP request
+        }
+
+        $base = config('store.media_base_url');
+        if ($base) {
+            if (str_ends_with($base, '/ds-web') && str_starts_with($cleanKey, 'ds-web/')) {
+                $cleanKey = substr($cleanKey, 7);
+            }
+            return rtrim($base, '/') . '/' . ltrim($cleanKey, '/');
+        }
+
+        return url('/media/' . $cleanKey);
     }
 }

@@ -422,4 +422,33 @@ class AdminCmsManagementTest extends TestCase
         $this->assertEquals('Royal Heritage. Modern Grace.', $settings->home_hero_title);
         $this->assertEquals('Updated Festive Collection', $settings->home_hero_subtitle);
     }
+
+    public function test_admin_can_upload_image_file_for_homepage_block(): void
+    {
+        $block = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->first();
+        if (!$block) {
+            $block = \App\Models\HomeBlock::create([
+                'type' => \App\Enums\HomeBlockType::HERO,
+                'position' => 2,
+                'is_visible' => true,
+                'heading' => 'Festive Showcase',
+            ]);
+        }
+
+        $imageFile = UploadedFile::fake()->image('festive_showcase.webp', 800, 1000);
+
+        $updateRes = $this->asAdmin()->put('/admin/homepage/blocks/' . $block->id, [
+            'heading' => 'New Festive Collection',
+            'eyebrow' => 'Handcrafted Excellence',
+            'image' => $imageFile,
+        ]);
+
+        $updateRes->assertRedirect();
+        $updateRes->assertSessionHas('success');
+
+        $block->refresh();
+        $this->assertNotNull($block->image_storage_key);
+        $this->assertStringStartsWith("homepage/{$block->id}/", $block->image_storage_key);
+        $this->assertNotNull($block->image_url);
+    }
 }

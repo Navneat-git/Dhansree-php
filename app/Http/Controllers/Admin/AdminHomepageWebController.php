@@ -106,7 +106,19 @@ class AdminHomepageWebController extends Controller
             $ext = $file->getClientOriginalExtension() ?: 'webp';
             $filename = (string) Str::uuid() . '.' . $ext;
             $storageKey = "homepage/{$block->id}/{$filename}";
-            Storage::disk('public')->put('media/' . $storageKey, file_get_contents($file->getRealPath()));
+            $content = file_get_contents($file->getRealPath());
+            Storage::disk('public')->put('media/' . $storageKey, $content);
+
+            // Also copy to ds-assets directory if present so CDN can serve it immediately
+            $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
+            if ($extraDir) {
+                $targetFile = rtrim($extraDir, '/') . '/' . ltrim($storageKey, '/');
+                $targetDir = dirname($targetFile);
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0775, true);
+                }
+                @file_put_contents($targetFile, $content);
+            }
 
             $block->image_storage_key = $storageKey;
             $block->image_alt_text = $validated['heading'] ?? 'Homepage banner';
@@ -132,19 +144,25 @@ class AdminHomepageWebController extends Controller
         $block->version = ($block->version ?? 0) + 1;
         $block->save();
 
-        // If this is the HERO Festive Signature block, sync with StoreSettings for storefront consistency
+        // If this is the HERO Festive Signature block, safely sync with StoreSettings if columns exist
         if ($block->type === HomeBlockType::HERO) {
-            $settings = StoreSettings::current();
-            if ($block->image_url) {
-                $settings->home_hero_image_url = $block->image_url;
+            try {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('store_settings', 'home_hero_image_url')) {
+                    $settings = StoreSettings::current();
+                    if ($block->image_url) {
+                        $settings->home_hero_image_url = $block->image_url;
+                    }
+                    if (!empty($block->heading)) {
+                        $settings->home_hero_title = $block->heading;
+                    }
+                    if (!empty($block->eyebrow)) {
+                        $settings->home_hero_subtitle = $block->eyebrow;
+                    }
+                    $settings->save();
+                }
+            } catch (\Throwable $e) {
+                // Ignore sync error so homepage block update never fails
             }
-            if (!empty($block->heading)) {
-                $settings->home_hero_title = $block->heading;
-            }
-            if (!empty($block->eyebrow)) {
-                $settings->home_hero_subtitle = $block->eyebrow;
-            }
-            $settings->save();
         }
 
         return back()->with('success', "Section #{$block->id} ({$block->type->value}) updated successfully.");
