@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -17,6 +18,7 @@ class Collection extends Model
     protected $casts = [
         'is_visible' => 'boolean',
         'position' => 'integer',
+        'quick_link_group_id' => 'integer',
         'version' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -30,5 +32,10 @@ class Collection extends Model
     public function collectionCategories(): HasMany
     {
         return $this->hasMany(CollectionCategory::class, 'collection_id', 'id');
+    }
+
+    public function quickLinkGroup(): BelongsTo
+    {
+        return $this->belongsTo(QuickLinkGroup::class, 'quick_link_group_id', 'id');
     }
 }

@@ -54,7 +54,21 @@ class ProductImage extends Model
             return '';
         }
 
+        if (str_starts_with($this->storage_key, 'http://') || str_starts_with($this->storage_key, 'https://')) {
+            return $this->storage_key;
+        }
+
         $cleanKey = ltrim($this->storage_key, '/');
+
+        // Check if file exists in public/media or storage/app/public/media
+        if (file_exists(public_path('media/' . $cleanKey)) || file_exists(storage_path('app/public/media/' . $cleanKey))) {
+            return url('/media/' . $cleanKey);
+        }
+
+        $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
+        if ($extraDir && file_exists(rtrim($extraDir, '/') . '/' . $cleanKey)) {
+            return url('/media/' . $cleanKey);
+        }
 
         // When accessed via IP address or localhost, use /media proxy route so image loads reliably
         try {
@@ -70,7 +84,10 @@ class ProductImage extends Model
 
         $base = config('store.media_base_url');
         if ($base) {
-            return rtrim($base, '/') . '/' . $cleanKey;
+            if (str_ends_with($base, '/ds-web') && str_starts_with($cleanKey, 'ds-web/')) {
+                $cleanKey = substr($cleanKey, 7);
+            }
+            return rtrim($base, '/') . '/' . ltrim($cleanKey, '/');
         }
 
         return url('/media/' . $cleanKey);

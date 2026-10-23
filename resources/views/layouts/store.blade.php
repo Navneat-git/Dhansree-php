@@ -178,6 +178,21 @@
                         </svg>
                     </a>
 
+                    <!-- Wishlist Trigger with Dynamic Badge -->
+                    <a href="{{ route('storefront.wishlist.index') }}"
+                       class="relative p-2 text-rich-black/80 hover:text-rose-600 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
+                       aria-label="My Wishlist"
+                       title="My Wishlist">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        <span x-show="wishlistCount > 0"
+                              x-cloak
+                              x-text="wishlistCount"
+                              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-ivory">
+                        </span>
+                    </a>
+
                     <!-- Cart Drawer Trigger with Dynamic Badge -->
                     <button type="button"
                             @click="cartDrawerOpen = true"
@@ -329,6 +344,17 @@
                    class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl bg-gold-200/50 border border-gold-400 text-maroon-900 text-xs font-semibold">
                     <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     <span>{{ auth('customer')->check() ? 'My Account (' . (auth('customer')->user()->name) . ')' : 'Sign In / My Account' }}</span>
+                </a>
+
+                <a href="{{ route('storefront.wishlist.index') }}"
+                   class="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white border border-light-gold text-rich-black text-xs font-semibold hover:border-rose-400 transition-colors">
+                    <span class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        <span>My Wishlist</span>
+                    </span>
+                    <span x-show="wishlistCount > 0" x-text="wishlistCount" class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold"></span>
                 </a>
 
                 <hr class="border-light-gold/60">
@@ -835,6 +861,10 @@
                 newsletterCode: '',
                 newsletterError: null,
 
+                // Wishlist state
+                wishlist: [],
+                wishlistCount: 0,
+
                 // Cart state
                 cart: {
                     items: [],
@@ -850,6 +880,7 @@
 
                 initCart() {
                     this.fetchCart();
+                    this.fetchWishlist();
 
                     // Scroll listener for sticky header styling
                     window.addEventListener('scroll', () => {
@@ -940,6 +971,45 @@
                         }
                     } catch (e) {
                         console.error('Remove item failed', e);
+                    }
+                },
+
+                async fetchWishlist() {
+                    try {
+                        const res = await fetch('{{ route('storefront.wishlist.ids') }}', { credentials: 'same-origin' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            this.wishlist = data.ids || [];
+                            this.wishlistCount = data.count || 0;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load wishlist', e);
+                    }
+                },
+
+                isInWishlist(productId) {
+                    return this.wishlist.includes(Number(productId));
+                },
+
+                async toggleWishlist(productId) {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch('{{ route('storefront.wishlist.toggle') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ product_id: productId })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.wishlist = data.ids || [];
+                            this.wishlistCount = data.count || 0;
+                        }
+                    } catch (e) {
+                        console.error('Wishlist toggle failed', e);
                     }
                 },
 

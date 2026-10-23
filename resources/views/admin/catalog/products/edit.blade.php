@@ -3,7 +3,19 @@
 @section('title', 'Manage Product - ' . $product->name)
 
 @section('content')
-<div class="max-w-6xl mx-auto space-y-6" x-data="{ activeTab: 'details' }">
+<div class="max-w-6xl mx-auto space-y-6" x-data="{ 
+    activeTab: (new URLSearchParams(window.location.search).get('tab')) || '{{ session('active_tab', request()->query('tab', 'details')) }}',
+    setTab(t) {
+        this.activeTab = t;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', t);
+        window.history.replaceState({}, '', url.toString());
+    }
+}" x-init="$watch('activeTab', val => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', val);
+    window.history.replaceState({}, '', url.toString());
+})">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-sm text-slate-500">
         <a href="{{ route('admin.products.index') }}" class="hover:text-amber-600 transition-colors">Products</a>
@@ -87,30 +99,42 @@
 
     <!-- Navigation Tabs -->
     <div class="flex items-center gap-2 border-b border-slate-200 overflow-x-auto text-xs font-semibold">
-        <button type="button" @click="activeTab = 'details'"
+        <button type="button" @click="setTab('details')"
                 :class="activeTab === 'details' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
             Details & SEO
         </button>
-        <button type="button" @click="activeTab = 'variants'"
+        <button type="button" @click="setTab('variants')"
                 :class="activeTab === 'variants' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
             Variants & Stock
             <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ $product->variants->count() }}</span>
         </button>
-        <button type="button" @click="activeTab = 'media'"
+        <button type="button" @click="setTab('media')"
                 :class="activeTab === 'media' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
             Media & Images
             <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ $product->images->count() }}</span>
         </button>
-        <button type="button" @click="activeTab = 'attributes'"
+        <button type="button" @click="setTab('attributes')"
                 :class="activeTab === 'attributes' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
             Specifications
             <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ $product->productAttributes->count() }}</span>
         </button>
-        <button type="button" @click="activeTab = 'danger'"
+        <button type="button" @click="setTab('faqs')"
+                :class="activeTab === 'faqs' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
+                class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
+            FAQs
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ ($productContent?->faq_mode === 'CUSTOM') ? $customFaqs->count() : ($productContent?->faq_mode === 'NONE' ? 'Off' : 'Default') }}</span>
+        </button>
+        <button type="button" @click="setTab('quick-links')"
+                :class="activeTab === 'quick-links' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
+                class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
+            Quick Links
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ $productContent?->quick_links_mode ?: 'INHERIT' }}</span>
+        </button>
+        <button type="button" @click="setTab('danger')"
                 :class="activeTab === 'danger' ? 'border-rose-600 text-rose-700 bg-rose-50/60' : 'border-transparent text-slate-600 hover:text-rose-600'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 ml-auto text-rose-600 rounded-t-md">
             Danger Zone
@@ -596,6 +620,188 @@
                         Save Specifications
                     </button>
                     <span class="text-xs text-slate-500" x-text="specs.length + ' specifications configured'"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB: FAQs -->
+    @php
+        $existingFaqs = ($customFaqs ?? collect())->map(function($f) {
+            return [
+                'question' => (string) $f->question,
+                'answer' => (string) $f->answer,
+                'position' => (int) $f->position,
+            ];
+        })->values()->all();
+        $faqMode = old('faq_mode', $productContent?->faq_mode ?? 'INHERIT');
+    @endphp
+    <div x-show="activeTab === 'faqs'" class="space-y-6" x-data="{
+        mode: '{{ $faqMode }}',
+        faqs: {{ json_encode($existingFaqs) }},
+        addFaq() {
+            this.faqs.push({ question: '', answer: '', position: this.faqs.length });
+        },
+        removeFaq(idx) {
+            this.faqs.splice(idx, 1);
+        }
+    }">
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
+            <div class="border-b border-slate-200/80 pb-4">
+                <h2 class="text-base font-bold text-slate-900">Product FAQs</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Control whether this product inherits default store FAQs, displays custom FAQs, or hides FAQs completely.</p>
+            </div>
+
+            <form method="POST" action="{{ route('admin.products.update-faqs', $product) }}" class="space-y-6">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">FAQ Display Mode</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="mode === 'INHERIT' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="faq_mode" value="INHERIT" x-model="mode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Inherit Default FAQs</span>
+                                <span class="text-[11px] text-slate-500">Displays general store FAQs configured in Store &rsaquo; FAQs.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="mode === 'CUSTOM' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="faq_mode" value="CUSTOM" x-model="mode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Custom Product FAQs</span>
+                                <span class="text-[11px] text-slate-500">Provide specific questions and answers for this exact product.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="mode === 'NONE' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="faq_mode" value="NONE" x-model="mode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Disable FAQs (Hide)</span>
+                                <span class="text-[11px] text-slate-500">Do not display any FAQ section on this product's page.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div x-show="mode === 'CUSTOM'" class="space-y-4 pt-4 border-t border-slate-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Custom Questions & Answers</h3>
+                            <p class="text-xs text-slate-500">Add question and answer pairs specific to this item.</p>
+                        </div>
+                        <button type="button" @click="addFaq()"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition-all shadow-2xs">
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Add FAQ
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        <template x-for="(faq, idx) in faqs" :key="idx">
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 relative group">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-xs font-bold text-slate-500 uppercase font-mono" x-text="'Q' + (idx + 1)"></span>
+                                    <button type="button" @click="removeFaq(idx)" class="text-xs text-rose-500 hover:text-rose-700 font-medium">
+                                        Delete
+                                    </button>
+                                </div>
+                                <div>
+                                    <input type="text" :name="'faqs[' + idx + '][question]'" x-model="faq.question" placeholder="Question (e.g. Is this fabric see-through?)" required
+                                           class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs">
+                                </div>
+                                <div>
+                                    <textarea :name="'faqs[' + idx + '][answer]'" x-model="faq.answer" rows="2" placeholder="Answer..." required
+                                              class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"></textarea>
+                                </div>
+                                <input type="hidden" :name="'faqs[' + idx + '][position]'" :value="idx">
+                            </div>
+                        </template>
+
+                        <div x-show="faqs.length === 0" class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                            <p class="text-xs font-semibold text-slate-600">No custom FAQs added yet.</p>
+                            <p class="text-xs text-slate-400 mt-1">Click "Add FAQ" above to add your first question & answer.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end pt-3 border-t border-slate-200">
+                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-colors">
+                        Save FAQ Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB: QUICK LINKS -->
+    @php
+        $qlMode = old('quick_links_mode', $productContent?->quick_links_mode ?? 'INHERIT');
+        $selectedGroup = old('quick_link_group_id', $productContent?->quick_link_group_id);
+    @endphp
+    <div x-show="activeTab === 'quick-links'" class="space-y-6" x-data="{ qlMode: '{{ $qlMode }}' }">
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-4 gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Product Quick Links</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Display horizontal pill navigation buttons on this product's detail page.</p>
+                </div>
+                <a href="{{ route('admin.quick-links.index') }}" target="_blank"
+                   class="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 hover:text-amber-700 hover:underline">
+                    Manage Quick Link Groups &rarr;
+                </a>
+            </div>
+
+            <form method="POST" action="{{ route('admin.products.update-quick-links', $product) }}" class="space-y-6">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Quick Links Mode</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="qlMode === 'INHERIT' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="quick_links_mode" value="INHERIT" x-model="qlMode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Inherit Category / Store Links</span>
+                                <span class="text-[11px] text-slate-500">Uses category quick links, or default product group if enabled.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="qlMode === 'CUSTOM' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="quick_links_mode" value="CUSTOM" x-model="qlMode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Assign Specific Group</span>
+                                <span class="text-[11px] text-slate-500">Pick a specific Quick Link group defined in Growth &rsaquo; Quick Links.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all"
+                               :class="qlMode === 'NONE' ? 'border-amber-500 bg-amber-50/50 text-slate-900' : 'border-slate-200 hover:border-slate-300 text-slate-700'">
+                            <input type="radio" name="quick_links_mode" value="NONE" x-model="qlMode" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-bold block">Disable Quick Links (Hide)</span>
+                                <span class="text-[11px] text-slate-500">Do not display any quick link pill bar on this product's page.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div x-show="qlMode === 'CUSTOM'" class="space-y-3 pt-4 border-t border-slate-200">
+                    <label class="block text-xs font-semibold text-slate-700">Select Quick Link Group</label>
+                    <select name="quick_link_group_id" class="w-full sm:w-80 px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs">
+                        <option value="">-- Choose Quick Link Group --</option>
+                        @foreach($quickLinkGroups ?? [] as $grp)
+                            <option value="{{ $grp->id }}" {{ ($selectedGroup == $grp->id) ? 'selected' : '' }}>
+                                {{ $grp->title }} ({{ $grp->quickLinks->count() }} links)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-end pt-3 border-t border-slate-200">
+                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-colors">
+                        Save Quick Links Settings
+                    </button>
                 </div>
             </form>
         </div>

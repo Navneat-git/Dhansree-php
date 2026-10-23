@@ -143,6 +143,35 @@
             </div>
         </div>
 
+        <!-- Quick Links Settings -->
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
+            <h2 class="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3">Quick Navigation Links</h2>
+            <p class="text-xs text-slate-500">Configure pill navigation links to display on this category's listing page.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Quick Links Mode</label>
+                    <select name="quick_links_mode" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
+                        <option value="INHERIT" {{ (old('quick_links_mode', $categoryContent?->quick_links_mode) === 'INHERIT' || !$categoryContent) ? 'selected' : '' }}>Inherit Global Listing Links</option>
+                        <option value="CUSTOM" {{ old('quick_links_mode', $categoryContent?->quick_links_mode) === 'CUSTOM' ? 'selected' : '' }}>Assign Specific Quick Link Group</option>
+                        <option value="NONE" {{ old('quick_links_mode', $categoryContent?->quick_links_mode) === 'NONE' ? 'selected' : '' }}>Disable Quick Links (Hide)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Assigned Group (if Custom)</label>
+                    <select name="quick_link_group_id" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
+                        <option value="">-- Choose Quick Link Group --</option>
+                        @foreach($quickLinkGroups ?? [] as $grp)
+                            <option value="{{ $grp->id }}" {{ ($categoryContent?->quick_link_group_id == $grp->id) ? 'selected' : '' }}>
+                                {{ $grp->title }} ({{ $grp->quickLinks->count() }} links)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="flex items-center justify-end gap-3">
             <a href="{{ route('admin.categories.index') }}" class="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 text-sm font-semibold transition-colors">
                 Cancel

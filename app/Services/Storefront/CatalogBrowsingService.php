@@ -113,6 +113,7 @@ class CatalogBrowsingService
             'banners' => $banners,
             'store' => $store,
             'heroBlock' => $heroBlock,
+            'quickLinksData' => $this->resolveQuickLinksForHome(),
         ];
     }
 
@@ -225,6 +226,7 @@ class CatalogBrowsingService
             'filters' => $filters,
             'availableOptions' => $listing['availableOptions'],
             'selectedOptions' => $listing['selectedOptions'],
+            'quickLinksData' => $this->resolveQuickLinksForCategory($category),
         ];
     }
 
@@ -304,6 +306,7 @@ class CatalogBrowsingService
             'filters' => $filters,
             'availableOptions' => $listing['availableOptions'],
             'selectedOptions' => $listing['selectedOptions'],
+            'quickLinksData' => $this->resolveQuickLinksForCollection($collection),
         ];
     }
 
@@ -466,6 +469,7 @@ class CatalogBrowsingService
     {
         $product = Product::with([
             'category.parent',
+            'productContent',
             'variants' => fn($q) => $q->whereNull('archived_at')->orderBy('position')->with(['optionValues', 'inventoryLevels']),
             'options' => fn($q) => $q->orderBy('position')->with(['values' => fn($vq) => $vq->orderBy('position')]),
             'images' => fn($q) => $q->orderBy('position')->with(['productImageVariants', 'productImageOptionValues']),
@@ -493,6 +497,8 @@ class CatalogBrowsingService
             'sizeChart' => $sizeChart,
             'isSmartLiving' => $isSmartLiving,
             'store' => $store,
+            'quickLinksData' => $this->resolveQuickLinksForProduct($product),
+            'faqs' => $this->resolveFaqsForProduct($product),
         ];
     }
 
@@ -699,5 +705,189 @@ class CatalogBrowsingService
             'womenFashionCategories' => $women,
             'smartLivingCategories' => $smart,
         ];
+    }
+
+    /**
+     * Resolve Quick Links for Homepage.
+     */
+    public function resolveQuickLinksForHome(): ?array
+    {
+        $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->where('is_visible', true)
+            ->where('show_on_home', true)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$group || $group->quickLinks->isEmpty()) {
+            return null;
+        }
+
+        return [
+            'title' => $group->title,
+            'links' => $group->quickLinks,
+        ];
+    }
+
+    /**
+     * Resolve Quick Links for Category listing page.
+     */
+    public function resolveQuickLinksForCategory(?Category $category): ?array
+    {
+        if (!$category) {
+            return null;
+        }
+
+        $categoryContent = \App\Models\CategoryContent::where('category_id', $category->id)->first();
+        $mode = $categoryContent?->quick_links_mode ?? 'INHERIT';
+
+        if (in_array($mode, ['NONE', 'HIDE'], true)) {
+            return null;
+        }
+
+        if ($mode === 'CUSTOM' && $categoryContent?->quick_link_group_id) {
+            $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+                ->where('is_visible', true)
+                ->where('id', $categoryContent->quick_link_group_id)
+                ->first();
+
+            if ($group && $group->quickLinks->isNotEmpty()) {
+                return ['title' => $group->title, 'links' => $group->quickLinks];
+            }
+            return null;
+        }
+
+        // INHERIT: find first visible group with show_on_listing
+        $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->where('is_visible', true)
+            ->where('show_on_listing', true)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($group && $group->quickLinks->isNotEmpty()) {
+            return ['title' => $group->title, 'links' => $group->quickLinks];
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve Quick Links for Curated Collection page.
+     */
+    public function resolveQuickLinksForCollection(?\App\Models\Collection $collection): ?array
+    {
+        if ($collection && $collection->quick_link_group_id) {
+            $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+                ->where('is_visible', true)
+                ->where('id', $collection->quick_link_group_id)
+                ->first();
+
+            if ($group && $group->quickLinks->isNotEmpty()) {
+                return ['title' => $group->title, 'links' => $group->quickLinks];
+            }
+        }
+
+        // Default listing group
+        $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->where('is_visible', true)
+            ->where('show_on_listing', true)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($group && $group->quickLinks->isNotEmpty()) {
+            return ['title' => $group->title, 'links' => $group->quickLinks];
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve Quick Links for Product Detail page.
+     */
+    public function resolveQuickLinksForProduct(?Product $product): ?array
+    {
+        if (!$product) {
+            return null;
+        }
+
+        $productContent = $product->relationLoaded('productContent')
+            ? $product->productContent
+            : \App\Models\ProductContent::where('product_id', $product->id)->first();
+
+        $mode = $productContent?->quick_links_mode ?? 'INHERIT';
+
+        if (in_array($mode, ['NONE', 'HIDE'], true)) {
+            return null;
+        }
+
+        if ($mode === 'CUSTOM' && $productContent?->quick_link_group_id) {
+            $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+                ->where('is_visible', true)
+                ->where('id', $productContent->quick_link_group_id)
+                ->first();
+
+            if ($group && $group->quickLinks->isNotEmpty()) {
+                return ['title' => $group->title, 'links' => $group->quickLinks];
+            }
+            return null;
+        }
+
+        // INHERIT: check category quick links first, then check show_on_product
+        if ($product->category) {
+            $catLinks = $this->resolveQuickLinksForCategory($product->category);
+            if ($catLinks) {
+                return $catLinks;
+            }
+        }
+
+        $group = \App\Models\QuickLinkGroup::with(['quickLinks' => fn($q) => $q->orderBy('position')->orderBy('id')])
+            ->where('is_visible', true)
+            ->where('show_on_product', true)
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($group && $group->quickLinks->isNotEmpty()) {
+            return ['title' => $group->title, 'links' => $group->quickLinks];
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve FAQs for Product Detail page.
+     */
+    public function resolveFaqsForProduct(Product $product): \Illuminate\Support\Collection
+    {
+        $productContent = $product->relationLoaded('productContent')
+            ? $product->productContent
+            : \App\Models\ProductContent::where('product_id', $product->id)->first();
+
+        $mode = $productContent?->faq_mode ?? 'INHERIT';
+
+        if (in_array($mode, ['NONE', 'HIDE'], true)) {
+            return collect();
+        }
+
+        if ($mode === 'CUSTOM') {
+            $customFaqs = \App\Models\FaqEntry::where('product_id', $product->id)
+                ->where('is_visible', true)
+                ->orderBy('position')
+                ->get();
+
+            if ($customFaqs->isNotEmpty()) {
+                return $customFaqs;
+            }
+            // Fallback to default FAQs if custom was chosen but none added yet
+        }
+
+        // Default Store FAQs
+        return \App\Models\FaqEntry::whereNull('product_id')
+            ->whereNull('category_id')
+            ->where('is_visible', true)
+            ->orderBy('position')
+            ->get();
     }
 }

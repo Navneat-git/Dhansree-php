@@ -445,6 +445,16 @@ class CategoryService
         // Store file to disk (public disk)
         Storage::disk('public')->put('media/' . $storageKey, $processed['data']);
 
+        $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
+        if ($extraDir) {
+            $targetFile = rtrim($extraDir, '/') . '/' . ltrim($storageKey, '/');
+            $targetDir = dirname($targetFile);
+            if (!is_dir($targetDir)) {
+                @mkdir($targetDir, 0775, true);
+            }
+            @file_put_contents($targetFile, $processed['data']);
+        }
+
         $oldKey = $category->image_storage_key;
 
         $category->update([

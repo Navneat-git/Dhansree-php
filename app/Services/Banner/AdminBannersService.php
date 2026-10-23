@@ -238,6 +238,16 @@ class AdminBannersService
         if ($desktopImage) {
             $key = 'banners/' . Str::uuid() . '.' . ($desktopImage->getClientOriginalExtension() ?: 'webp');
             Storage::disk('public')->putFileAs('media/banners', $desktopImage, basename($key));
+
+            $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
+            if ($extraDir) {
+                $targetFile = rtrim($extraDir, '/') . '/' . ltrim($key, '/');
+                $targetDir = dirname($targetFile);
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0775, true);
+                }
+                @file_put_contents($targetFile, file_get_contents($desktopImage->getRealPath()));
+            }
             
             $imageStorageKey = $key;
             $dimensions = @getimagesize($desktopImage->getRealPath());
@@ -268,6 +278,16 @@ class AdminBannersService
         if ($mobileImage) {
             $mKey = 'banners/mobile_' . Str::uuid() . '.' . ($mobileImage->getClientOriginalExtension() ?: 'webp');
             Storage::disk('public')->putFileAs('media/banners', $mobileImage, basename($mKey));
+
+            $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
+            if ($extraDir) {
+                $targetFile = rtrim($extraDir, '/') . '/' . ltrim($mKey, '/');
+                $targetDir = dirname($targetFile);
+                if (!is_dir($targetDir)) {
+                    @mkdir($targetDir, 0775, true);
+                }
+                @file_put_contents($targetFile, file_get_contents($mobileImage->getRealPath()));
+            }
 
             $mobileStorageKey = $mKey;
             $mDimensions = @getimagesize($mobileImage->getRealPath());

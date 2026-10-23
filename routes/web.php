@@ -23,6 +23,14 @@ Route::prefix('cart')->group(function () {
     Route::post('/clear', [CartController::class, 'clear'])->name('cart.clear');
 });
 
+// ─── Customer Wishlist ──────────────────────────────────────────────────────
+Route::prefix('wishlist')->name('storefront.wishlist.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Storefront\WishlistController::class, 'index'])->name('index');
+    Route::get('/ids', [\App\Http\Controllers\Storefront\WishlistController::class, 'ids'])->name('ids');
+    Route::post('/toggle', [\App\Http\Controllers\Storefront\WishlistController::class, 'toggle'])->name('toggle');
+    Route::post('/remove', [\App\Http\Controllers\Storefront\WishlistController::class, 'remove'])->name('remove');
+});
+
 // ─── Express Checkout & Payment ─────────────────────────────────────────────
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout/quote', [CheckoutController::class, 'quote'])->name('checkout.quote');
@@ -206,7 +214,16 @@ Route::prefix('admin')->group(function () {
 
             // Attributes
             Route::post('/{product}/attributes', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateAttributes'])->name('update-attributes');
+
+            // FAQs
+            Route::post('/{product}/faqs', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateFaqs'])->name('update-faqs');
+
+            // Quick Links
+            Route::post('/{product}/quick-links', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateQuickLinks'])->name('update-quick-links');
         });
+
+        // Catalog: Wishlists
+        Route::get('/catalog/wishlists', [\App\Http\Controllers\Admin\AdminWishlistWebController::class, 'index'])->name('admin.wishlists.index');
 
         // Direct Variant & Image actions
         Route::put('/catalog/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateVariant'])->name('admin.variants.update');
@@ -273,6 +290,17 @@ Route::prefix('admin')->group(function () {
             Route::post('/groups/{groupId}/entries', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'storeEntry'])->name('entries.store');
             Route::put('/entries/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'updateEntry'])->name('entries.update');
             Route::delete('/entries/{id}', [\App\Http\Controllers\Admin\AdminFaqWebController::class, 'deleteEntry'])->name('entries.destroy');
+        });
+
+        // Quick Links Management
+        Route::prefix('quick-links')->name('admin.quick-links.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'index'])->name('index');
+            Route::post('/groups', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'storeGroup'])->name('groups.store');
+            Route::put('/groups/{id}', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'updateGroup'])->name('groups.update');
+            Route::delete('/groups/{id}', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'destroyGroup'])->name('groups.destroy');
+            Route::post('/groups/{groupId}/links', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'storeLink'])->name('links.store');
+            Route::put('/links/{id}', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'updateLink'])->name('links.update');
+            Route::delete('/links/{id}', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'destroyLink'])->name('links.destroy');
         });
 
         // SEO Redirects Management

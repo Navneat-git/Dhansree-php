@@ -128,12 +128,18 @@ class AdminProductWebController extends Controller
         $detail = $this->productService->detail($product->id);
         $categoryOptions = $this->treeService->toCategoryOptions();
         $store = StoreSettings::current();
+        $productContent = \App\Models\ProductContent::where('product_id', $product->id)->first();
+        $customFaqs = \App\Models\FaqEntry::where('product_id', $product->id)->orderBy('position')->get();
+        $quickLinkGroups = \App\Models\QuickLinkGroup::where('is_visible', true)->orderBy('position')->get();
 
         return view('admin.catalog.products.edit', [
             'product' => $detail,
             'categoryOptions' => $categoryOptions,
             'store' => $store,
             'publishIssues' => $detail->publish_issues ?? [],
+            'productContent' => $productContent,
+            'customFaqs' => $customFaqs,
+            'quickLinkGroups' => $quickLinkGroups,
         ]);
     }
 
@@ -254,9 +260,14 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->createVariant($product, $validated, $adminUser?->id, $request);
-            return back()->with('success', 'Variant added successfully.');
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', 'Variant added successfully.');
         } catch (Throwable $e) {
-            return back()->withInput()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->withInput()
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -278,9 +289,13 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->updateVariant($variant, $validated, $adminUser?->id, $request);
-            return back()->with('success', "Variant '{$variant->sku}' updated successfully.");
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "Variant '{$variant->sku}' updated successfully.");
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -293,9 +308,13 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->archiveVariant($variant, $adminUser?->id, $request);
-            return back()->with('success', "Variant '{$variant->sku}' archived.");
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "Variant '{$variant->sku}' archived.");
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -308,9 +327,13 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->restoreVariant($variant, $adminUser?->id, $request);
-            return back()->with('success', "Variant '{$variant->sku}' restored.");
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "Variant '{$variant->sku}' restored.");
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -339,9 +362,13 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->syncOptions($product, $formatted, $adminUser?->id, $request);
-            return back()->with('success', 'Product options and values saved.');
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', 'Product options and values saved.');
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -369,9 +396,13 @@ class AdminProductWebController extends Controller
             );
 
             $count = count($created);
-            return back()->with('success', "{$count} variant(s) generated successfully.");
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "{$count} variant(s) generated successfully.");
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -402,9 +433,13 @@ class AdminProductWebController extends Controller
                 $request
             );
 
-            return back()->with('success', 'Product image uploaded successfully.');
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Product image uploaded successfully.');
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -414,12 +449,17 @@ class AdminProductWebController extends Controller
     public function deleteImage(Request $request, ProductImage $image): RedirectResponse
     {
         $adminUser = $request->attributes->get('admin_user');
+        $productId = $image->product_id;
 
         try {
             $this->imageService->deleteImage($image, $adminUser?->id, $request);
-            return back()->with('success', 'Product image deleted.');
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Product image deleted.');
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -429,12 +469,17 @@ class AdminProductWebController extends Controller
     public function setPrimaryImage(Request $request, ProductImage $image): RedirectResponse
     {
         $adminUser = $request->attributes->get('admin_user');
+        $productId = $image->product_id;
 
         try {
             $this->imageService->setPrimary($image, $adminUser?->id, $request);
-            return back()->with('success', 'Primary image updated.');
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Primary image updated.');
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -448,9 +493,95 @@ class AdminProductWebController extends Controller
 
         try {
             $this->productService->setAttributes($product, $rawAttrs, $adminUser?->id, $request);
-            return back()->with('success', 'Product specifications saved successfully.');
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'attributes'])
+                ->with('active_tab', 'attributes')
+                ->with('success', 'Product specifications saved successfully.');
         } catch (Throwable $e) {
-            return back()->with('error', $e->getMessage());
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'attributes'])
+                ->with('active_tab', 'attributes')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update product FAQs (mode and custom question-answer pairs).
+     */
+    public function updateFaqs(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'faq_mode' => 'required|string|in:INHERIT,CUSTOM,CUSTOM_PLUS_GLOBAL,HIDE,NONE',
+            'faqs' => 'nullable|array',
+            'faqs.*.question' => 'nullable|string|max:200',
+            'faqs.*.answer' => 'nullable|string',
+            'faqs.*.position' => 'nullable|integer|min:0',
+        ]);
+
+        $mode = $validated['faq_mode'] === 'NONE' ? 'HIDE' : $validated['faq_mode'];
+
+        try {
+            \App\Models\ProductContent::updateOrCreate(
+                ['product_id' => $product->id],
+                ['faq_mode' => $mode]
+            );
+
+            if ($mode === 'CUSTOM') {
+                \App\Models\FaqEntry::where('product_id', $product->id)->delete();
+
+                $faqs = $validated['faqs'] ?? [];
+                foreach ($faqs as $idx => $faq) {
+                    $q = trim($faq['question'] ?? '');
+                    $a = trim($faq['answer'] ?? '');
+                    if ($q !== '' && $a !== '') {
+                        \App\Models\FaqEntry::create([
+                            'product_id' => $product->id,
+                            'group_id' => null,
+                            'question' => $q,
+                            'answer' => $a,
+                            'position' => (int) ($faq['position'] ?? $idx),
+                            'is_visible' => true,
+                        ]);
+                    }
+                }
+            }
+
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'faqs'])
+                ->with('active_tab', 'faqs')
+                ->with('success', 'Product FAQs updated successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'faqs'])
+                ->with('active_tab', 'faqs')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Update product Quick Links configuration.
+     */
+    public function updateQuickLinks(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'quick_links_mode' => 'required|string|in:INHERIT,CUSTOM,CUSTOM_PLUS_GLOBAL,HIDE,NONE',
+            'quick_link_group_id' => 'nullable|integer|exists:quick_link_groups,id',
+        ]);
+
+        $mode = $validated['quick_links_mode'] === 'NONE' ? 'HIDE' : $validated['quick_links_mode'];
+
+        try {
+            \App\Models\ProductContent::updateOrCreate(
+                ['product_id' => $product->id],
+                [
+                    'quick_links_mode' => $mode,
+                    'quick_link_group_id' => $mode === 'CUSTOM' ? ($validated['quick_link_group_id'] ?? null) : null,
+                ]
+            );
+
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'quick-links'])
+                ->with('active_tab', 'quick-links')
+                ->with('success', 'Product Quick Links updated successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'quick-links'])
+                ->with('active_tab', 'quick-links')
+                ->with('error', $e->getMessage());
         }
     }
 }

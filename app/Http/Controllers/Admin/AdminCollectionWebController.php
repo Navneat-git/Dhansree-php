@@ -91,7 +91,9 @@ class AdminCollectionWebController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.collections.edit', compact('collection', 'categories'));
+        $quickLinkGroups = \App\Models\QuickLinkGroup::where('is_visible', true)->orderBy('position')->get();
+
+        return view('admin.collections.edit', compact('collection', 'categories', 'quickLinkGroups'));
     }
 
     /**
@@ -108,6 +110,7 @@ class AdminCollectionWebController extends Controller
             'card_shape' => 'nullable|in:SQUARE,PORTRAIT',
             'seo_title' => 'nullable|string|max:120',
             'seo_description' => 'nullable|string|max:320',
+            'quick_link_group_id' => 'nullable|integer|exists:quick_link_groups,id',
             'categories' => 'nullable|array',
             'categories.*' => 'integer|exists:categories,id',
         ]);
@@ -121,6 +124,7 @@ class AdminCollectionWebController extends Controller
             'card_shape' => $validated['card_shape'] ?? 'PORTRAIT',
             'seo_title' => $validated['seo_title'] ?? null,
             'seo_description' => $validated['seo_description'] ?? null,
+            'quick_link_group_id' => $validated['quick_link_group_id'] ?? null,
         ]);
 
         $syncData = [];

@@ -114,6 +114,18 @@
                                   class="w-full text-sm rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none">{{ old('seo_description', $collection->seo_description) }}</textarea>
                     </div>
                 </div>
+            <!-- Quick Links Group Selection -->
+            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Quick Links Group</label>
+                <p class="text-xs text-slate-400">Select a group of quick navigation links to display on this collection's page, or leave blank to inherit default links.</p>
+                <select name="quick_link_group_id" class="w-full text-sm rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-amber-500 focus:outline-none">
+                    <option value="">-- Inherit Default / None --</option>
+                    @foreach($quickLinkGroups ?? [] as $grp)
+                        <option value="{{ $grp->id }}" {{ ($collection->quick_link_group_id == $grp->id) ? 'selected' : '' }}>
+                            {{ $grp->title }} ({{ $grp->quickLinks->count() }} links)
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <!-- Visibility Toggle -->

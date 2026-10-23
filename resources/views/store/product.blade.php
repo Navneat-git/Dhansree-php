@@ -61,6 +61,8 @@
     $firstImg = $product->primary_image_url ?? $product->images->first()?->url;
 @endphp
 
+@include('store.partials.quick-links')
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12"
      x-data="{
         activeImage: '{{ $firstImg }}',
@@ -312,6 +314,23 @@
                         <span>🛍️</span>
                         <span>Add to Bag</span>
                     </button>
+
+                    <button type="button"
+                            @click="toggleWishlist({{ $product->id }})"
+                            class="py-3.5 px-4 rounded-lg border border-light-gold bg-white hover:border-rose-400 text-rich-black transition-all shadow-xs flex items-center justify-center gap-2 shrink-0"
+                            :title="isInWishlist({{ $product->id }}) ? 'Remove from Wishlist' : 'Add to Wishlist'">
+                        <svg class="w-5 h-5 transition-colors"
+                             :class="isInWishlist({{ $product->id }}) ? 'fill-rose-500 text-rose-500' : 'text-slate-400 hover:text-rose-500'"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
+                        </svg>
+                        <span class="text-xs font-bold uppercase tracking-wider hidden sm:inline"
+                              x-text="isInWishlist({{ $product->id }}) ? 'Wishlisted' : 'Wishlist'">
+                        </span>
+                    </button>
                 </div>
 
                 <!-- Express Delivery info banner -->
@@ -530,6 +549,44 @@
         </div>
     </section>
 
+    <!-- Product FAQs Section (Accordion) -->
+    @if(isset($faqs) && count($faqs) > 0)
+        <section class="mt-16 md:mt-24 pt-12 border-t border-light-gold">
+            <div class="text-center space-y-2 mb-10">
+                <p class="text-xs uppercase tracking-widest text-gold-600 font-semibold">Have Questions?</p>
+                <h2 class="font-serif text-3xl text-maroon-800">Frequently Asked Questions</h2>
+                <p class="text-xs text-rich-black/60 max-w-lg mx-auto">
+                    Quick answers to common questions about orders, quality, sizing, and care.
+                </p>
+            </div>
+
+            <div class="max-w-3xl mx-auto space-y-3" x-data="{ openFaq: null }">
+                @foreach($faqs as $index => $faq)
+                    <div class="bg-white rounded-xl border border-light-gold/70 shadow-xs overflow-hidden transition-all duration-200">
+                        <button type="button"
+                                @click="openFaq = (openFaq === {{ $index }} ? null : {{ $index }})"
+                                class="w-full flex items-center justify-between p-4 sm:p-5 text-left text-rich-black hover:text-maroon-800 transition-colors focus:outline-none">
+                            <span class="text-xs sm:text-sm font-semibold pr-4">
+                                {{ $faq->question }}
+                            </span>
+                            <span class="shrink-0 size-6 rounded-full bg-warm-beige/60 text-maroon-800 flex items-center justify-center transition-transform duration-200"
+                                  :class="openFaq === {{ $index }} ? 'rotate-180 bg-maroon-800 text-white' : ''">
+                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </span>
+                        </button>
+                        <div x-show="openFaq === {{ $index }}"
+                             x-cloak
+                             class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 text-xs sm:text-sm text-rich-black/75 leading-relaxed border-t border-light-gold/30">
+                            <p class="pt-3">{!! nl2br(e($faq->answer)) !!}</p>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <!-- Related Products -->
     @if($relatedProducts->isNotEmpty())
         <section class="mt-16 md:mt-24 pt-12 border-t border-light-gold">
@@ -546,6 +603,20 @@
                                 <a href="{{ url('/product/' . $rel->slug) }}">
                                     <img src="{{ $rel->primary_image_url }}" alt="{{ $rel->name }}" class="w-full h-full object-cover">
                                 </a>
+
+                                <button type="button"
+                                        @click.stop.prevent="toggleWishlist({{ $rel->id }})"
+                                        class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform z-10"
+                                        :title="isInWishlist({{ $rel->id }}) ? 'Remove from wishlist' : 'Add to wishlist'">
+                                    <svg class="w-3.5 h-3.5 transition-colors"
+                                         :class="isInWishlist({{ $rel->id }}) ? 'fill-rose-500 text-rose-500' : 'text-slate-400 hover:text-rose-500'"
+                                         viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
+                                    </svg>
+                                </button>
                             </div>
                             <h4 class="text-xs font-medium text-rich-black line-clamp-2 h-9">
                                 <a href="{{ url('/product/' . $rel->slug) }}" class="hover:text-maroon-800">

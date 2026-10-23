@@ -45,15 +45,28 @@ class ProductImageService
 
             // Save to storage
             Storage::disk('public')->put('media/' . $storageKey, $processed['data']);
+            @chmod(storage_path('app/public/media/' . $storageKey), 0664);
 
-            $extraDir = config('store.media_local_directory');
+            // Also mirror directly into public/media for direct static serving
+            $publicFile = public_path('media/' . $storageKey);
+            $publicDir = dirname($publicFile);
+            if (!is_dir($publicDir)) {
+                @mkdir($publicDir, 0775, true);
+            }
+            if (!file_exists($publicFile)) {
+                @file_put_contents($publicFile, $processed['data']);
+                @chmod($publicFile, 0664);
+            }
+
+            $extraDir = config('store.media_local_directory') ?: (is_dir('/home/dhansree/files/ds-assets/ds-web') ? '/home/dhansree/files/ds-assets/ds-web' : null);
             if ($extraDir) {
                 $targetFile = rtrim($extraDir, '/') . '/' . ltrim($storageKey, '/');
                 $targetDir = dirname($targetFile);
                 if (!is_dir($targetDir)) {
-                    @mkdir($targetDir, 0755, true);
+                    @mkdir($targetDir, 0775, true);
                 }
                 @file_put_contents($targetFile, $processed['data']);
+                @chmod($targetFile, 0664);
             }
 
             $maxPos = ProductImage::where('product_id', $product->id)->max('position');

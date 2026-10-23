@@ -134,6 +134,8 @@
 </section>
 @endif
 
+@include('store.partials.quick-links')
+
 <!-- Trust & Quality Strip (Positioned immediately below Hero Banner) -->
 <section class="border-b border-light-gold/60 bg-warm-beige/35 py-6 sm:py-7">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -346,6 +348,22 @@
                                     {{ $product->discount_percentage }}% OFF
                                 </span>
                             @endif
+
+                            <!-- Wishlist Heart Button -->
+                            <button type="button"
+                                    @click.stop.prevent="toggleWishlist({{ $product->id }})"
+                                    class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform z-10"
+                                    :title="isInWishlist({{ $product->id }}) ? 'Remove from wishlist' : 'Add to wishlist'"
+                                    :aria-label="isInWishlist({{ $product->id }}) ? 'Remove from wishlist' : 'Add to wishlist'">
+                                <svg class="w-4 h-4 transition-colors"
+                                     :class="isInWishlist({{ $product->id }}) ? 'fill-rose-500 text-rose-500' : 'text-slate-400 hover:text-rose-500'"
+                                     viewBox="0 0 24 24"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
+                                </svg>
+                            </button>
                         </div>
 
                         <!-- Product Info -->

@@ -50,6 +50,11 @@ class Category extends Model
         return $this->hasMany(CategoryContent::class, 'category_id', 'id');
     }
 
+    public function categoryContent(): HasOne
+    {
+        return $this->hasOne(CategoryContent::class, 'category_id', 'id');
+    }
+
     public function collectionCategories(): HasMany
     {
         return $this->hasMany(CollectionCategory::class, 'category_id', 'id');

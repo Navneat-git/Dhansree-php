@@ -106,6 +106,11 @@ class Product extends Model
         return $this->hasMany(ProductContent::class, 'product_id', 'id');
     }
 
+    public function productContent(): HasOne
+    {
+        return $this->hasOne(ProductContent::class, 'product_id', 'id');
+    }
+
     public function productMarketplaceValues(): HasMany
     {
         return $this->hasMany(ProductMarketplaceValue::class, 'product_id', 'id');

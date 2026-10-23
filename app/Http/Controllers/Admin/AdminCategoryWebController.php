@@ -100,10 +100,14 @@ class AdminCategoryWebController extends Controller
     {
         $detail = $this->categoryService->detail($category->id);
         $categoryOptions = $this->treeService->toCategoryOptions();
+        $categoryContent = \App\Models\CategoryContent::where('category_id', $category->id)->first();
+        $quickLinkGroups = \App\Models\QuickLinkGroup::where('is_visible', true)->orderBy('position')->get();
 
         return view('admin.catalog.categories.edit', [
             'category' => $detail,
             'categoryOptions' => $categoryOptions,
+            'categoryContent' => $categoryContent,
+            'quickLinkGroups' => $quickLinkGroups,
         ]);
     }
 
@@ -122,6 +126,8 @@ class AdminCategoryWebController extends Controller
             'show_in_browse' => 'nullable|boolean',
             'seo_title' => 'nullable|string|max:120',
             'seo_description' => 'nullable|string|max:320',
+            'quick_links_mode' => 'nullable|string|in:INHERIT,CUSTOM,CUSTOM_PLUS_GLOBAL,HIDE,NONE',
+            'quick_link_group_id' => 'nullable|integer|exists:quick_link_groups,id',
             'version' => 'nullable|integer',
         ]);
 
@@ -134,6 +140,18 @@ class AdminCategoryWebController extends Controller
                 $adminUser?->id,
                 $request
             );
+
+            if ($request->has('quick_links_mode')) {
+                $rawMode = $validated['quick_links_mode'] ?? 'INHERIT';
+                $qlMode = $rawMode === 'NONE' ? 'HIDE' : $rawMode;
+                \App\Models\CategoryContent::updateOrCreate(
+                    ['category_id' => $category->id],
+                    [
+                        'quick_links_mode' => $qlMode,
+                        'quick_link_group_id' => $qlMode === 'CUSTOM' ? ($validated['quick_link_group_id'] ?? null) : null,
+                    ]
+                );
+            }
 
             return redirect()->route('admin.categories.edit', $category)
                 ->with('success', 'Category details updated successfully.');
