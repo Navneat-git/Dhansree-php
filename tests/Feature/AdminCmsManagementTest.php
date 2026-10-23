@@ -384,4 +384,42 @@ class AdminCmsManagementTest extends TestCase
         $this->assertEquals('Special Traditional Co-ords', $settings->smart_living_promo_subtitle);
         $this->assertEquals('https://assets.dhansree.com/custom-smart-living.webp', $settings->smart_living_promo_image_url);
     }
+
+    public function test_admin_can_view_and_update_homepage_hero_block(): void
+    {
+        $block = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->first();
+        if (!$block) {
+            $block = \App\Models\HomeBlock::create([
+                'type' => \App\Enums\HomeBlockType::HERO,
+                'position' => 2,
+                'is_visible' => true,
+                'heading' => 'Ethnic Elegance. Timeless You.',
+            ]);
+        }
+
+        $res = $this->asAdmin()->get('/admin/homepage');
+        $res->assertStatus(200);
+        $res->assertViewIs('admin.homepage.index');
+
+        $updateRes = $this->asAdmin()->put('/admin/homepage/blocks/' . $block->id, [
+            'eyebrow' => 'Updated Festive Collection',
+            'heading' => 'Royal Heritage. Modern Grace.',
+            'body' => 'Handcrafted purely in India with traditional artistry.',
+            'primary_label' => 'Shop Festive Now',
+            'primary_path' => '/kurta-set',
+            'image_url_direct' => 'https://assets.dhansree.com/ds-web/products/11/770abdd8-0d0c-4abc-b1be-c3565e795c82.webp',
+        ]);
+
+        $updateRes->assertRedirect();
+        $updateRes->assertSessionHas('success');
+
+        $block->refresh();
+        $this->assertEquals('Updated Festive Collection', $block->eyebrow);
+        $this->assertEquals('Royal Heritage. Modern Grace.', $block->heading);
+        $this->assertEquals('https://assets.dhansree.com/ds-web/products/11/770abdd8-0d0c-4abc-b1be-c3565e795c82.webp', $block->image_storage_key);
+
+        $settings = \App\Models\StoreSettings::current();
+        $this->assertEquals('Royal Heritage. Modern Grace.', $settings->home_hero_title);
+        $this->assertEquals('Updated Festive Collection', $settings->home_hero_subtitle);
+    }
 }

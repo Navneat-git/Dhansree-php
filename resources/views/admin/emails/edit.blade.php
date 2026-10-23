@@ -230,7 +230,7 @@
     <!-- Send Test Modal -->
     <div x-cloak
          x-show="testModalOpen"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75">
         <div @click.away="testModalOpen = false" class="bg-white rounded-xl border border-slate-200 p-6 max-w-md w-full space-y-4 shadow-xl">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-base font-bold text-slate-900">Send Test Email</h3>

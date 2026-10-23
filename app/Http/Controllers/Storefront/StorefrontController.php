@@ -35,6 +35,7 @@ class StorefrontController extends Controller
             'smartLivingCategories' => $data['smartLivingCategories'],
             'banners' => $data['banners'],
             'store' => $data['store'],
+            'heroBlock' => $data['heroBlock'] ?? null,
             'isSmartLivingHub' => false,
             'seoTitle' => 'Dhansree Trends — Ethnic Elegance. Timeless You.',
             'seoDescription' => 'Explore premium handcrafted women kurties, suit sets, and elegant ethnic co-ords. Pure fabrics, exquisite embroidery, and fast shipping across India.',

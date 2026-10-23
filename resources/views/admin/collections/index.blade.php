@@ -129,7 +129,7 @@
     <!-- Create Collection Modal -->
     <div x-show="createModalOpen"
          x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 flex items-center justify-center p-4">
         <div @click.away="createModalOpen = false"
              class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-2xl text-left">
             

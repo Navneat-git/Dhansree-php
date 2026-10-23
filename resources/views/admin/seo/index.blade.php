@@ -193,7 +193,7 @@
     <!-- Add Redirect Modal -->
     <div x-show="addModalOpen"
          x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4" @click.away="addModalOpen = false" x-data="{ code: '301' }">
             <h3 class="text-base font-bold text-slate-900">Add SEO Redirect</h3>
             <p class="text-xs text-slate-500">Configure redirect from old legacy path to current store URL.</p>

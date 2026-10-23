@@ -234,7 +234,7 @@
     <!-- Group Create/Edit Modal -->
     <div x-show="groupModalOpen"
          x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4" @click.away="groupModalOpen = false">
             <h3 class="text-base font-bold text-slate-900" x-text="editingGroup ? 'Edit FAQ Group' : 'Add FAQ Group'"></h3>
 
@@ -289,7 +289,7 @@
     <!-- Entry Create/Edit Modal -->
     <div x-show="entryModalOpen"
          x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4" @click.away="entryModalOpen = false">
             <h3 class="text-base font-bold text-slate-900" x-text="editingEntry ? 'Edit Question & Answer' : 'Add Question & Answer'"></h3>
 

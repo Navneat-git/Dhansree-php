@@ -45,6 +45,12 @@
                             {{ $index + 1 }}
                         </div>
 
+                        @if($block->image_url)
+                            <div class="hidden sm:block w-14 h-18 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 shadow-2xs">
+                                <img src="{{ $block->image_url }}" alt="Section visual" class="w-full h-full object-cover">
+                            </div>
+                        @endif
+
                         <div class="space-y-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="px-2.5 py-0.5 rounded text-[11px] font-bold tracking-wider uppercase
@@ -54,7 +60,7 @@
                                     @elseif($block->type->value === 'PRODUCT_RAIL') bg-emerald-100 text-emerald-800 border border-emerald-200
                                     @elseif($block->type->value === 'PROMO_BANNER') bg-rose-100 text-rose-800 border border-rose-200
                                     @else bg-slate-100 text-slate-800 border border-slate-200 @endif">
-                                    {{ str_replace('_', ' ', $block->type->value) }}
+                                    {{ $block->type->value === 'HERO' ? 'HERO (FESTIVE SHOWCASE)' : str_replace('_', ' ', $block->type->value) }}
                                 </span>
 
                                 @if($block->is_visible)
@@ -141,41 +147,56 @@
         @endforelse
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal (Non-blurry, crystal clear dialog) -->
     <div x-show="editingBlock" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" @click="editingBlock = null"></div>
+        <!-- Solid dark backdrop without blur filter to prevent full-screen blurring artifacts -->
+        <div class="fixed inset-0 bg-slate-950/70 transition-opacity" @click="editingBlock = null" aria-hidden="true"></div>
 
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-slate-200">
+        <!-- Centered Modal Panel -->
+        <div class="relative z-10 flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative w-full max-w-xl my-8 bg-white rounded-2xl text-left shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
+                 @click.stop>
                 <form method="POST" :action="'{{ url('/admin/homepage/blocks') }}/' + (editingBlock ? editingBlock.id : '')" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
                     <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                            <h3 class="text-base font-bold text-slate-900">
-                                Edit Section: <span class="text-amber-600" x-text="editingBlock ? editingBlock.type : ''"></span>
-                            </h3>
-                            <button type="button" @click="editingBlock = null" class="text-slate-400 hover:text-slate-700">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">
+                                    Edit Section: <span class="text-amber-600" x-text="editingBlock ? (editingBlock.type === 'HERO' ? 'Festive Signature Showcase (HERO)' : editingBlock.type) : ''"></span>
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-0.5" x-text="editingBlock && editingBlock.type === 'HERO' ? 'Manages the Festive Collection hero showcase card on the homepage.' : 'Manage section content, texts, and imagery.'"></p>
+                            </div>
+                            <button type="button" @click="editingBlock = null" class="text-slate-400 hover:text-slate-700 p-1">
                                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
 
+                        <!-- Current Image Preview if exists -->
+                        <template x-if="editingBlock && editingBlock.image_url">
+                            <div class="flex items-center gap-3 p-3 bg-amber-50/60 border border-amber-200/80 rounded-xl">
+                                <img :src="editingBlock.image_url" alt="Current visual" class="w-14 h-18 rounded-lg object-cover border border-amber-300 shadow-2xs shrink-0">
+                                <div class="space-y-0.5">
+                                    <p class="text-xs font-bold text-amber-950">Current Section Image</p>
+                                    <p class="text-[11px] text-slate-600">This image is currently displayed on this section. Upload a new file below or supply a direct image URL to replace it.</p>
+                                </div>
+                            </div>
+                        </template>
+
                         <!-- Eyebrow -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Eyebrow / Subheading</label>
-                            <input type="text" name="eyebrow" :value="editingBlock ? editingBlock.eyebrow : ''" placeholder="e.g. Festive Collection"
+                            <input type="text" name="eyebrow" :value="editingBlock ? editingBlock.eyebrow : ''" placeholder="e.g. New Season Festive Collection"
                                    class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                         </div>
 
                         <!-- Heading -->
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Section Heading / Title</label>
-                            <input type="text" name="heading" :value="editingBlock ? editingBlock.heading : ''" placeholder="e.g. Everyday essentials, thoughtfully chosen."
+                            <input type="text" name="heading" :value="editingBlock ? editingBlock.heading : ''" placeholder="e.g. Ethnic Elegance. Timeless You."
                                    class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                         </div>
 
@@ -190,12 +211,12 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Primary Button Label</label>
-                                <input type="text" name="primary_label" :value="editingBlock ? editingBlock.primary_label : ''" placeholder="e.g. Shop Now"
+                                <input type="text" name="primary_label" :value="editingBlock ? editingBlock.primary_label : ''" placeholder="e.g. Shop Kurta Sets"
                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Primary Button URL</label>
-                                <input type="text" name="primary_path" :value="editingBlock ? editingBlock.primary_path : ''" placeholder="e.g. /shop"
+                                <input type="text" name="primary_path" :value="editingBlock ? editingBlock.primary_path : ''" placeholder="e.g. /kurta-set"
                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                             </div>
                         </div>
@@ -204,21 +225,28 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Secondary Button Label</label>
-                                <input type="text" name="secondary_label" :value="editingBlock ? editingBlock.secondary_label : ''" placeholder="e.g. Explore"
+                                <input type="text" name="secondary_label" :value="editingBlock ? editingBlock.secondary_label : ''" placeholder="e.g. Explore Co-ords"
                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Secondary Button URL</label>
-                                <input type="text" name="secondary_path" :value="editingBlock ? editingBlock.secondary_path : ''" placeholder="e.g. /smart-living"
+                                <input type="text" name="secondary_path" :value="editingBlock ? editingBlock.secondary_path : ''" placeholder="e.g. /women-two-piece-sets-co-ord"
                                        class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                             </div>
                         </div>
 
-                        <!-- Image upload -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Replace Image (WebP / JPG / PNG)</label>
-                            <input type="file" name="image" accept="image/*"
-                                   class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                        <!-- Image upload & direct URL -->
+                        <div class="space-y-2 pt-2 border-t border-slate-200">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Upload New Image File (WebP / JPG / PNG)</label>
+                                <input type="file" name="image" accept="image/*"
+                                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Or Direct Image URL (optional)</label>
+                                <input type="text" name="image_url_direct" placeholder="https://assets.dhansree.com/... or /media/products/..."
+                                       class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                            </div>
                         </div>
                     </div>
 

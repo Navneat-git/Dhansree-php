@@ -98,15 +98,21 @@ class AdminHomepageWebController extends Controller
             'text_mode' => 'nullable|string|max:20',
             'theme' => 'nullable|string|max:30',
             'image' => 'nullable|image|max:10240',
+            'image_url_direct' => 'nullable|string|max:500',
         ]);
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $filename = (string) Str::uuid() . '.webp';
+            $ext = $file->getClientOriginalExtension() ?: 'webp';
+            $filename = (string) Str::uuid() . '.' . $ext;
             $storageKey = "homepage/{$block->id}/{$filename}";
             Storage::disk('public')->put('media/' . $storageKey, file_get_contents($file->getRealPath()));
 
             $block->image_storage_key = $storageKey;
+            $block->image_alt_text = $validated['heading'] ?? 'Homepage banner';
+        } elseif ($request->filled('image_url_direct')) {
+            $directUrl = trim((string) $request->input('image_url_direct'));
+            $block->image_storage_key = $directUrl;
             $block->image_alt_text = $validated['heading'] ?? 'Homepage banner';
         }
 
@@ -125,6 +131,21 @@ class AdminHomepageWebController extends Controller
         $block->theme = $validated['theme'] ?? $block->theme;
         $block->version = ($block->version ?? 0) + 1;
         $block->save();
+
+        // If this is the HERO Festive Signature block, sync with StoreSettings for storefront consistency
+        if ($block->type === HomeBlockType::HERO) {
+            $settings = StoreSettings::current();
+            if ($block->image_url) {
+                $settings->home_hero_image_url = $block->image_url;
+            }
+            if (!empty($block->heading)) {
+                $settings->home_hero_title = $block->heading;
+            }
+            if (!empty($block->eyebrow)) {
+                $settings->home_hero_subtitle = $block->eyebrow;
+            }
+            $settings->save();
+        }
 
         return back()->with('success', "Section #{$block->id} ({$block->type->value}) updated successfully.");
     }

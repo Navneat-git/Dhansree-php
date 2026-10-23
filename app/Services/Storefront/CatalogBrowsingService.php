@@ -104,6 +104,7 @@ class CatalogBrowsingService
             ->get();
 
         $store = StoreSettings::current();
+        $heroBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->where('is_visible', true)->first();
 
         return [
             'categories' => $womenCategories,
@@ -111,6 +112,7 @@ class CatalogBrowsingService
             'smartLivingCategories' => $smartLivingCategories,
             'banners' => $banners,
             'store' => $store,
+            'heroBlock' => $heroBlock,
         ];
     }
 

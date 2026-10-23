@@ -143,11 +143,13 @@
 
     <!-- Stock Adjustment Modal -->
     <div x-show="adjustingVariant" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-        <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" @click="adjustingVariant = null"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-950/70 transition-opacity" @click="adjustingVariant = null" aria-hidden="true"></div>
 
-            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200">
+        <!-- Centered Dialog Container -->
+        <div class="relative z-10 flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative w-full max-w-md my-8 bg-white rounded-2xl text-left shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
+                 @click.stop>
                 <form method="POST" :action="'{{ url('/admin/inventory/adjust') }}/' + (adjustingVariant ? adjustingVariant.id : '')">
                     @csrf
                     <div class="bg-white px-6 pt-5 pb-4 space-y-4">

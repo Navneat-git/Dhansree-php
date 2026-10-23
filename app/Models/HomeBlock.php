@@ -26,6 +26,11 @@ class HomeBlock extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'image_url',
+        'mobile_image_url',
+    ];
+
     public function railCategory(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'rail_category_id', 'id');
@@ -34,5 +39,33 @@ class HomeBlock extends Model
     public function homeBlockItems(): HasMany
     {
         return $this->hasMany(HomeBlockItem::class, 'block_id', 'id');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_storage_key) {
+            return null;
+        }
+
+        $base = config('store.media_base_url');
+        if ($base) {
+            return rtrim($base, '/') . '/' . ltrim($this->image_storage_key, '/');
+        }
+
+        return asset('storage/media/' . ltrim($this->image_storage_key, '/'));
+    }
+
+    public function getMobileImageUrlAttribute(): ?string
+    {
+        if (!$this->mobile_image_storage_key) {
+            return null;
+        }
+
+        $base = config('store.media_base_url');
+        if ($base) {
+            return rtrim($base, '/') . '/' . ltrim($this->mobile_image_storage_key, '/');
+        }
+
+        return asset('storage/media/' . ltrim($this->mobile_image_storage_key, '/'));
     }
 }

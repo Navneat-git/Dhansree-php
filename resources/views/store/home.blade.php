@@ -162,6 +162,8 @@
     </div>
 </section>
 
+<!-- Festive Signature Edit / Hero Showcase Section -->
+@if(!isset($heroBlock) || $heroBlock->is_visible)
 <section class="relative bg-gradient-to-b from-warm-beige/60 via-ivory to-ivory py-12 md:py-20 border-b border-light-gold/60 overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -170,27 +172,41 @@
             <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-200/70 border border-gold-400 text-maroon-900 text-xs font-semibold uppercase tracking-wider">
                     <span>✨</span>
-                    <span>New Season Festive Collection</span>
+                    <span>{{ $heroBlock?->eyebrow ?: 'New Season Festive Collection' }}</span>
                 </div>
 
                 <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-normal text-maroon-800 leading-[1.15] tracking-tight">
-                    Ethnic Elegance.<br>
-                    <span class="italic font-medium text-rich-black">Timeless You.</span>
+                    @if($heroBlock && !empty($heroBlock->heading))
+                        @php
+                            $parts = explode('.', $heroBlock->heading, 2);
+                        @endphp
+                        @if(count($parts) === 2 && trim($parts[1]) !== '')
+                            {{ trim($parts[0]) }}.<br>
+                            <span class="italic font-medium text-rich-black">{{ trim($parts[1]) }}</span>
+                        @else
+                            {!! nl2br(e($heroBlock->heading)) !!}
+                        @endif
+                    @else
+                        Ethnic Elegance.<br>
+                        <span class="italic font-medium text-rich-black">Timeless You.</span>
+                    @endif
                 </h1>
 
                 <p class="text-sm sm:text-base text-rich-black/75 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                    Immerse yourself in handcrafted pure cotton kurta sets, contemporary two-piece co-ords, and regal salwar suits. Designed for graceful everyday comfort and festive radiance.
+                    {{ $heroBlock?->body ?: 'Immerse yourself in handcrafted pure cotton kurta sets, contemporary two-piece co-ords, and regal salwar suits. Designed for graceful everyday comfort and festive radiance.' }}
                 </p>
 
                 <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
-                    <a href="{{ url('/kurta-set') }}"
+                    <a href="{{ url($heroBlock?->primary_path ?: '/kurta-set') }}"
                        class="w-full sm:w-auto px-8 py-3.5 rounded-lg bg-maroon-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-md text-center">
-                        Shop Kurta Sets
+                        {{ $heroBlock?->primary_label ?: 'Shop Kurta Sets' }}
                     </a>
-                    <a href="{{ url('/women-two-piece-sets-co-ord') }}"
+                    @if($heroBlock?->secondary_label || !$heroBlock)
+                    <a href="{{ url($heroBlock?->secondary_path ?: '/women-two-piece-sets-co-ord') }}"
                        class="w-full sm:w-auto px-8 py-3.5 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-bold uppercase tracking-wider hover:bg-maroon-50 transition-all text-center">
-                        Explore Co-ords
+                        {{ $heroBlock?->secondary_label ?: 'Explore Co-ords' }}
                     </a>
+                    @endif
                 </div>
 
                 <!-- Trust badges under hero -->
@@ -215,11 +231,11 @@
                 <div class="relative mx-auto max-w-md lg:max-w-none">
                     @php
                         $heroProd = $store->homeHeroProduct ?? $featuredProducts->first();
-                        $heroImg = $store->home_hero_image_url ?: ($heroProd?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp');
-                        $heroTag = $store->home_hero_subtitle ?: 'Festive Signature Edit';
-                        $heroTitle = $store->home_hero_title ?: ($heroProd?->name ?: 'Pure Cotton Flared Kurta & Pant Set');
+                        $heroImg = $heroBlock?->image_url ?: ($store->home_hero_image_url ?: ($heroProd?->primary_image_url ?: 'https://assets.dhansree.com/ds-web/products/1/d875fada-3006-41f8-91ed-257d4d47077e.webp'));
+                        $heroTag = $store->home_hero_subtitle ?: ($heroBlock?->eyebrow ?: 'Festive Signature Edit');
+                        $heroTitle = $store->home_hero_title ?: ($heroBlock?->heading ?: ($heroProd?->name ?: 'DHANSREE Mustard Yellow Embroidered Kurta Pant Set for Women'));
                         $heroPrice = $heroProd ? 'From ' . $heroProd->formatted_price : 'From ₹1,199';
-                        $heroLink = $heroProd ? url('/product/' . $heroProd->slug) : url('/women-cotton-suits-sets');
+                        $heroLink = $heroBlock?->primary_path ? url($heroBlock->primary_path) : ($heroProd ? url('/product/' . $heroProd->slug) : url('/kurta-set'));
                     @endphp
                     <a href="{{ $heroLink }}" class="block group">
                         <div class="aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-gold-300 bg-warm-beige relative">
@@ -247,6 +263,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- Curated Categories Row -->
 <section class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -261,7 +278,11 @@
             <a href="{{ url('/' . $cat->slug) }}"
                class="group relative aspect-[3/4] sm:aspect-[4/5] rounded-xl overflow-hidden bg-warm-beige border border-light-gold shadow-sm flex flex-col justify-end p-4 sm:p-6 transition-all duration-300 hover:shadow-lg">
                 @php
-                    $catImg = $cat->image_url ?? $cat->products->first()?->primary_image_url;
+                    $catImg = $cat->image_url
+                        ?? $cat->products->first()?->primary_image_url
+                        ?? \App\Models\Product::whereHas('category', function ($q) use ($cat) {
+                            $q->where('id', $cat->id)->orWhere('parent_id', $cat->id);
+                        })->where('status', \App\Enums\ProductStatus::ACTIVE)->first()?->primary_image_url;
                 @endphp
                 @if($catImg)
                     <img src="{{ $catImg }}"

@@ -380,7 +380,7 @@
 
     <!-- Modal: Book Courier -->
     <div x-show="courierModalOpen" x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75">
         <div @click.away="courierModalOpen = false"
              class="w-full max-w-lg rounded-2xl bg-white border border-slate-200 p-6 space-y-5 shadow-2xl">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -438,7 +438,7 @@
 
     <!-- Modal: Cancel Order -->
     <div x-show="cancelModalOpen" x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75">
         <div @click.away="cancelModalOpen = false"
              class="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-2xl">
             <h3 class="text-lg font-bold text-slate-900">Cancel Order {{ $order->order_number }}</h3>
