@@ -38,22 +38,28 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
-    @if(config('services.google.site_verification'))
-        <meta name="google-site-verification" content="{{ config('services.google.site_verification') }}">
+    @php
+        $siteVerification = config('services.google.site_verification') ?: ($store->seo_google_verification ?? null);
+        $analyticsId = config('services.google.analytics_id') ?: ($store->analytics_google_measurement_id ?? null);
+        $metaPixelId = config('services.meta.pixel_id') ?: ($store->ads_meta_pixel_id ?? null);
+    @endphp
+
+    @if($siteVerification)
+        <meta name="google-site-verification" content="{{ $siteVerification }}">
     @endif
 
-    @if(config('services.google.analytics_id'))
+    @if($analyticsId)
         <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $analyticsId }}"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '{{ config('services.google.analytics_id') }}');
+            gtag('config', '{{ $analyticsId }}');
         </script>
     @endif
 
-    @if(config('services.meta.pixel_id'))
+    @if($metaPixelId)
         <!-- Meta Pixel Code -->
         <script>
             !function(f,b,e,v,n,t,s)
@@ -64,12 +70,12 @@
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '{{ config('services.meta.pixel_id') }}');
+            fbq('init', '{{ $metaPixelId }}');
             fbq('track', 'PageView');
         </script>
         <noscript>
             <img height="1" width="1" style="display:none"
-                 src="https://www.facebook.com/tr?id={{ config('services.meta.pixel_id') }}&ev=PageView&noscript=1"/>
+                 src="https://www.facebook.com/tr?id={{ $metaPixelId }}&ev=PageView&noscript=1"/>
         </noscript>
     @endif
 
