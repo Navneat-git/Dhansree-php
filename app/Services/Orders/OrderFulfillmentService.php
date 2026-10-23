@@ -21,9 +21,11 @@ use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Models\StoreSettings;
+use App\Services\Email\EmailService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Shipping\ShiprocketService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class OrderFulfillmentService
@@ -31,6 +33,7 @@ class OrderFulfillmentService
     public function __construct(
         protected ShiprocketService $shiprocketService,
         protected InventoryReservationService $reservationService,
+        protected EmailService $emailService,
     ) {}
 
     /**
@@ -248,6 +251,13 @@ class OrderFulfillmentService
                 'created_at' => $now,
             ]);
         });
+
+        // Send Shipment Dispatched Email
+        try {
+            $this->emailService->sendShipmentDispatched($shipment);
+        } catch (\Throwable $e) {
+            Log::warning("Could not send shipment dispatched email for shipment #{$shipment->id}: {$e->getMessage()}");
+        }
     }
 
     /**
@@ -293,6 +303,15 @@ class OrderFulfillmentService
                 'created_at' => $now,
             ]);
         });
+
+        // Send Shipment Delivered Email
+        try {
+            if ($shipment) {
+                $this->emailService->sendShipmentDelivered($shipment);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Could not send shipment delivered email for order #{$order->order_number}: {$e->getMessage()}");
+        }
     }
 
     /**
@@ -300,11 +319,14 @@ class OrderFulfillmentService
      */
     public function cancelOrder(Order $order, string $reason, ?int $adminUserId = null): void
     {
-        DB::transaction(function () use ($order, $reason, $adminUserId) {
+        $refundDue = false;
+
+        DB::transaction(function () use ($order, $reason, $adminUserId, &$refundDue) {
             if (in_array($order->status, [OrderStatus::DELIVERED, OrderStatus::CANCELLED], true)) {
                 throw new InvalidArgumentException("Order {$order->order_number} cannot be cancelled from its current state.");
             }
 
+            $refundDue = ($order->payment_status === PaymentStatus::PAID);
             $now = now();
             $prevStatus = $order->status;
 
@@ -341,6 +363,13 @@ class OrderFulfillmentService
                 'created_at' => $now,
             ]);
         });
+
+        // Send Order Cancelled Email
+        try {
+            $this->emailService->sendOrderCancelled($order, $refundDue, $reason);
+        } catch (\Throwable $e) {
+            Log::warning("Could not send order cancelled email for order #{$order->order_number}: {$e->getMessage()}");
+        }
     }
 
     /**

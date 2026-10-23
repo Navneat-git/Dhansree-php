@@ -99,18 +99,11 @@ class CustomerAuthService
             ]
         );
 
-        // Record in email outbox
+        // Dispatch login code email via EmailService
         try {
-            EmailMessage::create([
-                'type' => EmailType::LOGIN_CODE,
-                'dedupe_key' => "LOGIN_CODE:{$challenge->id}:{$challenge->send_count}",
-                'recipient' => $email,
-                'subject' => "Your Dhansree sign-in code: {$code}",
-                'status' => EmailStatus::SENT,
-                'sent_at' => $now,
-            ]);
+            app(\App\Services\Email\EmailService::class)->sendLoginCode($email, $code, 10);
         } catch (\Throwable $e) {
-            Log::warning("Could not persist login code email message: {$e->getMessage()}");
+            Log::warning("Could not send login code email: {$e->getMessage()}");
         }
 
         Log::info("Customer OTP code generated for [{$email}]: [{$code}]");

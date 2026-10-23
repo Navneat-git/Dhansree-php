@@ -42,8 +42,9 @@ Route::post('/api/webhooks/razorpay', [CheckoutController::class, 'razorpayWebho
 Route::post('/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle'])->name('webhooks.shiprocket');
 Route::post('/api/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle']);
 
-// ─── Newsletter Subscription ───────────────────────────────────────────────
+// ─── Newsletter Subscription & Unsubscribe ──────────────────────────────────
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
 // ─── Customer Passwordless Auth & Portal ──────────────────────────────────
 Route::prefix('account')->name('storefront.account.')->group(function () {
@@ -293,6 +294,16 @@ Route::prefix('admin')->group(function () {
         Route::prefix('settings')->name('admin.settings.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminSettingsWebController::class, 'index'])->name('index');
             Route::put('/', [\App\Http\Controllers\Admin\AdminSettingsWebController::class, 'update'])->name('update');
+        });
+
+        // Email Templates
+        Route::prefix('emails')->name('admin.emails.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'index'])->name('index');
+            Route::get('/{type}', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'edit'])->name('edit');
+            Route::put('/{type}', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'update'])->name('update');
+            Route::post('/{type}/preview', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'preview'])->name('preview');
+            Route::post('/{type}/test', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'sendTest'])->name('test');
+            Route::post('/{type}/reset', [\App\Http\Controllers\Admin\AdminEmailTemplateWebController::class, 'reset'])->name('reset');
         });
 
         // Audit Logs

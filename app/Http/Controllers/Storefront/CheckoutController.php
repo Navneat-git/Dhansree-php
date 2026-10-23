@@ -12,6 +12,7 @@ use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\StoreSettings;
 use App\Services\Checkout\CheckoutService;
+use App\Services\Email\EmailService;
 use App\Services\Payments\RazorpayService;
 use App\Services\Storefront\CartService;
 use App\Support\Commerce\IndianStates;
@@ -29,6 +30,7 @@ class CheckoutController extends Controller
         protected CheckoutService $checkoutService,
         protected CartService $cartService,
         protected RazorpayService $razorpayService,
+        protected EmailService $emailService,
     ) {}
 
     /**
@@ -176,6 +178,13 @@ class CheckoutController extends Controller
             $confirmedUrl = url('/order/' . $order->order_number . '/confirmed');
 
             if ($validated['payment_method'] === 'COD') {
+                // Send Order Confirmation Email asynchronously/safely
+                try {
+                    $this->emailService->sendOrderConfirmation($order, false);
+                } catch (\Throwable $e) {
+                    Log::warning("Could not send COD order confirmation email: {$e->getMessage()}");
+                }
+
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => true,
@@ -272,6 +281,14 @@ class CheckoutController extends Controller
             ]);
         });
 
+        // Send Payment & Order Confirmation Emails
+        try {
+            $this->emailService->sendPaymentConfirmation($order);
+            $this->emailService->sendOrderConfirmation($order, false);
+        } catch (\Throwable $e) {
+            Log::warning("Could not send online payment/order confirmation emails: {$e->getMessage()}");
+        }
+
         return response()->json([
             'success' => true,
             'redirect_url' => url('/order/' . $order->order_number . '/confirmed'),
@@ -325,6 +342,14 @@ class CheckoutController extends Controller
                         'note' => "Payment confirmed via Razorpay webhook ({$paymentId})",
                         'created_at' => $now,
                     ]);
+
+                    // Send Payment & Order Confirmation Emails
+                    try {
+                        $this->emailService->sendPaymentConfirmation($order);
+                        $this->emailService->sendOrderConfirmation($order, false);
+                    } catch (\Throwable $e) {
+                        Log::warning("Could not send webhook payment confirmation email: {$e->getMessage()}");
+                    }
                 }
             }
         }
