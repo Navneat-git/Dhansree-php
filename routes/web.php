@@ -231,7 +231,17 @@ Route::prefix('admin')->group(function () {
         Route::post('/catalog/variants/{variant}/restore', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'restoreVariant'])->name('admin.variants.restore');
 
         Route::delete('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'deleteImage'])->name('admin.images.delete');
+        Route::put('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateImage'])->name('admin.images.update');
         Route::post('/catalog/images/{image}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryImage'])->name('admin.images.set-primary');
+
+        // Marketplace Listings & Export (Meesho, Flipkart, Amazon, Myntra, Ajio)
+        Route::prefix('marketplace')->name('admin.marketplace.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'listings'])->name('index');
+            Route::get('/listings', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'listings'])->name('listings');
+            Route::get('/export', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'export'])->name('export');
+            Route::get('/copy', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'copyTsv'])->name('copy');
+            Route::post('/products/{product}/values', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'saveProductValues'])->name('products.values');
+        });
 
         // Orders & Fulfillment
         Route::prefix('orders')->name('admin.orders.')->group(function () {
@@ -315,6 +325,11 @@ Route::prefix('admin')->group(function () {
         Route::prefix('subscribers')->name('admin.subscribers.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'index'])->name('index');
             Route::get('/export', [\App\Http\Controllers\Admin\AdminNewsletterWebController::class, 'export'])->name('export');
+        });
+
+        // Customer Journeys & GA4 Analytics
+        Route::prefix('analytics')->name('admin.analytics.')->group(function () {
+            Route::get('/journeys', [\App\Http\Controllers\Admin\AdminCustomerJourneyWebController::class, 'index'])->name('journeys');
         });
 
         // Homepage Sections & Blocks

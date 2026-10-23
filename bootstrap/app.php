@@ -31,11 +31,16 @@ return Application::configure(basePath: dirname(__DIR__))
             '__Host-dhansree_customer',
             'dhansree_admin_2fa_challenge',
             '__Host-dhansree_admin_2fa_challenge',
+            'dhansree_visitor_id',
         ]);
 
         $middleware->validateCsrfTokens(except: [
             'api/*',
             'webhooks/*',
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackCustomerJourney::class,
         ]);
 
         $middleware->alias([

@@ -57,8 +57,109 @@
 
 @section('content')
 @php
-    $defaultVariant = $product->variants->whereNull('archived_at')->first();
-    $firstImg = $product->primary_image_url ?? $product->images->first()?->url;
+    $liveVariants = $product->variants->whereNull('archived_at');
+    $colorOption = $product->options->first(fn($o) => in_array(strtolower($o->name), ['color', 'colour']));
+    $sizeOption = $product->options->first(fn($o) => in_array(strtolower($o->name), ['size']));
+
+    $variantsMatrix = [];
+    $colorsList = [];
+
+    // Map each image to its 0-based position
+    $imagePositions = [];
+    foreach ($product->images as $pos => $img) {
+        $imagePositions[$img->id] = $pos;
+    }
+
+    $colorHexMap = [
+        'blue' => '#2563eb',
+        'navy' => '#1e3a8a',
+        'yellow' => '#eab308',
+        'mustard' => '#ca8a04',
+        'red' => '#dc2626',
+        'maroon' => '#881337',
+        'green' => '#16a34a',
+        'white' => '#ffffff',
+        'off-white' => '#fafaf9',
+        'black' => '#0f172a',
+        'pink' => '#ec4899',
+        'purple' => '#9333ea',
+        'orange' => '#ea580c',
+        'grey' => '#64748b',
+        'gray' => '#64748b',
+        'beige' => '#d6c7b2',
+        'peach' => '#ffcba4',
+        'teal' => '#0d9488',
+        'rust' => '#b45309',
+        'gold' => '#d97706',
+    ];
+
+    if ($colorOption) {
+        foreach ($colorOption->values as $cVal) {
+            $cName = $cVal->value;
+            $varsForColor = $liveVariants->filter(function($v) use ($cVal) {
+                return $v->optionValues->contains('id', $cVal->id);
+            });
+            if ($varsForColor->isEmpty()) {
+                continue;
+            }
+
+            $varIds = $varsForColor->pluck('id')->all();
+            $colorImage = $product->images->first(function($img) use ($cVal, $varIds) {
+                return $img->productImageOptionValues->contains('option_value_id', $cVal->id)
+                    || $img->productImageVariants->whereIn('variant_id', $varIds)->isNotEmpty();
+            }) ?? $product->images->first();
+
+            $imgPos = $colorImage ? ($imagePositions[$colorImage->id] ?? 0) : 0;
+            $hexKey = strtolower(trim($cName));
+
+            $colorsList[] = [
+                'id' => $cVal->id,
+                'name' => $cName,
+                'hex' => $colorHexMap[$hexKey] ?? '#94a3b8',
+                'thumbnail' => $colorImage?->url,
+                'imageUrl' => $colorImage?->url,
+                'imageIndex' => $imgPos,
+            ];
+        }
+    }
+
+    foreach ($liveVariants as $variant) {
+        $colorVal = $colorOption ? $variant->optionValues->firstWhere('option_id', $colorOption->id)?->value : null;
+        $sizeVal = $sizeOption ? $variant->optionValues->firstWhere('option_id', $sizeOption->id)?->value : null;
+        if (!$sizeVal) {
+            $sizeVal = $variant->display_option_label;
+        }
+
+        $stock = $variant->inventoryLevels->sum('on_hand') - $variant->inventoryLevels->sum('reserved');
+        $variantsMatrix[] = [
+            'id' => $variant->id,
+            'sku' => $variant->sku,
+            'color' => $colorVal ?? '',
+            'size' => $sizeVal,
+            'price' => '₹' . number_format($variant->price_rupees, 0),
+            'mrp' => $variant->mrp_rupees ? '₹' . number_format($variant->mrp_rupees, 0) : '',
+            'discount' => $variant->discount_percentage ? $variant->discount_percentage . '% OFF' : '',
+            'inStock' => $stock > 0,
+            'stock' => $stock,
+        ];
+    }
+
+    $defaultVariant = $liveVariants->first();
+    $firstColor = !empty($colorsList) ? $colorsList[0]['name'] : '';
+    $firstSize = '';
+    if ($firstColor) {
+        $firstMatch = collect($variantsMatrix)->firstWhere('color', $firstColor);
+        if ($firstMatch) {
+            $firstSize = $firstMatch['size'];
+            $defaultVariant = $liveVariants->firstWhere('id', $firstMatch['id']) ?? $defaultVariant;
+        }
+    } else {
+        $firstSize = $variantsMatrix[0]['size'] ?? '';
+    }
+
+    $firstImg = $defaultVariant ? ($product->images->first(function($img) use ($defaultVariant) {
+        return $img->productImageVariants->contains('variant_id', $defaultVariant->id);
+    })?->url ?? $product->primary_image_url ?? $product->images->first()?->url) : ($product->primary_image_url ?? $product->images->first()?->url);
 @endphp
 
 @include('store.partials.quick-links')
@@ -68,17 +169,56 @@
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
         sizeChartOpen: false,
+        variantsMatrix: @js($variantsMatrix),
+        colors: @js($colorsList),
+        hasColors: {{ !empty($colorsList) ? 'true' : 'false' }},
+        selectedColor: '{{ $firstColor }}',
+        selectedSize: '{{ $firstSize }}',
         selectedVariantId: {{ $defaultVariant?->id ?? 'null' }},
         selectedVariantPrice: '{{ $defaultVariant?->price_rupees ? '₹' . number_format($defaultVariant->price_rupees, 0) : $product->formatted_price }}',
         selectedVariantMrp: '{{ $defaultVariant?->mrp_rupees ? '₹' . number_format($defaultVariant->mrp_rupees, 0) : $product->formatted_mrp }}',
         selectedVariantDiscount: '{{ $defaultVariant?->discount_percentage ? $defaultVariant->discount_percentage . '% OFF' : ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}',
+        inStock: {{ ($defaultVariant?->inventoryLevels->sum('on_hand') ?? 1) > 0 ? 'true' : 'false' }},
         quantity: 1,
         activeTab: 'description',
-        selectVariant(id, price, mrp, discount) {
-            this.selectedVariantId = id;
-            this.selectedVariantPrice = price;
-            this.selectedVariantMrp = mrp;
-            this.selectedVariantDiscount = discount;
+        selectColor(colorName) {
+            this.selectedColor = colorName;
+            const cInfo = this.colors.find(c => c.name === colorName);
+            if (cInfo && cInfo.imageUrl) {
+                this.activeImage = cInfo.imageUrl;
+                window.dispatchEvent(new CustomEvent('jump-to-image', { detail: { index: cInfo.imageIndex } }));
+            }
+            const sizes = this.getSizesForColor(colorName);
+            if (!sizes.some(s => s.size === this.selectedSize)) {
+                if (sizes.length > 0) {
+                    this.selectSize(sizes[0].size);
+                }
+            } else {
+                this.updateSelectedVariant();
+            }
+        },
+        selectSize(sizeName) {
+            this.selectedSize = sizeName;
+            this.updateSelectedVariant();
+        },
+        getSizesForColor(colorName) {
+            if (!this.hasColors) return this.variantsMatrix;
+            return this.variantsMatrix.filter(v => v.color === colorName);
+        },
+        updateSelectedVariant() {
+            let found = null;
+            if (this.hasColors) {
+                found = this.variantsMatrix.find(v => v.color === this.selectedColor && v.size === this.selectedSize);
+            } else {
+                found = this.variantsMatrix.find(v => v.size === this.selectedSize);
+            }
+            if (found) {
+                this.selectedVariantId = found.id;
+                this.selectedVariantPrice = found.price;
+                this.selectedVariantMrp = found.mrp;
+                this.selectedVariantDiscount = found.discount;
+                this.inStock = found.inStock;
+            }
         }
      }">
 
@@ -101,25 +241,26 @@
     <div class="grid grid-cols-1 {{ $isSmartLivingHub ? 'lg:grid-cols-12' : 'lg:grid-cols-2' }} gap-8 lg:gap-12 items-start">
         
         <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
-        <div class="min-w-0 {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
-             x-data="{
-                activeIdx: 0,
-                expanded: false,
-                imageCount: {{ $product->images->count() }},
-                updateScroll(el) {
-                    const width = el.clientWidth;
-                    if (width > 0) {
-                        this.activeIdx = Math.round(el.scrollLeft / width);
+            <div class="min-w-0 {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
+                 x-data="{
+                    activeIdx: 0,
+                    expanded: false,
+                    imageCount: {{ $product->images->count() }},
+                    updateScroll(el) {
+                        const width = el.clientWidth;
+                        if (width > 0) {
+                            this.activeIdx = Math.round(el.scrollLeft / width);
+                        }
+                    },
+                    scrollToImage(idx) {
+                        const track = this.$refs.galleryTrack;
+                        if (track && track.clientWidth > 0) {
+                            track.scrollTo({ left: track.clientWidth * idx, behavior: 'smooth' });
+                            this.activeIdx = idx;
+                        }
                     }
-                },
-                scrollToImage(idx) {
-                    const track = this.$refs.galleryTrack;
-                    if (track && track.clientWidth > 0) {
-                        track.scrollTo({ left: track.clientWidth * idx, behavior: 'smooth' });
-                        this.activeIdx = idx;
-                    }
-                }
-             }">
+                 }"
+                 @jump-to-image.window="scrollToImage($event.detail.index)">
             
             <ul x-ref="galleryTrack"
                 @scroll.passive="updateScroll($el)"
@@ -246,40 +387,78 @@
                 </p>
             @endif
 
-            <!-- Variant / Size Selector (Only for Women's Fashion products) -->
+            <!-- Variant, Color & Size Selector (Only for Women's Fashion products) -->
             @if(!$isSmartLivingHub && $product->variants->count() > 0)
-                <div class="space-y-3 pt-2">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="font-bold uppercase tracking-wider text-rich-black">Select Size / Option:</span>
-                        @if(!empty($sizeChart))
-                            <button type="button"
-                                    @click="sizeChartOpen = true"
-                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-rich-black underline underline-offset-4 hover:text-maroon-800 transition-colors">
-                                <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                Size chart
-                            </button>
-                        @else
-                            <span class="text-maroon-800 font-medium">Standard Indian Fit</span>
-                        @endif
-                    </div>
+                <div class="space-y-4 pt-2">
+                    <!-- Color Selector (if product has multiple color variations) -->
+                    <template x-if="hasColors">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-bold uppercase tracking-wider text-rich-black">
+                                    Color: <span class="text-maroon-800 font-semibold" x-text="selectedColor"></span>
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <template x-for="c in colors" :key="c.name">
+                                    <button type="button"
+                                            @click="selectColor(c.name)"
+                                            :class="selectedColor === c.name ? 'border-maroon-800 ring-2 ring-maroon-800/40 bg-maroon-50/70 font-bold text-maroon-900' : 'border-light-gold hover:border-maroon-800/60 text-rich-black bg-white'"
+                                            class="px-3.5 py-2 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-all shadow-2xs">
+                                        <template x-if="c.thumbnail">
+                                            <img :src="c.thumbnail" class="w-4 h-4 rounded-full object-cover border border-slate-200">
+                                        </template>
+                                        <template x-if="!c.thumbnail">
+                                            <span class="w-3.5 h-3.5 rounded-full border border-slate-300"
+                                                  :style="'background-color: ' + (c.hex || '#cbd5e1')"></span>
+                                        </template>
+                                        <span x-text="c.name"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
 
-                    <div class="flex flex-wrap gap-2.5">
-                        @foreach($product->variants->whereNull('archived_at') as $variant)
-                            @php
-                                $valName = $variant->display_option_label;
-                                $pRupees = '₹' . number_format($variant->price_rupees, 0);
-                                $mRupees = $variant->mrp_rupees ? '₹' . number_format($variant->mrp_rupees, 0) : '';
-                                $disc = $variant->discount_percentage ? $variant->discount_percentage . '% OFF' : '';
-                            @endphp
-                            <button type="button"
-                                    @click="selectVariant({{ $variant->id }}, '{{ $pRupees }}', '{{ $mRupees }}', '{{ $disc }}')"
-                                    :class="selectedVariantId === {{ $variant->id }} ? 'border-maroon-800 bg-maroon-50 text-maroon-800 ring-1 ring-maroon-800 font-bold' : 'border-light-gold text-rich-black hover:border-maroon-800/50'"
-                                    class="{{ strlen($valName) <= 3 ? 'min-w-11 px-3' : 'px-4' }} h-11 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all bg-white shadow-xs">
-                                {{ $valName }}
-                            </button>
-                        @endforeach
+                    <!-- Size Selector -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold uppercase tracking-wider text-rich-black">
+                                Select Size: <span class="text-maroon-800 font-semibold" x-text="selectedSize"></span>
+                            </span>
+                            @if(!empty($sizeChart))
+                                <button type="button"
+                                        @click="sizeChartOpen = true"
+                                        class="inline-flex items-center gap-1.5 text-xs font-semibold text-rich-black underline underline-offset-4 hover:text-maroon-800 transition-colors">
+                                    <svg class="w-4 h-4 text-maroon-800 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Size chart
+                                </button>
+                            @else
+                                <span class="text-maroon-800 font-medium">Standard Indian Fit</span>
+                            @endif
+                        </div>
+
+                        <div class="flex flex-wrap gap-2.5">
+                            <template x-for="v in getSizesForColor(selectedColor)" :key="v.id">
+                                <button type="button"
+                                        @click="selectSize(v.size)"
+                                        :disabled="!v.inStock"
+                                        :class="{
+                                            'border-maroon-800 bg-maroon-50 text-maroon-800 ring-1 ring-maroon-800 font-bold': selectedSize === v.size && v.inStock,
+                                            'border-light-gold text-rich-black hover:border-maroon-800/50 bg-white': selectedSize !== v.size && v.inStock,
+                                            'border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed line-through': !v.inStock
+                                        }"
+                                        class="min-w-11 px-3.5 h-11 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all shadow-xs relative">
+                                    <span x-text="v.size"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Out of Stock Indicator -->
+                        <div x-show="!inStock" class="text-xs text-rose-600 font-medium flex items-center gap-1.5 pt-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Selected size & color is currently out of stock</span>
+                        </div>
                     </div>
                 </div>
             @elseif(!$isSmartLivingHub && !empty($sizeChart))
@@ -310,9 +489,11 @@
 
                     <button type="button"
                             @click="addToCart(selectedVariantId, quantity)"
-                            class="flex-1 py-3.5 px-6 rounded-lg bg-maroon-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-md flex items-center justify-center gap-2">
+                            :disabled="!inStock"
+                            :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-maroon-800 hover:bg-maroon-900'"
+                            class="flex-1 py-3.5 px-6 rounded-lg text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2">
                         <span>🛍️</span>
-                        <span>Add to Bag</span>
+                        <span x-text="inStock ? 'Add to Bag' : 'Out of Stock'"></span>
                     </button>
 
                     <button type="button"

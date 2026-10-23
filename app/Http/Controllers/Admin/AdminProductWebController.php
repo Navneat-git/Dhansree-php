@@ -444,6 +444,45 @@ class AdminProductWebController extends Controller
     }
 
     /**
+     * Update product image assignments (alt text, variants, and option values).
+     */
+    public function updateImage(Request $request, ProductImage $image): RedirectResponse
+    {
+        $request->validate([
+            'alt_text' => 'nullable|string|max:160',
+            'variant_ids' => 'nullable|array',
+            'variant_ids.*' => 'integer|exists:product_variants,id',
+            'option_value_ids' => 'nullable|array',
+            'option_value_ids.*' => 'integer|exists:product_option_values,id',
+        ]);
+
+        $adminUser = $request->attributes->get('admin_user');
+        $product = Product::findOrFail($image->product_id);
+
+        try {
+            $variantIds = array_map('intval', $request->input('variant_ids', []));
+            $optionValueIds = array_map('intval', $request->input('option_value_ids', []));
+
+            $this->imageService->updateImage(
+                $image,
+                (string) $request->input('alt_text', $image->alt_text ?? ''),
+                $variantIds,
+                $optionValueIds,
+                $adminUser?->id,
+                $request
+            );
+
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Image variant and color assignments saved successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Delete product image.
      */
     public function deleteImage(Request $request, ProductImage $image): RedirectResponse

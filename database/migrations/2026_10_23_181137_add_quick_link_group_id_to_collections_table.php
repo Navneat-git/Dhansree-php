@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('collections', function (Blueprint $table) {
-            $table->unsignedInteger('quick_link_group_id')->nullable()->after('products_per_section');
+            if (Schema::hasColumn('collections', 'products_per_section')) {
+                $table->unsignedInteger('quick_link_group_id')->nullable()->after('products_per_section');
+            } else {
+                $table->unsignedInteger('quick_link_group_id')->nullable();
+            }
         });
     }
 

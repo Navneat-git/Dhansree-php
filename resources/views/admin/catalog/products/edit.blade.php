@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-6" x-data="{ 
-    activeTab: (new URLSearchParams(window.location.search).get('tab')) || '{{ session('active_tab', request()->query('tab', 'details')) }}',
+    activeTab: '{{ session('active_tab', request()->query('tab')) }}' || (new URLSearchParams(window.location.search).get('tab')) || 'details',
     setTab(t) {
         this.activeTab = t;
         const url = new URL(window.location.href);
@@ -446,8 +446,10 @@
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
             <h2 class="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3">Upload Product Image</h2>
 
-            <form method="POST" action="{{ route('admin.products.upload-image', $product) }}" enctype="multipart/form-data" class="space-y-4">
+            <form method="POST" action="{{ route('admin.products.upload-image', ['product' => $product, 'tab' => 'media']) }}" enctype="multipart/form-data" class="space-y-4">
                 @csrf
+                <input type="hidden" name="tab" value="media">
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Image File (JPEG, PNG, WebP &bull; Max 10MB)</label>
@@ -461,23 +463,42 @@
                     </div>
                 </div>
 
-                <!-- Optional Variant Pinning -->
+                <!-- Pin by Option (e.g. Color) -->
+                @if($product->options->isNotEmpty())
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-700">Pin to Specific Color / Option (Optional):</label>
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            @foreach($product->options as $opt)
+                                @foreach($opt->values as $oval)
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 hover:bg-amber-50/50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                        <span class="font-medium"><strong class="text-slate-900">{{ $opt->name }}:</strong> {{ $oval->value }}</span>
+                                    </label>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Pin by Specific Variant SKUs -->
                 @if($product->variants->count() > 1)
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Pin Image to Variant / Color (Optional)</label>
-                        <div class="flex items-center gap-3 flex-wrap">
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-700">Pin to Specific Variant SKUs (Optional):</label>
+                        <div class="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
                             @foreach($product->variants as $var)
-                                <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+                                <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2.5 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
                                     <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                    <span>{{ $var->sku }}</span>
+                                    <span class="font-mono text-[11px]">{{ $var->sku }}</span>
+                                    <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
                                 </label>
                             @endforeach
                         </div>
                     </div>
                 @endif
 
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all">
-                    Upload & Process WebP
+                <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span>Upload & Process WebP</span>
                 </button>
             </form>
         </div>
@@ -486,44 +507,163 @@
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
             <h2 class="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3 flex items-center justify-between">
                 <span>Product Gallery ({{ $product->images->count() }})</span>
-                <span class="text-xs font-normal text-slate-500">Position 0 is the primary storefront photo</span>
+                <span class="text-xs font-normal text-slate-500">Position 0 is the primary storefront photo &bull; Pin media to variants to switch photos when color is selected</span>
             </h2>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 @forelse($product->images as $img)
-                    <div class="rounded-lg border border-slate-200 bg-white p-2.5 space-y-2 relative group shadow-2xs">
-                        <div class="aspect-square rounded-md overflow-hidden bg-slate-100 relative border border-slate-100">
-                            <img src="{{ $img->url }}" alt="{{ $img->alt_text }}" class="w-full h-full object-cover">
-                            @if($img->is_primary)
-                                <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 shadow-xs">
-                                    PRIMARY
+                    @php
+                        $pinnedVariantIds = $img->productImageVariants->pluck('variant_id')->all();
+                        $pinnedOptionValueIds = $img->productImageOptionValues->pluck('option_value_id')->all();
+                        $pinnedVars = $product->variants->whereIn('id', $pinnedVariantIds);
+                        $pinnedVals = $product->options->flatMap->values->whereIn('id', $pinnedOptionValueIds);
+                    @endphp
+                    <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2.5 relative flex flex-col justify-between shadow-2xs hover:shadow-xs transition-shadow"
+                         x-data="{ editModal: false }">
+                        <div class="space-y-2">
+                            <div class="aspect-square rounded-lg overflow-hidden bg-slate-100 relative border border-slate-200">
+                                <img src="{{ $img->url }}" alt="{{ $img->alt_text }}" class="w-full h-full object-contain">
+                                @if($img->is_primary)
+                                    <span class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 shadow-xs">
+                                        PRIMARY
+                                    </span>
+                                @endif
+                                <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/60 text-white">
+                                    #{{ $img->position }}
                                 </span>
-                            @endif
+                            </div>
+
+                            <div class="text-[11px] text-slate-500 truncate font-mono">
+                                {{ $img->width }} &times; {{ $img->height }} px ({{ round($img->byte_size / 1024) }} KB)
+                            </div>
+
+                            <!-- Pinned Variation Badges -->
+                            <div class="space-y-1">
+                                <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pinned to:</div>
+                                <div class="flex items-center gap-1 flex-wrap min-h-6">
+                                    @if($pinnedVals->isNotEmpty() || $pinnedVars->isNotEmpty())
+                                        @foreach($pinnedVals as $pv)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                                Color: {{ $pv->value }}
+                                            </span>
+                                        @endforeach
+                                        @foreach($pinnedVars as $pVar)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 font-mono" title="{{ $pVar->sku }}">
+                                                {{ $pVar->display_option_label }}
+                                            </span>
+                                        @endforeach
+                                    @else
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-slate-500 bg-slate-100">
+                                            All Variations
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="text-[11px] text-slate-500 truncate font-mono">
-                            {{ $img->width }} &times; {{ $img->height }} px ({{ round($img->byte_size / 1024) }} KB)
-                        </div>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <!-- Button to Open Assign & Edit Modal -->
+                            <button type="button" @click="editModal = true"
+                                    class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors flex items-center justify-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Assign Variations / Alt</span>
+                            </button>
 
-                        <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-100">
-                            @if(!$img->is_primary)
-                                <form method="POST" action="{{ route('admin.images.set-primary', $img) }}">
+                            <div class="flex items-center justify-between gap-1 text-[11px]">
+                                @if(!$img->is_primary)
+                                    <form method="POST" action="{{ route('admin.images.set-primary', $img) }}">
+                                        @csrf
+                                        <button type="submit" class="font-semibold text-amber-700 hover:underline">
+                                            Make Primary
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-slate-400">Main photo</span>
+                                @endif
+
+                                <form method="POST" action="{{ route('admin.images.delete', $img) }}" onsubmit="return confirm('Delete this image?');">
                                     @csrf
-                                    <button type="submit" class="text-[11px] font-semibold text-amber-700 hover:underline">
-                                        Make Primary
+                                    @method('DELETE')
+                                    <button type="submit" class="font-semibold text-rose-600 hover:underline">
+                                        Delete
                                     </button>
                                 </form>
-                            @else
-                                <span class="text-[11px] text-slate-400">Main photo</span>
-                            @endif
+                            </div>
+                        </div>
 
-                            <form method="POST" action="{{ route('admin.images.delete', $img) }}" onsubmit="return confirm('Delete this image?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-[11px] font-semibold text-rose-600 hover:underline">
-                                    Delete
-                                </button>
-                            </form>
+                        <!-- Assign Variations Modal -->
+                        <div x-show="editModal" x-cloak
+                             class="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+                             @keydown.escape.window="editModal = false">
+                            <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-left"
+                                 @click.outside="editModal = false">
+                                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                                    <h3 class="text-sm font-bold text-slate-900">Assign Variations & Alt Text</h3>
+                                    <button type="button" @click="editModal = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+                                </div>
+
+                                <form method="POST" action="{{ route('admin.images.update', $img) }}" class="space-y-4">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="tab" value="media">
+
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $img->url }}" class="w-16 h-16 rounded-lg object-contain border border-slate-200 bg-slate-50 shrink-0">
+                                        <div class="flex-1 min-w-0">
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Alt Text</label>
+                                            <input type="text" name="alt_text" value="{{ $img->alt_text }}" maxlength="160"
+                                                   class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-amber-500">
+                                        </div>
+                                    </div>
+
+                                    @if($product->options->isNotEmpty())
+                                        <div class="space-y-2">
+                                            <label class="block text-xs font-semibold text-slate-800">Pin to Color / Option:</label>
+                                            <p class="text-[11px] text-slate-500">Selecting a color displays this photo automatically when that color is clicked on the storefront.</p>
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                @foreach($product->options as $opt)
+                                                    @foreach($opt->values as $oval)
+                                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+                                                            <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}"
+                                                                   {{ in_array($oval->id, $pinnedOptionValueIds, true) ? 'checked' : '' }}
+                                                                   class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                            <span><strong>{{ $opt->name }}:</strong> {{ $oval->value }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    @if($product->variants->count() > 1)
+                                        <div class="space-y-2">
+                                            <label class="block text-xs font-semibold text-slate-800">Pin to Specific Variant SKUs:</label>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                                @foreach($product->variants as $var)
+                                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white p-1.5 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                                        <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}"
+                                                               {{ in_array($var->id, $pinnedVariantIds, true) ? 'checked' : '' }}
+                                                               class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                        <div class="truncate">
+                                                            <div class="font-mono text-[11px] truncate">{{ $var->sku }}</div>
+                                                            <div class="text-slate-400 text-[10px]">{{ $var->display_option_label }}</div>
+                                                        </div>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                                        <button type="button" @click="editModal = false" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-800">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all">
+                                            Save Assignments
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 @empty

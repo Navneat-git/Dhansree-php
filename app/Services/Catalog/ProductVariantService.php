@@ -82,10 +82,51 @@ class ProductVariantService
                 }
             }
 
-            // Remove unused options
-            ProductOption::where('product_id', $product->id)
+            // Identify and remove unused options
+            $removedOptionIds = ProductOption::where('product_id', $product->id)
                 ->whereNotIn('id', $keptOptionIds)
-                ->delete();
+                ->pluck('id')
+                ->all();
+
+            if (!empty($removedOptionIds)) {
+                $affectedVariantIdsFromOptions = DB::table('product_variant_option_values')
+                    ->whereIn('option_id', $removedOptionIds)
+                    ->pluck('variant_id')
+                    ->unique()
+                    ->all();
+
+                if (!empty($affectedVariantIdsFromOptions)) {
+                    ProductVariant::whereIn('id', $affectedVariantIdsFromOptions)->update([
+                        'archived_at' => Carbon::now('UTC'),
+                        'option_signature' => null,
+                    ]);
+                }
+
+                ProductOption::whereIn('id', $removedOptionIds)->delete();
+            }
+
+            // Identify and remove unused option values for kept options
+            $removedValueIds = ProductOptionValue::whereIn('option_id', $keptOptionIds)
+                ->whereNotIn('id', $keptValueIds)
+                ->pluck('id')
+                ->all();
+
+            if (!empty($removedValueIds)) {
+                $affectedVariantIds = DB::table('product_variant_option_values')
+                    ->whereIn('option_value_id', $removedValueIds)
+                    ->pluck('variant_id')
+                    ->unique()
+                    ->all();
+
+                if (!empty($affectedVariantIds)) {
+                    ProductVariant::whereIn('id', $affectedVariantIds)->update([
+                        'archived_at' => Carbon::now('UTC'),
+                        'option_signature' => null,
+                    ]);
+                }
+
+                ProductOptionValue::whereIn('id', $removedValueIds)->delete();
+            }
 
             if ($adminUserId) {
                 AuditLogger::log(

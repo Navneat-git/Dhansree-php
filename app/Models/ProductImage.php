@@ -48,6 +48,16 @@ class ProductImage extends Model
         return $this->hasMany(ProductImageVariant::class, 'image_id', 'id');
     }
 
+    public function variants(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ProductVariant::class, 'product_image_variants', 'image_id', 'variant_id');
+    }
+
+    public function optionValues(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(ProductOptionValue::class, 'product_image_option_values', 'image_id', 'option_value_id');
+    }
+
     public function getUrlAttribute(): string
     {
         if (!$this->storage_key) {

@@ -101,7 +101,7 @@ class ProductService
             'category',
             'variants' => fn($q) => $q->orderBy('position')->with(['optionValues', 'inventoryItem', 'inventoryLevels']),
             'options' => fn($q) => $q->orderBy('position')->with(['values' => fn($vq) => $vq->orderBy('position')]),
-            'images' => fn($q) => $q->orderBy('position')->with(['productImageVariants', 'productImageOptionValues']),
+            'images' => fn($q) => $q->orderBy('position')->with(['productImageVariants', 'productImageOptionValues', 'variants', 'optionValues']),
             'productAttributes' => fn($q) => $q->orderBy('position'),
         ])->findOrFail($id);
 

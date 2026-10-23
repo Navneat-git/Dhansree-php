@@ -25,4 +25,9 @@ class MarketplaceTemplate extends Model
     {
         return $this->hasMany(MarketplaceTemplateColumn::class, 'template_id', 'id');
     }
+
+    public function columns(): HasMany
+    {
+        return $this->hasMany(MarketplaceTemplateColumn::class, 'template_id', 'id')->orderBy('position');
+    }
 }
