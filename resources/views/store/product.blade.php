@@ -169,6 +169,24 @@
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
         sizeChartOpen: false,
+        sizeChartZoomOpen: false,
+        chartZoomScale: 1,
+        zoomInChart() {
+            if (this.chartZoomScale < 3) {
+                this.chartZoomScale = Math.min(3, +(this.chartZoomScale + 0.5).toFixed(1));
+            }
+        },
+        zoomOutChart() {
+            if (this.chartZoomScale > 1) {
+                this.chartZoomScale = Math.max(1, +(this.chartZoomScale - 0.5).toFixed(1));
+            }
+        },
+        resetChartZoom() {
+            this.chartZoomScale = 1;
+        },
+        toggleChartZoom() {
+            this.chartZoomScale = this.chartZoomScale > 1 ? 1 : 2;
+        },
         variantsMatrix: @js($variantsMatrix),
         colors: @js($colorsList),
         hasColors: {{ !empty($colorsList) ? 'true' : 'false' }},
@@ -820,7 +838,7 @@
         <!-- Size Chart Modal Dialog -->
         <div x-cloak
              x-show="sizeChartOpen"
-             @keydown.escape.window="sizeChartOpen = false"
+             @keydown.escape.window="if (sizeChartZoomOpen) { sizeChartZoomOpen = false; resetChartZoom(); } else { sizeChartOpen = false; }"
              class="fixed inset-0 z-50 overflow-y-auto"
              role="dialog"
              aria-modal="true"
@@ -849,7 +867,7 @@
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
                      @click.stop
-                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full max-w-2xl border border-light-gold/60 max-h-[90vh] flex flex-col">
+                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full max-w-3xl border border-light-gold/60 max-h-[90vh] flex flex-col">
                     
                     <!-- Modal Header -->
                     <div class="px-6 py-4 border-b border-light-gold/40 flex items-start justify-between bg-warm-beige/30">
@@ -876,21 +894,38 @@
                     <!-- Modal Content -->
                     <div class="p-6 overflow-y-auto space-y-5 flex-1">
                         @if(!empty($sizeChart['image']))
-                            @if($sizeChart['picture_is_the_chart'] ?? false)
-                                <!-- Image is the entire size chart -->
-                                <div class="max-h-[70vh] overflow-y-auto rounded-xl border border-light-gold bg-warm-beige/10">
+                            <!-- Size Chart Image with Zoom & Enlarge Feature -->
+                            <div class="relative group rounded-xl border border-light-gold bg-warm-beige/10 overflow-hidden text-center shadow-2xs">
+                                <!-- Enlarge Pill Badge Button in Top Right -->
+                                <div class="absolute top-3 right-3 z-10">
+                                    <button type="button"
+                                            @click="sizeChartZoomOpen = true; resetChartZoom()"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rich-black/85 hover:bg-maroon-800 text-white text-xs font-semibold shadow-md backdrop-blur-xs transition-all transform hover:scale-105 cursor-pointer"
+                                            aria-label="Enlarge and zoom size chart">
+                                        <svg class="w-4 h-4 text-gold-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
+                                        </svg>
+                                        <span>🔍 Zoom / Enlarge</span>
+                                    </button>
+                                </div>
+
+                                <!-- Clickable Image -->
+                                <button type="button"
+                                        @click="sizeChartZoomOpen = true; resetChartZoom()"
+                                        class="w-full block cursor-zoom-in text-center p-2 focus:outline-none group/img"
+                                        title="Click to enlarge and zoom into chart image">
                                     <img src="{{ $sizeChart['image']['url'] }}"
                                          alt="{{ $sizeChart['image']['alt_text'] ?? 'Size Chart' }}"
-                                         class="mx-auto h-auto w-full object-contain">
-                                </div>
-                            @else
-                                <!-- How to measure diagram image -->
-                                <div class="shrink-0 overflow-hidden rounded-xl border border-light-gold bg-warm-beige/10">
-                                    <img src="{{ $sizeChart['image']['url'] }}"
-                                         alt="{{ $sizeChart['image']['alt_text'] ?? 'How to measure' }}"
-                                         class="mx-auto h-auto max-h-[40vh] w-full object-contain">
-                                </div>
-                            @endif
+                                         class="mx-auto h-auto max-h-[48vh] sm:max-h-[54vh] w-full object-contain transition-transform duration-200 group-hover/img:scale-[1.015]">
+                                    
+                                    <div class="mt-1 pt-1.5 pb-0.5 border-t border-light-gold/40 flex items-center justify-center gap-1.5 text-[11px] font-medium text-maroon-900/80">
+                                        <svg class="w-3.5 h-3.5 text-gold-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
+                                        </svg>
+                                        <span>Click image or "Zoom / Enlarge" button to inspect full-size measurements</span>
+                                    </div>
+                                </button>
+                            </div>
                         @endif
 
                         @if(!($sizeChart['picture_is_the_chart'] ?? false) && !empty($sizeChart['rows']))
@@ -911,7 +946,7 @@
                                     </thead>
                                     <tbody>
                                         @foreach($sizeChart['rows'] as $r)
-                                            <tr class="hover:bg-warm-beige/20 transition-colors odd:bg-white even:bg-warm-beige/10">
+                                             <tr class="hover:bg-warm-beige/20 transition-colors odd:bg-white even:bg-warm-beige/10">
                                                 <th scope="row" class="border-b border-light-gold/40 py-2.5 px-4 font-bold text-rich-black text-left">
                                                     {{ $r['label'] }}
                                                 </th>
@@ -942,6 +977,120 @@
                 </div>
             </div>
         </div>
+
+        @if(!empty($sizeChart['image']))
+            <!-- High-Resolution Size Chart Zoom Lightbox Modal -->
+            <div x-cloak
+                 x-show="sizeChartZoomOpen"
+                 @keydown.escape.window="if (sizeChartZoomOpen) { sizeChartZoomOpen = false; resetChartZoom(); }"
+                 class="fixed inset-0 z-[70] flex flex-col bg-rich-black/95 backdrop-blur-md"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="size-chart-zoom-title">
+
+                <!-- Top Floating Header with Zoom Controls -->
+                <header class="px-4 py-3 bg-rich-black/95 border-b border-white/15 flex flex-wrap items-center justify-between gap-3 text-white shrink-0 z-20">
+                    <div class="flex items-center gap-2.5">
+                        <span class="size-8 rounded-full bg-gold-500/20 text-gold-300 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <h4 id="size-chart-zoom-title" class="text-sm font-semibold text-white tracking-wide">
+                                Size Guide – Detailed Enlarge View
+                            </h4>
+                            <p class="text-[11px] text-white/60 hidden sm:block">
+                                Use + / - buttons, double-click, or pan to inspect every measurement clearly
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Control Buttons -->
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <!-- Zoom Out Button -->
+                        <button type="button"
+                                @click="zoomOutChart()"
+                                :disabled="chartZoomScale <= 1"
+                                class="p-2 sm:px-3 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors flex items-center gap-1"
+                                title="Zoom Out (-)">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                            </svg>
+                            <span class="hidden sm:inline">Zoom Out</span>
+                        </button>
+
+                        <!-- Zoom Level Percentage Display / Toggle -->
+                        <button type="button"
+                                @click="toggleChartZoom()"
+                                class="px-2.5 py-1.5 rounded-lg bg-gold-500/20 border border-gold-400/40 text-gold-300 font-mono text-xs font-bold hover:bg-gold-500/30 transition-colors"
+                                title="Click to toggle 100% / 200%">
+                            <span x-text="Math.round(chartZoomScale * 100) + '%'">100%</span>
+                        </button>
+
+                        <!-- Zoom In Button -->
+                        <button type="button"
+                                @click="zoomInChart()"
+                                :disabled="chartZoomScale >= 3"
+                                class="p-2 sm:px-3 sm:py-1.5 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors flex items-center gap-1"
+                                title="Zoom In (+)">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <span class="hidden sm:inline">Zoom In</span>
+                        </button>
+
+                        <!-- Reset Button -->
+                        <button type="button"
+                                x-show="chartZoomScale > 1"
+                                @click="resetChartZoom()"
+                                class="hidden sm:inline-flex px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                                title="Reset zoom to 100%">
+                            Reset
+                        </button>
+
+                        <div class="h-5 w-px bg-white/20 mx-1"></div>
+
+                        <!-- Close / Back Button -->
+                        <button type="button"
+                                @click="sizeChartZoomOpen = false; resetChartZoom()"
+                                class="px-3.5 py-1.5 rounded-lg bg-maroon-800 hover:bg-maroon-700 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                                aria-label="Back to size chart">
+                            <span>Back</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Zoom Canvas Area -->
+                <div class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center select-none"
+                     :class="chartZoomScale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'"
+                     @click.self="sizeChartZoomOpen = false; resetChartZoom()">
+                    <div class="transition-transform duration-200 ease-out inline-block max-w-none text-center"
+                         :style="'transform: scale(' + chartZoomScale + '); transform-origin: center center;'">
+                        <img src="{{ $sizeChart['image']['url'] }}"
+                             alt="{{ $sizeChart['image']['alt_text'] ?? 'Size Chart Enlarge' }}"
+                             @dblclick="toggleChartZoom()"
+                             @click="chartZoomScale === 1 ? zoomInChart() : null"
+                             class="rounded-xl shadow-2xl max-h-[85vh] w-auto max-w-full sm:max-w-4xl object-contain mx-auto bg-white p-2.5 sm:p-4 border border-white/20 select-none pointer-events-auto"
+                             title="Double-click to zoom in/out">
+                    </div>
+                </div>
+
+                <!-- Bottom Floating Instruction Pill -->
+                <div class="px-4 py-2.5 bg-rich-black/95 border-t border-white/10 flex items-center justify-between text-xs text-white/70">
+                    <span class="hidden sm:inline">Tip: Double-click or use + / - to zoom up to 300%. Drag to pan around image. Click Back or press Esc to return.</span>
+                    <span class="sm:hidden text-center w-full text-[11px]">Use the <strong class="text-gold-300">+</strong> button above to zoom into measurement details.</span>
+                    <button type="button"
+                            @click="sizeChartZoomOpen = false; resetChartZoom()"
+                            class="hidden sm:inline-block text-xs text-gold-300 hover:text-white underline underline-offset-2">
+                        Back to Size Guide
+                    </button>
+                </div>
+            </div>
+        @endif
     @endif
 
 </div>

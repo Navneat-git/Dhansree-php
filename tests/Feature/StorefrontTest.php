@@ -116,6 +116,8 @@ class StorefrontTest extends TestCase
         $kurtiResponse->assertDontSee('x-transition:exit', false);
         $kurtiResponse->assertSee('@click="sizeChartOpen = false"', false);
         $kurtiResponse->assertSee('Got It', false);
+        $kurtiResponse->assertSee('sizeChartZoomOpen', false);
+        $kurtiResponse->assertSee('Zoom / Enlarge', false);
 
         // 2. Test Smart Living product (Square cards, larger grid, no size chart, no select size option)
         $smartProduct = Product::where('slug', 'vintage-t-9-trimmer')->first();
