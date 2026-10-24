@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-IN" class="h-full scroll-smooth">
+<html lang="en-IN" class="h-full scroll-smooth overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -96,12 +96,12 @@
 
     @stack('head')
 </head>
-<body class="min-h-full flex flex-col font-sans antialiased text-rich-black bg-ivory selection:bg-gold-500 selection:text-white"
+<body class="min-h-full flex flex-col font-sans antialiased text-rich-black bg-ivory selection:bg-gold-500 selection:text-white overflow-x-hidden w-full max-w-full"
       x-data="dhansreeStore()"
       x-init="initCart()">
 
     <!-- Continuous Running Announcement Bar -->
-    <div class="marquee-container overflow-hidden whitespace-nowrap {{ ($isSmartLivingHub ?? false) ? 'bg-tech-dark text-gold-300' : 'bg-maroon-800 text-gold-200' }} py-2 text-xs font-medium tracking-wide border-b {{ ($isSmartLivingHub ?? false) ? 'border-tech-border' : 'border-maroon-900' }}">
+    <div class="marquee-container w-full max-w-full overflow-hidden overflow-x-hidden whitespace-nowrap {{ ($isSmartLivingHub ?? false) ? 'bg-tech-dark text-gold-300' : 'bg-maroon-800 text-gold-200' }} py-2 text-xs font-medium tracking-wide border-b {{ ($isSmartLivingHub ?? false) ? 'border-tech-border' : 'border-maroon-900' }}">
         <div class="inline-flex items-center gap-10 pr-10 animate-marquee">
             <span class="inline-flex items-center gap-1.5"><span class="text-gold-400">🏷️</span> Special Offer: <strong>{{ $topBarDiscount }}</strong> on Every Purchase | Use Code: <span class="bg-gold-500/20 px-1.5 py-0.5 rounded text-gold-300 font-bold border border-gold-400/40">{{ $topBarCouponCode }}</span></span>
             <span class="text-gold-500/50">•</span>
@@ -127,32 +127,32 @@
             :class="{ 'shadow-sm': scrolled }">
         
         <!-- Top Row: Brand Logo Lockup, Centered Search Bar, Account & Cart -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 sm:h-20 items-center justify-between gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full max-w-full">
+            <div class="flex h-16 sm:h-20 items-center justify-between gap-1.5 sm:gap-3 lg:grid lg:grid-cols-[1fr_auto_1fr] w-full">
 
                 <!-- Column 1: Mobile Hamburger + Official Brand Logo Lockup -->
-                <div class="flex items-center gap-3 shrink-0">
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0 min-w-0">
                     <!-- Mobile hamburger -->
                     <button type="button"
                             @click="mobileNavOpen = true"
-                            class="lg:hidden p-2 -ml-2 text-rich-black hover:text-maroon-800 focus:outline-none"
+                            class="lg:hidden p-1.5 sm:p-2 -ml-1 text-rich-black hover:text-maroon-800 focus:outline-none shrink-0"
                             aria-label="Open mobile menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
                         </svg>
                     </button>
 
                     <!-- Professional Brand Lockup -->
-                    <a href="{{ url('/') }}" class="flex items-center gap-2.5 sm:gap-3 group py-1" aria-label="Dhansree Home">
+                    <a href="{{ url('/') }}" class="flex items-center gap-1.5 sm:gap-3 group py-1 min-w-0" aria-label="Dhansree Home">
                         <!-- High-res Monogram Emblem -->
-                        <div class="relative size-9 sm:size-10 rounded-full bg-gradient-to-br from-maroon-800 to-maroon-950 p-0.5 shadow-xs ring-1 ring-gold-400/50 group-hover:ring-gold-400 transition-all flex items-center justify-center shrink-0">
-                            <span class="font-serif text-xl sm:text-2xl font-bold text-gold-300 select-none tracking-tighter">d</span>
+                        <div class="relative size-8 sm:size-10 rounded-full bg-gradient-to-br from-maroon-800 to-maroon-950 p-0.5 shadow-xs ring-1 ring-gold-400/50 group-hover:ring-gold-400 transition-all flex items-center justify-center shrink-0">
+                            <span class="font-serif text-lg sm:text-2xl font-bold text-gold-300 select-none tracking-tighter">d</span>
                         </div>
-                        <div class="flex flex-col">
-                            <span class="font-serif text-xl sm:text-2xl lg:text-[1.65rem] font-bold tracking-[0.18em] text-maroon-900 group-hover:text-maroon-800 transition-colors uppercase leading-none">
+                        <div class="flex flex-col min-w-0">
+                            <span class="font-serif text-lg sm:text-2xl lg:text-[1.65rem] font-bold tracking-[0.12em] sm:tracking-[0.18em] text-maroon-900 group-hover:text-maroon-800 transition-colors uppercase leading-none truncate">
                                 DHANSREE
                             </span>
-                            <span class="text-[0.5625rem] sm:text-[0.625rem] tracking-[0.25em] font-sans font-semibold text-gold-600 uppercase mt-0.5 leading-none">
+                            <span class="text-[0.5rem] sm:text-[0.625rem] tracking-[0.18em] sm:tracking-[0.25em] font-sans font-semibold text-gold-600 uppercase mt-0.5 leading-none truncate">
                                 ETHNIC ELEGANCE
                             </span>
                         </div>
@@ -172,11 +172,11 @@
                 </form>
 
                 <!-- Column 3: Utility Actions (Mobile search trigger, Account, Cart Drawer) -->
-                <div class="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+                <div class="flex items-center justify-end gap-1 sm:gap-2.5 shrink-0">
                     <!-- Search Trigger (Mobile only) -->
                     <button type="button"
                             @click="searchOpen = true; $nextTick(() => $refs.searchInput.focus())"
-                            class="lg:hidden p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors"
+                            class="lg:hidden p-1.5 sm:p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors"
                             aria-label="Search catalog">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
@@ -185,7 +185,7 @@
 
                     <!-- Customer Account Link -->
                     <a href="{{ auth('customer')->check() ? route('storefront.account.dashboard') : route('storefront.account.login') }}"
-                       class="p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
+                       class="p-1.5 sm:p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
                        aria-label="{{ auth('customer')->check() ? 'My Account' : 'Sign in' }}"
                        title="{{ auth('customer')->check() ? 'My Account (' . auth('customer')->user()->name . ')' : 'Sign In' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,7 +195,7 @@
 
                     <!-- Wishlist Trigger with Dynamic Badge -->
                     <a href="{{ route('storefront.wishlist.index') }}"
-                       class="relative p-2 text-rich-black/80 hover:text-rose-600 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
+                       class="relative p-1.5 sm:p-2 text-rich-black/80 hover:text-rose-600 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
                        aria-label="My Wishlist"
                        title="My Wishlist">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,14 +204,14 @@
                         <span x-show="wishlistCount > 0"
                               x-cloak
                               x-text="wishlistCount"
-                              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-600 text-white text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-ivory">
+                              class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-rose-600 text-white text-[0.5625rem] sm:text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-ivory">
                         </span>
                     </a>
 
                     <!-- Cart Drawer Trigger with Dynamic Badge -->
                     <button type="button"
                             @click="cartDrawerOpen = true"
-                            class="relative p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
+                            class="relative p-1.5 sm:p-2 text-rich-black/80 hover:text-maroon-800 rounded-full hover:bg-gold-200/40 transition-colors flex items-center"
                             aria-label="Shopping bag">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
@@ -219,7 +219,7 @@
                         <span x-show="cart.total_quantity > 0"
                               x-cloak
                               x-text="cart.total_quantity"
-                              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-maroon-800 text-white text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-ivory">
+                              class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-maroon-800 text-white text-[0.5625rem] sm:text-[0.625rem] font-bold flex items-center justify-center ring-2 ring-ivory">
                         </span>
                     </button>
                 </div>
@@ -719,7 +719,7 @@
     </div>
 
     <!-- Main Content Slot -->
-    <main class="flex-1">
+    <main class="flex-1 w-full max-w-full overflow-x-hidden">
         @yield('content')
     </main>
 

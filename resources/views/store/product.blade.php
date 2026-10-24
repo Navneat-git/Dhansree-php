@@ -164,7 +164,7 @@
 
 @include('store.partials.quick-links')
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12"
+<div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 md:py-12 w-full max-w-full overflow-hidden"
      x-data="{
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
@@ -241,25 +241,25 @@
      }">
 
     <!-- Breadcrumbs -->
-    <nav class="flex items-center gap-2 text-xs text-rich-black/50 mb-8 overflow-x-auto whitespace-nowrap">
-        <a href="{{ $isSmartLivingHub ? url('/smart-living') : url('/') }}" class="hover:text-maroon-800 transition-colors">
+    <nav class="flex items-center gap-2 text-xs text-rich-black/50 mb-8 overflow-x-auto whitespace-nowrap w-full max-w-full min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <a href="{{ $isSmartLivingHub ? url('/smart-living') : url('/') }}" class="hover:text-maroon-800 transition-colors shrink-0">
             {{ $isSmartLivingHub ? 'Smart Living' : 'Home' }}
         </a>
         <span>/</span>
         @if($product->category)
-            <a href="{{ url('/' . $product->category->slug) }}" class="hover:text-maroon-800 transition-colors">
+            <a href="{{ url('/' . $product->category->slug) }}" class="hover:text-maroon-800 transition-colors shrink-0">
                 {{ $product->category->name }}
             </a>
             <span>/</span>
         @endif
-        <span class="text-rich-black/80 font-medium truncate max-w-xs">{{ $product->name }}</span>
+        <span class="text-rich-black/80 font-medium truncate max-w-xs shrink-0">{{ $product->name }}</span>
     </nav>
 
     <!-- Main Product Grid: Gallery (2-column desktop grid / mobile swipe) + Details -->
-    <div class="grid grid-cols-1 {{ $isSmartLivingHub ? 'lg:grid-cols-12' : 'lg:grid-cols-2' }} gap-8 lg:gap-12 items-start">
+    <div class="grid grid-cols-1 {{ $isSmartLivingHub ? 'lg:grid-cols-12' : 'lg:grid-cols-2' }} gap-8 lg:gap-12 items-start w-full max-w-full">
         
         <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
-            <div class="min-w-0 {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
+            <div class="min-w-0 w-full max-w-full overflow-hidden {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
                  x-data="{
                     activeIdx: 0,
                     expanded: false,
@@ -283,7 +283,7 @@
             <ul x-ref="galleryTrack"
                 @scroll.passive="updateScroll($el)"
                 aria-label="{{ $product->name }} pictures"
-                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto {{ $product->images->count() === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }}">
+                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto {{ $product->images->count() === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }}">
                 
                 @php
                     $imgCount = $product->images->count();

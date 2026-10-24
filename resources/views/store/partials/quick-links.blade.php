@@ -1,6 +1,6 @@
 @if(!empty($quickLinksData) && !empty($quickLinksData['links']) && count($quickLinksData['links']) > 0)
-    <section class="py-3 px-4 sm:px-6 lg:px-8 border-y border-amber-100/70 bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50">
-        <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto scrollbar-none py-0.5">
+    <section class="w-full max-w-full overflow-hidden py-3 px-3 sm:px-6 lg:px-8 border-y border-amber-100/70 bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50">
+        <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-x-auto scrollbar-none py-0.5 w-full min-w-0">
             @if(!empty($quickLinksData['title']))
                 <div class="text-[11px] font-bold text-slate-800 tracking-wider uppercase whitespace-nowrap shrink-0 flex items-center gap-1.5 pl-1">
                     <svg class="size-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
