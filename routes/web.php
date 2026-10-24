@@ -243,6 +243,20 @@ Route::prefix('admin')->group(function () {
             Route::post('/products/{product}/values', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'saveProductValues'])->name('products.values');
         });
 
+        // Wholesale Purchases & Procurement (Women Fashion & Smart Living)
+        Route::prefix('wholesale')->name('admin.wholesale.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'store'])->name('store');
+            Route::get('/export', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'export'])->name('export');
+            Route::get('/copy', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'copyTsv'])->name('copy');
+            Route::post('/colors', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'storeColor'])->name('colors.store');
+            Route::delete('/colors/{color}', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'deleteColor'])->name('colors.destroy');
+            Route::get('/{purchase}/edit', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'edit'])->name('edit');
+            Route::put('/{purchase}', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'update'])->name('update');
+            Route::delete('/{purchase}', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'destroy'])->name('destroy');
+        });
+
         // Orders & Fulfillment
         Route::prefix('orders')->name('admin.orders.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'index'])->name('index');
