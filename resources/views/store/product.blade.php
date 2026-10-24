@@ -1124,4 +1124,18 @@
     @endif
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof window.dhansreeTrack === 'function') {
+            window.dhansreeTrack('view_item', {
+                content_name: '{{ addslashes($product->name) }}',
+                content_ids: ['{{ $product->id }}'],
+                content_type: 'product',
+                value: {{ (float) ($product->primaryVariant?->price_rupees ?? 0) }},
+                currency: 'INR'
+            });
+        }
+    });
+</script>
 @endsection

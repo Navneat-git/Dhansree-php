@@ -363,6 +363,15 @@
 
             quote: @json($quote),
 
+            init() {
+                if (typeof window.dhansreeTrack === 'function') {
+                    window.dhansreeTrack('begin_checkout', {
+                        value: this.quote ? (this.quote.total_paise / 100) : 0,
+                        currency: 'INR'
+                    });
+                }
+            },
+
             async recalculateQuote() {
                 if (this.calculating) return;
                 this.calculating = true;

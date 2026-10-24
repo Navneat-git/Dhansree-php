@@ -26,3 +26,4 @@ Thumbs.db
 # The standalone Tailwind CLI is a 107 MB platform binary, fetched by scripts/install-tailwind.sh
 # rather than committed.
 /bin/tailwindcss
+/public/media/products

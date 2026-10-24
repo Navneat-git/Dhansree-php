@@ -12,10 +12,15 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductVariantService;
 use App\Support\Auth\AdminSessionManager;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ImageVariantAssignmentTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private AdminUser $admin;
     private string $rawSessionToken;
 
@@ -93,5 +98,63 @@ class ImageVariantAssignmentTest extends TestCase
         // Verify variants and optionValues links
         $this->assertTrue($image->variants->contains('id', $variant1->id));
         $this->assertTrue($image->optionValues->contains('id', $blueOptionValue->id));
+    }
+
+    public function test_admin_can_upload_multiple_product_images_at_once(): void
+    {
+        Storage::fake('public');
+
+        $product = Product::create([
+            'name' => 'Multi Image Product ' . uniqid(),
+            'slug' => 'multi-img-' . uniqid(),
+            'status' => \App\Enums\ProductStatus::DRAFT,
+        ]);
+
+        $file1 = UploadedFile::fake()->image('angle1.jpg', 800, 800);
+        $file2 = UploadedFile::fake()->image('angle2.jpg', 800, 800);
+        $file3 = UploadedFile::fake()->image('angle3.jpg', 800, 800);
+
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->post(route('admin.products.upload-image', $product), [
+                'images' => [$file1, $file2, $file3],
+                'alt_text' => 'Multi Angle Kurti',
+            ]);
+
+        $response->assertRedirect(route('admin.products.edit', ['product' => $product, 'tab' => 'media']));
+        $response->assertSessionHas('success', '3 product images uploaded successfully.');
+
+        $images = ProductImage::where('product_id', $product->id)->orderBy('position')->get();
+        $this->assertCount(3, $images);
+        $this->assertSame(0, $images[0]->position);
+        $this->assertSame(1, $images[1]->position);
+        $this->assertSame(2, $images[2]->position);
+        $this->assertTrue($images[0]->is_primary);
+        $this->assertFalse($images[1]->is_primary);
+    }
+
+    public function test_admin_can_upload_single_image_with_fallback(): void
+    {
+        Storage::fake('public');
+
+        $product = Product::create([
+            'name' => 'Single Image Product ' . uniqid(),
+            'slug' => 'single-img-' . uniqid(),
+            'status' => \App\Enums\ProductStatus::DRAFT,
+        ]);
+
+        $file = UploadedFile::fake()->image('single.jpg', 800, 800);
+
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->post(route('admin.products.upload-image', $product), [
+                'image' => $file,
+                'alt_text' => 'Single Shot',
+            ]);
+
+        $response->assertRedirect(route('admin.products.edit', ['product' => $product, 'tab' => 'media']));
+        $response->assertSessionHas('success', 'Product image uploaded successfully.');
+
+        $image = ProductImage::where('product_id', $product->id)->first();
+        $this->assertNotNull($image);
+        $this->assertSame('Single Shot', $image->alt_text);
     }
 }

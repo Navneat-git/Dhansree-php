@@ -39,11 +39,11 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
     @php
-        $siteVerification = config('services.google.site_verification') ?: ($store->seo_google_verification ?? null);
-        $analyticsId = config('services.google.analytics_id') ?: ($store->analytics_google_measurement_id ?? null);
-        $metaPixelId = config('services.meta.pixel_id') ?: ($store->ads_meta_pixel_id ?? null);
-
         $storeSettings = $store ?? \App\Models\StoreSettings::current();
+        $siteVerification = config('services.google.site_verification') ?: ($storeSettings->seo_google_verification ?? null);
+        $analyticsId = config('services.google.analytics_id') ?: ($storeSettings->analytics_google_measurement_id ?? null);
+        $gtmId = config('services.google.gtm_id') ?: ($storeSettings->gtm_container_id ?? null);
+        $metaPixelId = config('services.meta.pixel_id') ?: ($storeSettings->ads_meta_pixel_id ?? null);
         $topBarCouponCode = $storeSettings->featured_coupon_code ?? 'FESTIVE10';
         $topBarCoupon = \App\Models\Coupon::where('code', $topBarCouponCode)->where('is_active', true)->first();
         if ($topBarCoupon) {
@@ -61,6 +61,16 @@
 
     @if($siteVerification)
         <meta name="google-site-verification" content="{{ $siteVerification }}">
+    @endif
+
+    @if($gtmId)
+        <!-- Google Tag Manager -->
+        <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','{{ $gtmId }}');</script>
+        <!-- End Google Tag Manager -->
     @endif
 
     @if($analyticsId)
@@ -94,11 +104,42 @@
         </noscript>
     @endif
 
+    <!-- Universal E-Commerce Event Tracker Bridge -->
+    <script>
+        window.dhansreeTrack = function(eventName, payload) {
+            payload = payload || {};
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push(Object.assign({ event: eventName }, payload));
+
+            if (typeof window.gtag === 'function') {
+                window.gtag('event', eventName, payload);
+            }
+
+            if (typeof window.fbq === 'function') {
+                const metaMap = {
+                    'view_item': 'ViewContent',
+                    'add_to_cart': 'AddToCart',
+                    'begin_checkout': 'InitiateCheckout',
+                    'purchase': 'Purchase'
+                };
+                const fbEvent = metaMap[eventName] || eventName;
+                window.fbq('track', fbEvent, payload);
+            }
+        };
+    </script>
+
     @stack('head')
 </head>
 <body class="min-h-full flex flex-col font-sans antialiased text-rich-black bg-ivory selection:bg-gold-500 selection:text-white overflow-x-hidden w-full max-w-full"
       x-data="dhansreeStore()"
       x-init="initCart()">
+
+    @if($gtmId)
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ $gtmId }}"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+    @endif
 
     <!-- Continuous Running Announcement Bar -->
     <div class="marquee-container w-full max-w-full overflow-hidden overflow-x-hidden whitespace-nowrap {{ ($isSmartLivingHub ?? false) ? 'bg-tech-dark text-gold-300' : 'bg-maroon-800 text-gold-200' }} py-2 text-xs font-medium tracking-wide border-b {{ ($isSmartLivingHub ?? false) ? 'border-tech-border' : 'border-maroon-900' }}">
@@ -939,6 +980,13 @@
                         if (res.ok && data.success) {
                             this.cart = data.cart;
                             this.cartDrawerOpen = true;
+                            if (typeof window.dhansreeTrack === 'function') {
+                                window.dhansreeTrack('add_to_cart', {
+                                    variant_id: variantId,
+                                    quantity: quantity,
+                                    currency: 'INR'
+                                });
+                            }
                         } else {
                             alert(data.message || 'Unable to add item to bag.');
                         }

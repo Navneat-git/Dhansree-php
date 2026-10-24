@@ -131,4 +131,17 @@
 
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof window.dhansreeTrack === 'function') {
+            window.dhansreeTrack('purchase', {
+                transaction_id: '{{ $order->order_number }}',
+                order_id: '{{ $order->order_number }}',
+                value: {{ round($order->total_paise / 100, 2) }},
+                currency: 'INR'
+            });
+        }
+    });
+</script>
 @endsection

@@ -95,15 +95,17 @@ class AdminSettingsWebController extends Controller
         }
 
         if ($section === 'social_seo' || $section === 'all') {
-            $settings->instagram_url = $request->input('instagram_url', $settings->instagram_url);
-            $settings->facebook_url = $request->input('facebook_url', $settings->facebook_url);
-            $settings->youtube_url = $request->input('youtube_url', $settings->youtube_url);
-            $settings->pinterest_url = $request->input('pinterest_url', $settings->pinterest_url);
-            $settings->x_url = $request->input('x_url', $settings->x_url);
-            $settings->seo_home_title = $request->input('seo_home_title', $settings->seo_home_title);
-            $settings->seo_home_description = $request->input('seo_home_description', $settings->seo_home_description);
-            $settings->seo_google_verification = $request->input('seo_google_verification', $settings->seo_google_verification);
-            $settings->analytics_google_measurement_id = $request->input('analytics_google_measurement_id', $settings->analytics_google_measurement_id);
+            $settings->instagram_url = $request->has('instagram_url') ? $request->input('instagram_url') : $settings->instagram_url;
+            $settings->facebook_url = $request->has('facebook_url') ? $request->input('facebook_url') : $settings->facebook_url;
+            $settings->youtube_url = $request->has('youtube_url') ? $request->input('youtube_url') : $settings->youtube_url;
+            $settings->pinterest_url = $request->has('pinterest_url') ? $request->input('pinterest_url') : $settings->pinterest_url;
+            $settings->x_url = $request->has('x_url') ? $request->input('x_url') : $settings->x_url;
+            $settings->seo_home_title = $request->has('seo_home_title') ? $request->input('seo_home_title') : $settings->seo_home_title;
+            $settings->seo_home_description = $request->has('seo_home_description') ? $request->input('seo_home_description') : $settings->seo_home_description;
+            $settings->seo_google_verification = $request->has('seo_google_verification') ? $request->input('seo_google_verification') : $settings->seo_google_verification;
+            $settings->analytics_google_measurement_id = $request->has('analytics_google_measurement_id') ? $request->input('analytics_google_measurement_id') : $settings->analytics_google_measurement_id;
+            $settings->gtm_container_id = $request->has('gtm_container_id') ? $request->input('gtm_container_id') : $settings->gtm_container_id;
+            $settings->ads_meta_pixel_id = $request->has('ads_meta_pixel_id') ? $request->input('ads_meta_pixel_id') : $settings->ads_meta_pixel_id;
         }
 
         $settings->save();

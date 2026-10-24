@@ -446,8 +446,8 @@
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
             <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Upload New Product Image</h2>
-                    <p class="text-xs text-slate-500">Add a new image file from your device and optionally tag which color it belongs to.</p>
+                    <h2 class="text-base font-bold text-slate-900">Upload Product Images</h2>
+                    <p class="text-xs text-slate-500">Select one or multiple image files (e.g. 5–6 images from different angles) to upload together in a single batch.</p>
                 </div>
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -455,20 +455,30 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.products.upload-image', ['product' => $product, 'tab' => 'media']) }}" enctype="multipart/form-data" class="space-y-4">
+            <form method="POST" action="{{ route('admin.products.upload-image', ['product' => $product, 'tab' => 'media']) }}" enctype="multipart/form-data" class="space-y-4" x-data="{ fileCount: 0 }">
                 @csrf
                 <input type="hidden" name="tab" value="media">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Select File (JPEG, PNG, WebP &bull; Max 10MB)</label>
-                        <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
-                               class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Select Images (Multiple selection enabled &bull; Max 10MB each)
+                        </label>
+                        <input type="file" name="images[]" multiple required accept="image/jpeg,image/png,image/webp"
+                               @change="fileCount = $event.target.files.length"
+                               class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100 border border-slate-300 rounded-lg cursor-pointer">
+                        <div class="flex items-center justify-between mt-1.5">
+                            <p class="text-[11px] text-slate-400">
+                                Tip: Hold <strong>Ctrl</strong> (or <strong>Cmd</strong> on Mac) to select multiple files at once.
+                            </p>
+                            <span x-show="fileCount > 0" class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" x-text="fileCount + ' file(s) selected'"></span>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Alt Text (Accessibility & Google Image Search)</label>
                         <input type="text" name="alt_text" value="{{ $product->name }}" maxlength="160"
                                class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
+                        <p class="text-[11px] text-slate-400 mt-1.5">Applied as default description for newly uploaded photos.</p>
                     </div>
                 </div>
 
@@ -535,7 +545,7 @@
 
                 <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    <span>Upload & Process WebP</span>
+                    <span x-text="fileCount > 1 ? 'Upload & Process ' + fileCount + ' Images (WebP)' : 'Upload & Process Image (WebP)'">Upload & Process Image (WebP)</span>
                 </button>
             </form>
         </div>

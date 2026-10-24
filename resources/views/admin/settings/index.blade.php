@@ -268,18 +268,52 @@
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                     </div>
 
-                    <div class="sm:col-span-2 border-t border-slate-200 pt-4">
-                        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Google Analytics & Search Console</h3>
+                    <div class="sm:col-span-2 border-t border-slate-200 pt-5 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Marketing, Analytics & Tracking Scripts</h3>
+                                <p class="text-[11px] text-slate-500">Configure your Google Tag Manager, GA4, Meta Pixel, or Search Console tags for external ad platforms.</p>
+                            </div>
+                        </div>
+
+                        <!-- In-House Tracking Notice -->
+                        <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5 flex items-start gap-3">
+                            <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <div class="text-xs text-emerald-900 space-y-1">
+                                <p class="font-bold">In-House Customer Journey Tracking is 100% Active & Server-Side</p>
+                                <p class="text-emerald-800 leading-relaxed">
+                                    You <strong>do not need</strong> to add any script or external tag manager for customer journeys to work. Dhansree tracks unique & repeat visitors (by email & IP), acquisition channels (Meta Ads, Google CPC, Instagram, Organic), device types, cities, and live page views automatically in-house. View them anytime at <a href="{{ route('admin.analytics.journeys') }}" class="font-semibold underline hover:text-emerald-950">Customers &rsaquo; Customer Journeys</a>.
+                                </p>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Google Tag Manager Container ID</label>
+                                <input type="text" name="gtm_container_id" value="{{ old('gtm_container_id', $settings->gtm_container_id) }}" placeholder="e.g. GTM-XXXXXXX"
+                                       class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">Automatically renders GTM &lt;head&gt; script and &lt;noscript&gt; iframe across all storefront pages.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Meta Pixel ID (Facebook / Instagram Ads)</label>
+                                <input type="text" name="ads_meta_pixel_id" value="{{ old('ads_meta_pixel_id', $settings->ads_meta_pixel_id) }}" placeholder="e.g. 123456789012345"
+                                       class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">Pushes PageView, ViewContent, AddToCart, InitiateCheckout, and Purchase to Meta Ads Manager.</p>
+                            </div>
+
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1.5">Google Analytics 4 Measurement ID</label>
                                 <input type="text" name="analytics_google_measurement_id" value="{{ old('analytics_google_measurement_id', $settings->analytics_google_measurement_id) }}" placeholder="e.g. G-XXXXXXXXXX"
                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">Injects gtag.js with e-commerce event tracking (view_item, add_to_cart, purchase).</p>
                             </div>
+
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1.5">Google Search Console Verification Code</label>
                                 <input type="text" name="seo_google_verification" value="{{ old('seo_google_verification', $settings->seo_google_verification) }}" placeholder="e.g. AbCdEfGhIjKlMnOpQrSt"
                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">Renders &lt;meta name="google-site-verification"&gt; in &lt;head&gt;.</p>
                             </div>
                         </div>
                     </div>

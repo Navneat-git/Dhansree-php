@@ -415,7 +415,9 @@ class AdminProductWebController extends Controller
     public function uploadImage(Request $request, Product $product): RedirectResponse
     {
         $request->validate([
-            'image' => 'required|file|max:10240', // 10 MB
+            'images' => 'nullable|array',
+            'images.*' => 'file|max:10240', // 10 MB per image
+            'image' => 'nullable|file|max:10240', // Backwards compatibility
             'alt_text' => 'nullable|string|max:160',
             'variant_ids' => 'nullable|array',
             'variant_ids.*' => 'integer|exists:product_variants,id',
@@ -423,22 +425,51 @@ class AdminProductWebController extends Controller
             'option_value_ids.*' => 'integer|exists:product_option_values,id',
         ]);
 
+        $files = [];
+        if ($request->hasFile('images')) {
+            $files = array_filter((array) $request->file('images'));
+        } elseif ($request->hasFile('image')) {
+            $single = $request->file('image');
+            if ($single) {
+                $files = [$single];
+            }
+        }
+
+        if (empty($files)) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', 'Please select at least one valid image file to upload.');
+        }
+
         $adminUser = $request->attributes->get('admin_user');
+        $altText = $request->input('alt_text', $product->name);
+        $variantIds = $request->input('variant_ids', []);
+        $optionValueIds = $request->input('option_value_ids', []);
 
         try {
-            $this->imageService->addImage(
-                $product,
-                $request->file('image'),
-                $request->input('alt_text', $product->name),
-                $request->input('variant_ids', []),
-                $request->input('option_value_ids', []),
-                $adminUser?->id,
-                $request
-            );
+            $uploadedCount = 0;
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) {
+                    $this->imageService->addImage(
+                        $product,
+                        $file,
+                        $altText,
+                        $variantIds,
+                        $optionValueIds,
+                        $adminUser?->id,
+                        $request
+                    );
+                    $uploadedCount++;
+                }
+            }
+
+            $message = $uploadedCount === 1
+                ? 'Product image uploaded successfully.'
+                : "{$uploadedCount} product images uploaded successfully.";
 
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
-                ->with('success', 'Product image uploaded successfully.');
+                ->with('success', $message);
         } catch (Throwable $e) {
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
