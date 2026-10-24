@@ -181,6 +181,7 @@
                                     @endphp
                                     <label class="flex items-center gap-2.5 cursor-pointer py-1 text-xs text-rich-black/80 hover:text-maroon-800 transition-colors">
                                         <input type="checkbox" name="color[]" value="{{ $color }}" {{ $checked ? 'checked' : '' }}
+                                               onchange="this.form.submit()"
                                                class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
                                         <span class="w-3.5 h-3.5 rounded-full inline-block shrink-0 shadow-xs {{ $isWhite ? 'border border-slate-300' : '' }}" style="background-color: {{ $hex }};"></span>
                                         <span class="truncate">{{ $color }}</span>
@@ -206,7 +207,7 @@
                                         $checked = in_array($size, $selectedOptions['Size'] ?? []);
                                     @endphp
                                     <label class="cursor-pointer">
-                                        <input type="checkbox" name="size[]" value="{{ $size }}" {{ $checked ? 'checked' : '' }} class="peer sr-only">
+                                        <input type="checkbox" name="size[]" value="{{ $size }}" {{ $checked ? 'checked' : '' }} onchange="this.form.submit()" class="peer sr-only">
                                         <span class="min-w-[2.5rem] h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all peer-checked:bg-maroon-800 peer-checked:text-white peer-checked:border-maroon-800 border-light-gold text-rich-black/80 hover:border-maroon-800 bg-white shadow-xs">
                                             {{ $size }}
                                         </span>
@@ -234,6 +235,7 @@
                                         @endphp
                                         <label class="flex items-center gap-2.5 cursor-pointer py-1 text-xs text-rich-black/80 hover:text-maroon-800 transition-colors">
                                             <input type="checkbox" name="{{ Str::slug($dimName, '_') }}[]" value="{{ $val }}" {{ $checked ? 'checked' : '' }}
+                                                   onchange="this.form.submit()"
                                                    class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
                                             <span class="truncate">{{ $val }}</span>
                                         </label>
@@ -265,11 +267,12 @@
                     <hr class="border-light-gold/60">
                     <div class="flex items-center gap-2.5">
                         <input type="checkbox"
-                               id="mobile_in_stock"
-                               name="in_stock"
-                               value="1"
-                               {{ !empty($filters['in_stock']) ? 'checked' : '' }}
-                               class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
+                                id="mobile_in_stock"
+                                name="in_stock"
+                                value="1"
+                                {{ !empty($filters['in_stock']) ? 'checked' : '' }}
+                                onchange="this.form.submit()"
+                                class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
                         <label for="mobile_in_stock" class="text-xs font-medium text-rich-black/80 cursor-pointer">In Stock Only</label>
                     </div>
 
@@ -346,6 +349,7 @@
                                 @endphp
                                 <label class="flex items-center gap-2.5 cursor-pointer py-1 text-xs text-rich-black/80 hover:text-maroon-800 transition-colors">
                                     <input type="checkbox" name="color[]" value="{{ $color }}" {{ $checked ? 'checked' : '' }}
+                                           onchange="this.form.submit()"
                                            class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
                                     <span class="w-3.5 h-3.5 rounded-full inline-block shrink-0 shadow-xs {{ $isWhite ? 'border border-slate-300' : '' }}" style="background-color: {{ $hex }};"></span>
                                     <span class="truncate">{{ $color }}</span>
@@ -371,7 +375,7 @@
                                     $checked = in_array($size, $selectedOptions['Size'] ?? []);
                                 @endphp
                                 <label class="cursor-pointer">
-                                    <input type="checkbox" name="size[]" value="{{ $size }}" {{ $checked ? 'checked' : '' }} class="peer sr-only">
+                                    <input type="checkbox" name="size[]" value="{{ $size }}" {{ $checked ? 'checked' : '' }} onchange="this.form.submit()" class="peer sr-only">
                                     <span class="min-w-[2.5rem] h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all peer-checked:bg-maroon-800 peer-checked:text-white peer-checked:border-maroon-800 border-light-gold text-rich-black/80 hover:border-maroon-800 bg-white shadow-xs">
                                         {{ $size }}
                                     </span>
@@ -399,6 +403,7 @@
                                     @endphp
                                     <label class="flex items-center gap-2.5 cursor-pointer py-1 text-xs text-rich-black/80 hover:text-maroon-800 transition-colors">
                                         <input type="checkbox" name="{{ Str::slug($dimName, '_') }}[]" value="{{ $val }}" {{ $checked ? 'checked' : '' }}
+                                               onchange="this.form.submit()"
                                                class="rounded border-light-gold text-maroon-800 focus:ring-maroon-800">
                                         <span class="truncate">{{ $val }}</span>
                                     </label>
