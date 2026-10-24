@@ -108,16 +108,15 @@ class StorefrontTest extends TestCase
         $kurtiResponse->assertSee('Size chart');
         $kurtiResponse->assertSee('Size guide');
         $kurtiResponse->assertSee('Size Chart – Garment Measurements (in inches)');
-        $kurtiResponse->assertSee('Bust');
-        $kurtiResponse->assertSee('Waist');
         $kurtiResponse->assertSee('Fabric');
         $kurtiResponse->assertSee('Country of origin');
         $kurtiResponse->assertSee('x-transition:leave="ease-in duration-200"', false);
         $kurtiResponse->assertDontSee('x-transition:exit', false);
-        $kurtiResponse->assertSee('@click="sizeChartOpen = false"', false);
+        $kurtiResponse->assertSee('sizeChartOpen = false', false);
         $kurtiResponse->assertSee('Got It', false);
         $kurtiResponse->assertSee('sizeChartZoomOpen', false);
-        $kurtiResponse->assertSee('Zoom / Enlarge', false);
+        $kurtiResponse->assertSee('+ Zoom', false);
+        $kurtiResponse->assertSee('Fullscreen', false);
 
         // 2. Test Smart Living product (Square cards, larger grid, no size chart, no select size option)
         $smartProduct = Product::where('slug', 'vintage-t-9-trimmer')->first();
