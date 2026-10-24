@@ -365,7 +365,7 @@
                 <p class="text-xs uppercase tracking-widest text-gold-600 font-bold">
                     {{ $product->brand ?? 'DHANSREE' }}
                 </p>
-                <h1 class="font-serif text-2xl sm:text-3xl lg:text-4xl font-normal text-rich-black leading-snug">
+                <h1 class="font-sans text-xl sm:text-2xl lg:text-3xl font-semibold text-rich-black leading-snug tracking-tight">
                     {{ $product->name }}
                 </h1>
                 @if(!empty($reviewSummary))
