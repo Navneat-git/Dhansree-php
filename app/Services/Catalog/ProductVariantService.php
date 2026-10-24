@@ -128,6 +128,27 @@ class ProductVariantService
                 ProductOptionValue::whereIn('id', $removedValueIds)->delete();
             }
 
+            // If all options were removed and no active variants remain, reactivate the primary variant as the default single variant
+            if (empty($keptOptionIds)) {
+                $activeCount = ProductVariant::where('product_id', $product->id)
+                    ->whereNull('archived_at')
+                    ->count();
+
+                if ($activeCount === 0) {
+                    $primaryVariant = ProductVariant::where('product_id', $product->id)
+                        ->orderBy('position')
+                        ->orderBy('id')
+                        ->first();
+
+                    if ($primaryVariant) {
+                        $primaryVariant->update([
+                            'archived_at' => null,
+                            'option_signature' => '',
+                        ]);
+                    }
+                }
+            }
+
             if ($adminUserId) {
                 AuditLogger::log(
                     'catalog.product.options_changed',

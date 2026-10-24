@@ -262,11 +262,6 @@
                     'values' => (string) $o->values->pluck('value')->implode(', ')
                 ];
             })->values()->all();
-            if (empty($existingOptions)) {
-                $existingOptions = [
-                    ['name' => 'Size', 'values' => 'S, M, L, XL']
-                ];
-            }
         @endphp
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4" x-data="{
             options: {{ json_encode($existingOptions) }},

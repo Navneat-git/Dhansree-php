@@ -362,9 +362,12 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->syncOptions($product, $formatted, $adminUser?->id, $request);
+            $message = empty($formatted)
+                ? 'Product options removed. Product configured without variations.'
+                : 'Product options and values saved.';
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')
-                ->with('success', 'Product options and values saved.');
+                ->with('success', $message);
         } catch (Throwable $e) {
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')
