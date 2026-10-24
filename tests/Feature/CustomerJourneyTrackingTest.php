@@ -7,13 +7,18 @@ namespace Tests\Feature;
 use App\Enums\AdminUserStatus;
 use App\Models\AdminRole;
 use App\Models\AdminUser;
+use App\Models\TrackedVisitor;
 use App\Models\VisitorPageView;
 use App\Models\VisitorSession;
 use App\Support\Auth\AdminSessionManager;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class CustomerJourneyTrackingTest extends TestCase
 {
+    use DatabaseTransactions;
+
     private AdminUser $admin;
     private string $rawSessionToken;
 
@@ -60,6 +65,7 @@ class CustomerJourneyTrackingTest extends TestCase
         $this->assertSame('mobile', $session->device_type);
         $this->assertSame('iOS', $session->os);
         $this->assertSame(1, $session->page_views_count);
+        $this->assertNotNull($session->customer_code);
 
         // Verify page view step 1
         $pv1 = VisitorPageView::where('session_id', $session->session_id)->where('step_number', 1)->first();
@@ -91,5 +97,100 @@ class CustomerJourneyTrackingTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Customer Journeys & Traffic Explorer', false);
         $response->assertSee('Acquisition Channels');
+    }
+
+    public function test_unique_customer_assignment_and_repeat_visitor_recognition_by_ip_and_email(): void
+    {
+        $ip1 = '103.21.244.' . rand(1, 250);
+
+        // 1. First visit from IP1 -> Brand New Customer
+        $res1 = $this->withServerVariables(['REMOTE_ADDR' => $ip1])
+            ->get('/');
+        $res1->assertStatus(200);
+
+        $session1 = VisitorSession::where('ip_address', $ip1)->first();
+        $this->assertNotNull($session1);
+        $this->assertFalse((bool) $session1->is_repeat_visitor);
+        $this->assertEquals(1, $session1->visit_number);
+        $customerCode1 = $session1->customer_code;
+        $this->assertStringStartsWith('CUST-', $customerCode1);
+
+        // 2. Second visit from same IP1 (simulating return visit after session expiry)
+        VisitorSession::query()->update(['last_activity_at' => Carbon::now()->subHours(2)]);
+        $this->flushSession();
+
+        $res2 = $this->withServerVariables(['REMOTE_ADDR' => $ip1])
+            ->get('/smart-living');
+        $res2->assertStatus(200);
+
+        $session2 = VisitorSession::where('ip_address', $ip1)->latest('started_at')->first();
+        $this->assertNotNull($session2);
+        $this->assertTrue((bool) $session2->is_repeat_visitor);
+        $this->assertEquals($customerCode1, $session2->customer_code);
+        $this->assertEquals(2, $session2->visit_number);
+
+        // 3. Third visit from DIFFERENT IP, but with matching email in session
+        $ip2 = '49.36.120.' . rand(1, 250);
+        $customerEmail = 'user_' . uniqid() . '@example.com';
+
+        // Attach email to first customer
+        TrackedVisitor::where('customer_code', $customerCode1)->update(['email' => $customerEmail]);
+
+        VisitorSession::query()->update(['last_activity_at' => Carbon::now()->subHours(2)]);
+        $this->flushSession();
+
+        $res3 = $this->withServerVariables(['REMOTE_ADDR' => $ip2])
+            ->withSession(['customer_email' => $customerEmail])
+            ->get('/');
+        $res3->assertStatus(200);
+
+        $session3 = VisitorSession::where('ip_address', $ip2)->first();
+        $this->assertNotNull($session3);
+        $this->assertTrue((bool) $session3->is_repeat_visitor);
+        $this->assertEquals($customerCode1, $session3->customer_code);
+
+        // 4. Fourth visit from brand new IP and NO matching email -> New Customer
+        $ip3 = '203.0.113.' . rand(1, 250);
+        VisitorSession::query()->update(['last_activity_at' => Carbon::now()->subHours(2)]);
+        $this->flushSession();
+
+        $res4 = $this->withServerVariables(['REMOTE_ADDR' => $ip3])
+            ->get('/');
+        $res4->assertStatus(200);
+
+        $session4 = VisitorSession::where('ip_address', $ip3)->first();
+        $this->assertNotNull($session4);
+        $this->assertFalse((bool) $session4->is_repeat_visitor);
+        $this->assertNotEquals($customerCode1, $session4->customer_code);
+    }
+
+    public function test_google_cpc_and_meta_ads_detection(): void
+    {
+        // 1. Google CPC with gclid
+        $this->get('/?gclid=CjwKCAjwTESTGOOGLE_12345');
+        $googleCpcSession = VisitorSession::where('landing_page', 'like', '%gclid%')->first();
+        $this->assertNotNull($googleCpcSession);
+        $this->assertEquals('Google CPC', $googleCpcSession->platform);
+
+        // Expire previous session
+        VisitorSession::query()->update(['last_activity_at' => Carbon::now()->subHours(2)]);
+        $this->flushSession();
+
+        // 2. Meta Ads with utm_source=meta and utm_medium=cpc
+        $this->get('/?utm_source=meta&utm_medium=cpc&utm_campaign=winter_promo');
+        $metaSession = VisitorSession::where('utm_campaign', 'winter_promo')->first();
+        $this->assertNotNull($metaSession);
+        $this->assertEquals('Meta Ads', $metaSession->platform);
+
+        // Expire previous session
+        VisitorSession::query()->update(['last_activity_at' => Carbon::now()->subHours(2)]);
+        $this->flushSession();
+
+        // 3. Google Organic search
+        $this->withHeaders(['referer' => 'https://www.google.co.in/'])
+            ->get('/');
+        $googleOrgSession = VisitorSession::where('referrer_domain', 'www.google.co.in')->latest('id')->first();
+        $this->assertNotNull($googleOrgSession);
+        $this->assertEquals('Google Organic', $googleOrgSession->platform);
     }
 }

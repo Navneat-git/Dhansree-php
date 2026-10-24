@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\TrackedVisitor;
 use App\Models\VisitorPageView;
 use App\Models\VisitorSession;
 use Illuminate\Http\Request;
@@ -21,6 +22,8 @@ class AdminCustomerJourneyWebController extends Controller
     {
         $period = (string) $request->input('period', '7days');
         $platformFilter = (string) $request->input('platform', 'all');
+        $visitorTypeFilter = (string) $request->input('visitor_type', 'all'); // 'all', 'new', 'repeat'
+        $search = trim((string) $request->input('search', ''));
 
         $startDate = match ($period) {
             'today' => Carbon::today(),
@@ -42,13 +45,39 @@ class AdminCustomerJourneyWebController extends Controller
             $baseQuery->where('platform', $platformFilter);
         }
 
+        if ($visitorTypeFilter === 'new') {
+            $baseQuery->where('is_repeat_visitor', false);
+        } elseif ($visitorTypeFilter === 'repeat') {
+            $baseQuery->where('is_repeat_visitor', true);
+        }
+
+        if ($search !== '') {
+            $baseQuery->where(function ($q) use ($search) {
+                $q->where('customer_code', 'like', "%{$search}%")
+                  ->orWhere('customer_email', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('country', 'like', "%{$search}%")
+                  ->orWhere('utm_campaign', 'like', "%{$search}%")
+                  ->orWhere('landing_path', 'like', "%{$search}%");
+            });
+        }
+
         // 1. KPI Aggregations
         $totalSessions = (clone $baseQuery)->count();
-        $uniqueVisitors = (clone $baseQuery)->distinct('visitor_uuid')->count('visitor_uuid');
+        $uniqueCustomers = (clone $baseQuery)->whereNotNull('customer_code')->distinct('customer_code')->count('customer_code');
+        if ($uniqueCustomers === 0) {
+            $uniqueCustomers = (clone $baseQuery)->distinct('visitor_uuid')->count('visitor_uuid');
+        }
+
+        $newVisitorsCount = (clone $baseQuery)->where('is_repeat_visitor', false)->count();
+        $repeatVisitorsCount = (clone $baseQuery)->where('is_repeat_visitor', true)->count();
+        $repeatRate = $totalSessions > 0 ? round(($repeatVisitorsCount / $totalSessions) * 100, 1) : 0;
+
         $totalPageViews = (clone $baseQuery)->sum('page_views_count');
         $avgPagesPerSession = $totalSessions > 0 ? round($totalPageViews / $totalSessions, 1) : 0;
 
-        // 2. Acquisition Platform Breakdown
+        // 2. Acquisition Platform Breakdown (GA4 channels)
         $platformBreakdown = (clone $baseQuery)
             ->select('platform', DB::raw('count(*) as count'))
             ->groupBy('platform')
@@ -60,7 +89,24 @@ class AdminCustomerJourneyWebController extends Controller
             ? round(($topPlatform->count / $totalSessions) * 100, 1)
             : 0;
 
-        // 3. UTM Campaigns breakdown (if any)
+        // 3. Device Breakdown (Mobile vs Desktop vs Tablet)
+        $deviceBreakdown = (clone $baseQuery)
+            ->select('device_type', DB::raw('count(*) as count'))
+            ->groupBy('device_type')
+            ->orderByDesc('count')
+            ->get();
+
+        // 4. Locations Breakdown (City & Country)
+        $locationsBreakdown = (clone $baseQuery)
+            ->whereNotNull('city')
+            ->where('city', '!=', '')
+            ->select('city', 'region', 'country', DB::raw('count(*) as count'))
+            ->groupBy('city', 'region', 'country')
+            ->orderByDesc('count')
+            ->take(6)
+            ->get();
+
+        // 5. UTM Campaigns breakdown (if any)
         $campaignsBreakdown = (clone $baseQuery)
             ->whereNotNull('utm_campaign')
             ->select('utm_campaign', 'utm_source', DB::raw('count(*) as count'))
@@ -69,9 +115,9 @@ class AdminCustomerJourneyWebController extends Controller
             ->take(5)
             ->get();
 
-        // 4. Detailed Customer Journeys Feed (Paginated)
+        // 6. Detailed Customer Journeys Feed (Paginated)
         $journeys = (clone $baseQuery)
-            ->with(['pageViews'])
+            ->with(['pageViews', 'trackedVisitor'])
             ->latest('started_at')
             ->paginate(25)
             ->withQueryString();
@@ -82,15 +128,22 @@ class AdminCustomerJourneyWebController extends Controller
         return view('admin.analytics.customer-journeys', [
             'journeys' => $journeys,
             'totalSessions' => $totalSessions,
-            'uniqueVisitors' => $uniqueVisitors,
+            'uniqueCustomers' => $uniqueCustomers,
+            'newVisitorsCount' => $newVisitorsCount,
+            'repeatVisitorsCount' => $repeatVisitorsCount,
+            'repeatRate' => $repeatRate,
             'avgPagesPerSession' => $avgPagesPerSession,
             'topPlatform' => $topPlatform?->platform ?? 'Direct',
             'topPlatformShare' => $topPlatformShare,
             'platformBreakdown' => $platformBreakdown,
+            'deviceBreakdown' => $deviceBreakdown,
+            'locationsBreakdown' => $locationsBreakdown,
             'campaignsBreakdown' => $campaignsBreakdown,
             'allPlatforms' => $allPlatforms,
             'period' => $period,
             'selectedPlatform' => $platformFilter,
+            'selectedVisitorType' => $visitorTypeFilter,
+            'search' => $search,
         ]);
     }
 }
