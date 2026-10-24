@@ -231,7 +231,7 @@
         <!-- ========================================== -->
         <!-- FORM A: WOMEN FASHION                      -->
         <!-- ========================================== -->
-        <div x-show="purchaseType === 'women_fashion'" class="space-y-6">
+        <fieldset :disabled="purchaseType !== 'women_fashion'" x-show="purchaseType === 'women_fashion'" class="space-y-6 border-0 p-0 m-0 min-w-0">
             <!-- SECTION 1: Product Identifiers & Codes -->
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -257,7 +257,8 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Purchase Date <span class="text-rose-500">*</span></label>
                         <input type="date" name="purchase_date" x-model="wf.purchaseDate" @change="wf.recalculateAll()"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                               :required="purchaseType === 'women_fashion'">
                         <p class="text-[10px] text-slate-400 mt-1">Formats as ddmmyy in Pcode</p>
                     </div>
 
@@ -266,7 +267,8 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Vendor Code (vcode) <span class="text-rose-500">*</span></label>
                         <input type="text" name="vcode" x-model="wf.vcode" @input="wf.recalculateAll()"
                                placeholder="e.g. ICF"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono uppercase text-slate-900" required>
+                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono uppercase text-slate-900"
+                               :required="purchaseType === 'women_fashion'">
                         <p class="text-[10px] text-slate-400 mt-1">Supplier code (e.g. ICF)</p>
                     </div>
 
@@ -275,7 +277,8 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Design Number <span class="text-rose-500">*</span></label>
                         <input type="text" name="design_number" x-model="wf.designNumber" @input="wf.recalculateAll()"
                                placeholder="e.g. 10"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                               :required="purchaseType === 'women_fashion'">
                         <p class="text-[10px] text-slate-400 mt-1">Design / lot number</p>
                     </div>
                 </div>
@@ -285,7 +288,8 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Category Name <span class="text-rose-500">*</span></label>
                         <select name="category_name" x-model="wf.categoryName" @change="wf.updateCategoryCode()"
-                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                                :required="purchaseType === 'women_fashion'">
                             <option value="KURTI">KURTI</option>
                             <option value="2 SUIT SET">2 SUIT SET</option>
                             <option value="3 SUIT SET">3 SUIT SET</option>
@@ -313,7 +317,8 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Size <span class="text-rose-500">*</span></label>
                         <select name="size" x-model="wf.size" @change="wf.recalculateAll()"
-                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                                :required="purchaseType === 'women_fashion'">
                             <option value="S">S</option>
                             <option value="M">M</option>
                             <option value="L">L</option>
@@ -332,7 +337,8 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Color <span class="text-rose-500">*</span></label>
                         <select name="color" x-model="wf.color" @change="wf.updateColorCode(colorMap)"
-                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                                :required="purchaseType === 'women_fashion'">
                             <option value="">-- Select Color --</option>
                             @foreach($colorCodes as $col)
                                 <option value="{{ $col->color_name }}">{{ $col->color_name }} ({{ $col->color_code }})</option>
@@ -374,7 +380,8 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Product Title / Name <span class="text-rose-500">*</span></label>
                         <input type="text" name="product_name" x-model="wf.productName"
                                placeholder="e.g. Pure Cotton Anarkali Kurti with Dupatta"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900" required>
+                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                               :required="purchaseType === 'women_fashion'">
                     </div>
 
                     <div>
@@ -391,7 +398,8 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Cost (₹) <span class="text-rose-500">*</span></label>
                         <input type="number" step="0.01" name="cost" x-model="wf.cost"
                                placeholder="500.00"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900" required>
+                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900"
+                               :required="purchaseType === 'women_fashion'">
                     </div>
 
                     <div>
@@ -449,12 +457,12 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </fieldset>
 
         <!-- ========================================== -->
         <!-- FORM B: SMART LIVING & GADGETS             -->
         <!-- ========================================== -->
-        <div x-show="purchaseType === 'smart_living'" class="space-y-6">
+        <fieldset :disabled="purchaseType !== 'smart_living'" x-show="purchaseType === 'smart_living'" class="space-y-6 border-0 p-0 m-0 min-w-0">
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -612,7 +620,7 @@
                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"></textarea>
                 </div>
             </div>
-        </div>
+        </fieldset>
 
         <!-- SECTION 3: Common Image Upload & Preview -->
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
