@@ -46,6 +46,13 @@ class StoreSettings extends Model
         });
     }
 
+    public function getFeaturedCouponCodeAttribute(): string
+    {
+        return !empty($this->attributes['featured_coupon_code'])
+            ? $this->attributes['featured_coupon_code']
+            : 'FESTIVE10';
+    }
+
     public function getPaymentStripUrlAttribute(): ?string
     {
         if (!$this->payment_strip_storage_key) {

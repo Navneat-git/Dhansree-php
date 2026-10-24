@@ -54,6 +54,9 @@ class AdminSettingsWebController extends Controller
             $settings->support_email = $request->input('support_email', $settings->support_email);
             $settings->support_phone = $request->input('support_phone', $settings->support_phone);
             $settings->order_notification_email = $request->input('order_notification_email', $settings->order_notification_email);
+            if ($request->has('featured_coupon_code')) {
+                $settings->featured_coupon_code = strtoupper(trim((string) $request->input('featured_coupon_code')));
+            }
         }
 
         if ($section === 'business' || $section === 'all') {

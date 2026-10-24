@@ -77,6 +77,14 @@
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                         <p class="text-[11px] text-slate-400 mt-1">Receives alerts on new customer orders.</p>
                     </div>
+
+                    <div class="sm:col-span-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Default Top Bar Promo Coupon</label>
+                        <input type="text" name="featured_coupon_code" value="{{ old('featured_coupon_code', $settings->featured_coupon_code ?? 'FESTIVE10') }}"
+                               placeholder="e.g. FESTIVE10"
+                               class="w-full sm:w-1/2 px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold uppercase text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                        <p class="text-[11px] text-slate-400 mt-1">Displayed on the continuous running top marquee bar and checkout coupon placeholder across dhansree.com.</p>
+                    </div>
                 </div>
             </div>
         </div>

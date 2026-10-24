@@ -30,6 +30,20 @@ class Coupon extends Model
         'updated_at' => 'datetime',
     ];
 
+    public function getDiscountLabelAttribute(): string
+    {
+        if ($this->type->value === 'PERCENTAGE') {
+            return rtrim(rtrim(number_format($this->value / 100, 2), '0'), '.') . '% OFF';
+        }
+        return '₹' . number_format($this->value / 100, 0) . ' OFF';
+    }
+
+    public function getIsFeaturedAttribute(): bool
+    {
+        $featured = StoreSettings::current()->featured_coupon_code;
+        return strcasecmp(trim($this->code), trim($featured)) === 0;
+    }
+
     public function createdByAdminUser(): BelongsTo
     {
         return $this->belongsTo(AdminUser::class, 'created_by_admin_user_id', 'id');

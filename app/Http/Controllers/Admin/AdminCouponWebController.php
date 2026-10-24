@@ -39,11 +39,14 @@ class AdminCouponWebController extends Controller
 
         $data = $this->couponsService->list($filters, $page, 25);
 
+        $featuredCouponCode = \App\Models\StoreSettings::current()->featured_coupon_code;
+
         return view('admin.coupons.index', [
             'coupons' => $data['items'],
             'paginator' => $data['paginator'],
             'stats' => $data['stats'],
             'filters' => $filters,
+            'featuredCouponCode' => $featuredCouponCode,
             'canCreate' => $admin->hasPermission(Permissions::COUPON_CREATE),
             'canUpdate' => $admin->hasPermission(Permissions::COUPON_UPDATE),
             'canDelete' => $admin->hasPermission(Permissions::COUPON_DELETE),
@@ -219,6 +222,25 @@ class AdminCouponWebController extends Controller
         $stateText = $coupon->is_active ? 'activated' : 'deactivated';
 
         return back()->with('success', "Coupon '{$coupon->code}' has been {$stateText}.");
+    }
+
+    /**
+     * Set coupon as default/featured storefront announcement coupon.
+     */
+    public function setFeatured(Request $request, int $id): RedirectResponse
+    {
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+        if (!$admin->hasPermission(Permissions::COUPON_UPDATE)) {
+            abort(403, 'You do not have permission to edit coupons.');
+        }
+
+        $coupon = \App\Models\Coupon::findOrFail($id);
+        $settings = \App\Models\StoreSettings::current();
+        $settings->featured_coupon_code = $coupon->code;
+        $settings->save();
+
+        return redirect()->back(fallback: route('admin.coupons.index'))->with('success', "Coupon '{$coupon->code}' is now set as the default storefront coupon on the top announcement bar.");
     }
 
     /**

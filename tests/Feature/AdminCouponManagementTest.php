@@ -318,4 +318,49 @@ class AdminCouponManagementTest extends TestCase
         ]);
         $res->assertStatus(403);
     }
+
+    public function test_admin_can_set_featured_top_bar_coupon(): void
+    {
+        $code = 'FESTIVE' . rand(10, 99);
+        $coupon = Coupon::create([
+            'code' => $code,
+            'type' => CouponType::PERCENTAGE,
+            'value' => 1500,
+            'is_active' => true,
+            'created_by_admin_user_id' => $this->admin->id,
+            'version' => 0,
+        ]);
+
+        $res = $this->asAdmin()->from('/admin/coupons')->post("/admin/coupons/{$coupon->id}/featured");
+        $res->assertRedirect('/admin/coupons');
+        $res->assertSessionHas('success');
+
+        $this->assertEquals($code, \App\Models\StoreSettings::current()->featured_coupon_code);
+
+        // Check coupon listing shows the badge
+        $listRes = $this->asAdmin()->get('/admin/coupons');
+        $listRes->assertOk();
+        $listRes->assertSee('★ Top Bar Default');
+        $listRes->assertSee($code);
+
+        // Check storefront announcement bar renders the new code and discount
+        $storeRes = $this->get('/');
+        $storeRes->assertOk();
+        $storeRes->assertSee($code);
+        $storeRes->assertSee('Extra 15% OFF');
+    }
+
+    public function test_admin_can_update_featured_coupon_via_store_settings(): void
+    {
+        $res = $this->asAdmin()->from('/admin/settings')->put('/admin/settings', [
+            'section' => 'general',
+            'store_name' => 'Dhansree Trends',
+            'support_email' => 'support@dhansree.com',
+            'support_phone' => '+91 9876543210',
+            'featured_coupon_code' => 'FESTIVE10',
+        ]);
+
+        $res->assertRedirect('/admin/settings');
+        $this->assertEquals('FESTIVE10', \App\Models\StoreSettings::current()->featured_coupon_code);
+    }
 }

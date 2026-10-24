@@ -264,7 +264,7 @@
                     <div class="flex gap-2">
                         <input type="text"
                                x-model="form.coupon_code"
-                               placeholder="Have a coupon? e.g. WELCOME-10"
+                               placeholder="Have a coupon? e.g. {{ $store->featured_coupon_code ?? 'FESTIVE10' }}"
                                class="flex-1 px-3 py-2 rounded-lg border border-light-gold bg-ivory/40 text-xs uppercase font-mono tracking-wider text-rich-black focus:border-maroon-800 outline-none">
                         <button type="button"
                                 @click="recalculateQuote"

@@ -40,6 +40,25 @@
         </div>
     @endif
 
+    <!-- Featured Coupon Announcement Notice -->
+    @php
+        $featuredCoupon = $coupons->firstWhere('code', $featuredCouponCode);
+    @endphp
+    <div class="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border border-amber-300/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="size-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+                ★
+            </div>
+            <div>
+                <div class="text-xs font-bold uppercase tracking-wider text-amber-900">Current Default Top Bar Coupon: <span class="font-mono text-base font-extrabold text-slate-900">{{ $featuredCouponCode }}</span></div>
+                <p class="text-xs text-slate-600 mt-0.5">
+                    This coupon is featured on the continuous top announcement bar and checkout placeholder on <strong class="text-slate-800">dhansree.com</strong>.
+                    To switch the default coupon, click <em>"Make Top Bar Default"</em> next to any active coupon below.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Coupon Stats Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs">
@@ -121,10 +140,15 @@
                         <tr class="hover:bg-slate-50/70 transition-colors">
                             <!-- Code & Details -->
                             <td class="px-6 py-4 align-top">
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-mono font-bold text-amber-800 text-sm tracking-wide bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
                                         {{ $coupon->code }}
                                     </span>
+                                    @if($coupon->is_featured)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                            ★ Top Bar Default
+                                        </span>
+                                    @endif
                                 </div>
                                 @if($coupon->description)
                                     <div class="text-xs text-slate-600 mt-1 max-w-xs">
@@ -233,6 +257,25 @@
                             <td class="px-6 py-4 align-top text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-2">
                                     @if($canUpdate)
+                                        @if($coupon->is_active)
+                                            @if($coupon->is_featured)
+                                                <span class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                                                    ★ On Top Bar
+                                                </span>
+                                            @else
+                                                <form method="POST" action="{{ route('admin.coupons.set-featured', $coupon->id) }}" class="inline">
+                                                    @csrf
+                                                    <button
+                                                        type="submit"
+                                                        class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors shadow-2xs flex items-center gap-1"
+                                                        title="Set as the default coupon showing on the website top announcement bar"
+                                                    >
+                                                        ★ Make Top Bar Default
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endif
+
                                         <form method="POST" action="{{ route('admin.coupons.toggle', $coupon->id) }}" class="inline">
                                             @csrf
                                             <button
