@@ -442,9 +442,23 @@
 
     <!-- TAB 3: MEDIA & IMAGES -->
     <div x-show="activeTab === 'media'" class="space-y-6">
+        @php
+            $colorOptions = $product->options->filter(fn($o) => in_array(strtolower($o->name), ['color', 'colour']));
+            $otherOptions = $product->options->reject(fn($o) => in_array(strtolower($o->name), ['color', 'colour']));
+        @endphp
+
         <!-- Upload Box -->
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
-            <h2 class="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3">Upload Product Image</h2>
+            <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Upload New Product Image</h2>
+                    <p class="text-xs text-slate-500">Add a new image file from your device and optionally tag which color it belongs to.</p>
+                </div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Already uploaded images are pinned using the buttons in the gallery below</span>
+                </div>
+            </div>
 
             <form method="POST" action="{{ route('admin.products.upload-image', ['product' => $product, 'tab' => 'media']) }}" enctype="multipart/form-data" class="space-y-4">
                 @csrf
@@ -452,7 +466,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Image File (JPEG, PNG, WebP &bull; Max 10MB)</label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Select File (JPEG, PNG, WebP &bull; Max 10MB)</label>
                         <input type="file" name="image" required accept="image/jpeg,image/png,image/webp"
                                class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
                     </div>
@@ -463,16 +477,19 @@
                     </div>
                 </div>
 
-                <!-- Pin by Option (e.g. Color) -->
-                @if($product->options->isNotEmpty())
+                <!-- Pin by Color (Optional on Upload) -->
+                @if($colorOptions->isNotEmpty())
                     <div class="space-y-2 pt-2 border-t border-slate-100">
-                        <label class="block text-xs font-semibold text-slate-700">Pin to Specific Color / Option (Optional):</label>
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Tag new upload to Color (Optional):
+                            <span class="text-slate-400 font-normal">Check the color this new photo represents</span>
+                        </label>
                         <div class="flex items-center gap-2.5 flex-wrap">
-                            @foreach($product->options as $opt)
+                            @foreach($colorOptions as $opt)
                                 @foreach($opt->values as $oval)
-                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 hover:bg-amber-50/50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer transition-colors">
-                                        <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                        <span class="font-medium"><strong class="text-slate-900">{{ $opt->name }}:</strong> {{ $oval->value }}</span>
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-800 bg-amber-50/50 hover:bg-amber-100/70 px-3 py-1.5 rounded-lg border border-amber-200 cursor-pointer transition-colors font-medium">
+                                        <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}" class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                        <span>Color: <strong class="text-amber-900">{{ $oval->value }}</strong></span>
                                     </label>
                                 @endforeach
                             @endforeach
@@ -480,20 +497,45 @@
                     </div>
                 @endif
 
-                <!-- Pin by Specific Variant SKUs -->
-                @if($product->variants->count() > 1)
-                    <div class="space-y-2 pt-2 border-t border-slate-100">
-                        <label class="block text-xs font-semibold text-slate-700">Pin to Specific Variant SKUs (Optional):</label>
-                        <div class="flex items-center gap-2 flex-wrap max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
-                            @foreach($product->variants as $var)
-                                <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2.5 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
-                                    <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                    <span class="font-mono text-[11px]">{{ $var->sku }}</span>
-                                    <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
-                                </label>
-                            @endforeach
+                @if($otherOptions->isNotEmpty() || $product->variants->count() > 1)
+                    <details class="text-xs text-slate-600 border-t border-slate-100 pt-2 group">
+                        <summary class="cursor-pointer font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 select-none">
+                            <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <span>Advanced: Tag new upload to specific sizes or variant SKUs (Optional)</span>
+                        </summary>
+                        <div class="space-y-3 mt-3 pl-4">
+                            @if($otherOptions->isNotEmpty())
+                                <div class="space-y-1.5">
+                                    <span class="block text-[11px] font-semibold text-slate-600">Other Options:</span>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        @foreach($otherOptions as $opt)
+                                            @foreach($opt->values as $oval)
+                                                <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 px-2.5 py-1 rounded border border-slate-200 cursor-pointer">
+                                                    <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                    <span>{{ $opt->name }}: {{ $oval->value }}</span>
+                                                </label>
+                                            @endforeach
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($product->variants->count() > 1)
+                                <div class="space-y-1.5">
+                                    <span class="block text-[11px] font-semibold text-slate-600">Specific Variant SKUs:</span>
+                                    <div class="flex items-center gap-2 flex-wrap max-h-32 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        @foreach($product->variants as $var)
+                                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                                <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                <span class="font-mono text-[11px]">{{ $var->sku }}</span>
+                                                <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
-                    </div>
+                    </details>
                 @endif
 
                 <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2">
@@ -505,10 +547,12 @@
 
         <!-- Images Grid -->
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
-            <h2 class="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3 flex items-center justify-between">
-                <span>Product Gallery ({{ $product->images->count() }})</span>
-                <span class="text-xs font-normal text-slate-500">Position 0 is the primary storefront photo &bull; Pin media to variants to switch photos when color is selected</span>
-            </h2>
+            <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Product Gallery ({{ $product->images->count() }})</h2>
+                    <p class="text-xs text-slate-500">Position #0 is the primary storefront photo &bull; Click "Pin to Color / Edit Alt" on any photo to choose which color it represents.</p>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 @forelse($product->images as $img)
@@ -539,7 +583,7 @@
 
                             <!-- Pinned Variation Badges -->
                             <div class="space-y-1">
-                                <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pinned to:</div>
+                                <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Current Assignment:</div>
                                 <div class="flex items-center gap-1 flex-wrap min-h-6">
                                     @if($pinnedVals->isNotEmpty() || $pinnedVars->isNotEmpty())
                                         @foreach($pinnedVals as $pv)
@@ -554,7 +598,7 @@
                                         @endforeach
                                     @else
                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-slate-500 bg-slate-100">
-                                            All Variations
+                                            All Colors (General Photo)
                                         </span>
                                     @endif
                                 </div>
@@ -564,9 +608,9 @@
                         <div class="space-y-2 pt-2 border-t border-slate-100">
                             <!-- Button to Open Assign & Edit Modal -->
                             <button type="button" @click="editModal = true"
-                                    class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition-colors flex items-center justify-center gap-1.5">
-                                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                <span>Assign Variations / Alt</span>
+                                    class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
+                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                <span>Pin to Color / Edit Alt</span>
                             </button>
 
                             <div class="flex items-center justify-between gap-1 text-[11px]">
@@ -598,7 +642,10 @@
                             <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-left"
                                  @click.outside="editModal = false">
                                 <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                                    <h3 class="text-sm font-bold text-slate-900">Assign Variations & Alt Text</h3>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-slate-900">Pin Image #{{ $img->position }} to Color & Variations</h3>
+                                        <p class="text-[11px] text-slate-500">Choose which color is shown in this photo, then click Save Changes.</p>
+                                    </div>
                                     <button type="button" @click="editModal = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
                                 </div>
 
@@ -616,18 +663,18 @@
                                         </div>
                                     </div>
 
-                                    @if($product->options->isNotEmpty())
+                                    @if($colorOptions->isNotEmpty())
                                         <div class="space-y-2">
-                                            <label class="block text-xs font-semibold text-slate-800">Pin to Color / Option:</label>
-                                            <p class="text-[11px] text-slate-500">Selecting a color displays this photo automatically when that color is clicked on the storefront.</p>
+                                            <label class="block text-xs font-bold text-slate-800">Pin to Color:</label>
+                                            <p class="text-[11px] text-slate-500">When shoppers select this color on your storefront, the gallery will jump to this photo automatically.</p>
                                             <div class="flex items-center gap-2 flex-wrap">
-                                                @foreach($product->options as $opt)
+                                                @foreach($colorOptions as $opt)
                                                     @foreach($opt->values as $oval)
-                                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
+                                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 cursor-pointer font-medium">
                                                             <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}"
                                                                    {{ in_array($oval->id, $pinnedOptionValueIds, true) ? 'checked' : '' }}
-                                                                   class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                                            <span><strong>{{ $opt->name }}:</strong> {{ $oval->value }}</span>
+                                                                   class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                                            <span>Color: <strong class="text-amber-900">{{ $oval->value }}</strong></span>
                                                         </label>
                                                     @endforeach
                                                 @endforeach
@@ -635,35 +682,63 @@
                                         </div>
                                     @endif
 
-                                    @if($product->variants->count() > 1)
-                                        <div class="space-y-2">
-                                            <label class="block text-xs font-semibold text-slate-800">Pin to Specific Variant SKUs:</label>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                                                @foreach($product->variants as $var)
-                                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white p-1.5 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
-                                                        <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}"
-                                                               {{ in_array($var->id, $pinnedVariantIds, true) ? 'checked' : '' }}
-                                                               class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-                                                        <div class="truncate">
-                                                            <div class="font-mono text-[11px] truncate">{{ $var->sku }}</div>
-                                                            <div class="text-slate-400 text-[10px]">{{ $var->display_option_label }}</div>
+                                    @if($otherOptions->isNotEmpty() || $product->variants->count() > 1)
+                                        <details class="text-xs text-slate-600 border-t border-slate-100 pt-2 group">
+                                            <summary class="cursor-pointer font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 select-none">
+                                                <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                <span>Advanced: Pin to specific sizes or variant SKUs (Optional)</span>
+                                            </summary>
+                                            <div class="space-y-3 mt-3 pl-2">
+                                                @if($otherOptions->isNotEmpty())
+                                                    <div class="space-y-1.5">
+                                                        <span class="block text-[11px] font-semibold text-slate-600">Other Options:</span>
+                                                        <div class="flex items-center gap-2 flex-wrap">
+                                                            @foreach($otherOptions as $opt)
+                                                                @foreach($opt->values as $oval)
+                                                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-slate-50 px-2.5 py-1 rounded border border-slate-200 cursor-pointer">
+                                                                        <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}"
+                                                                               {{ in_array($oval->id, $pinnedOptionValueIds, true) ? 'checked' : '' }}
+                                                                               class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                                        <span>{{ $opt->name }}: {{ $oval->value }}</span>
+                                                                    </label>
+                                                                @endforeach
+                                                            @endforeach
                                                         </div>
-                                                    </label>
-                                                @endforeach
+                                                    </div>
+                                                @endif
+
+                                                @if($product->variants->count() > 1)
+                                                    <div class="space-y-1.5">
+                                                        <span class="block text-[11px] font-semibold text-slate-600">Specific Variant SKUs:</span>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                                            @foreach($product->variants as $var)
+                                                                <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white p-1.5 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                                                    <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}"
+                                                                           {{ in_array($var->id, $pinnedVariantIds, true) ? 'checked' : '' }}
+                                                                           class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                                    <div class="truncate">
+                                                                        <div class="font-mono text-[11px] truncate">{{ $var->sku }}</div>
+                                                                        <div class="text-slate-400 text-[10px]">{{ $var->display_option_label }}</div>
+                                                                    </div>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
                                             </div>
-                                        </div>
+                                        </details>
                                     @endif
 
                                     <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                                         <button type="button" @click="editModal = false" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-800">
                                             Cancel
                                         </button>
-                                        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition-all">
-                                            Save Assignments
+                                        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            <span>Save Changes</span>
                                         </button>
                                     </div>
                                 </form>
-                            </div>
                         </div>
                     </div>
                 @empty
