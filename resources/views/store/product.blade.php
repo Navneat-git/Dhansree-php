@@ -831,21 +831,23 @@
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 x-transition:exit="ease-in duration-200"
-                 x-transition:exit-start="opacity-100"
-                 x-transition:exit-end="opacity-0"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
                  @click="sizeChartOpen = false"
-                 class="fixed inset-0 bg-rich-black/60 backdrop-blur-xs transition-opacity"></div>
+                 class="fixed inset-0 bg-rich-black/60 backdrop-blur-xs transition-opacity"
+                 aria-hidden="true"></div>
 
             <!-- Dialog Positioning Wrapper -->
-            <div class="min-h-full flex items-center justify-center p-4 sm:p-6 text-center">
+            <div class="min-h-full flex items-center justify-center p-4 sm:p-6 text-center"
+                 @click="sizeChartOpen = false">
                 <div x-show="sizeChartOpen"
                      x-transition:enter="ease-out duration-300"
                      x-transition:enter-start="opacity-0 scale-95"
                      x-transition:enter-end="opacity-100 scale-100"
-                     x-transition:exit="ease-in duration-200"
-                     x-transition:exit-start="opacity-100 scale-100"
-                     x-transition:exit-end="opacity-0 scale-95"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
                      @click.stop
                      class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 w-full max-w-2xl border border-light-gold/60 max-h-[90vh] flex flex-col">
                     
