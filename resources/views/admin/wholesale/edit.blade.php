@@ -92,6 +92,7 @@
     // Smart Living State
     sl: {
         sku: '{{ addslashes($purchase->sku ?? '') }}',
+        nextSerial: '{{ $nextSmartLivingSerial ?? '001' }}',
         productName: '{{ addslashes($purchase->product_name ?? '') }}',
         description: '{{ addslashes($purchase->description ?? '') }}',
         categoryId: '{{ $purchase->category_id ?? '' }}',
@@ -108,6 +109,36 @@
         purchaseDate: '{{ $purchase->purchase_date?->format('Y-m-d') ?? '' }}',
         imageUrl: '{{ addslashes($purchase->image_url ?? '') }}',
         notes: '{{ addslashes($purchase->notes ?? '') }}',
+
+        formatSku() {
+            let raw = (this.sku || '').trim().toUpperCase();
+            if (!raw) return;
+
+            if (/-\d{3,}$/.test(raw)) {
+                this.sku = raw;
+                return;
+            }
+
+            const twoDigitMatch = raw.match(/^(.*?)-(\d{1,2})$/);
+            if (twoDigitMatch) {
+                this.sku = twoDigitMatch[1] + '-' + twoDigitMatch[2].padStart(3, '0');
+                return;
+            }
+
+            const base = raw.replace(/[-_\s]+$/, '');
+            this.sku = base + '-' + this.nextSerial;
+        },
+
+        get previewSku() {
+            let raw = (this.sku || '').trim().toUpperCase();
+            if (!raw) return '';
+            if (/-\d{3,}$/.test(raw)) return raw;
+            const twoDigitMatch = raw.match(/^(.*?)-(\d{1,2})$/);
+            if (twoDigitMatch) {
+                return twoDigitMatch[1] + '-' + twoDigitMatch[2].padStart(3, '0');
+            }
+            return raw.replace(/[-_\s]+$/, '') + '-' + this.nextSerial;
+        },
 
         get wholesalePrice() {
             const c = parseFloat(this.costPrice) || 0;
@@ -161,7 +192,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="{{ route('admin.wholesale.update', $purchase) }}" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="{{ route('admin.wholesale.update', $purchase) }}" @submit="if (purchaseType === 'smart_living') sl.formatSku()" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')
 
@@ -363,9 +394,33 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">SKU</label>
-                        <input type="text" name="sku" x-model="sl.sku"
-                               class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900" required>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-700">
+                                SKU <span class="text-rose-500">*</span>
+                            </label>
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                Next Serial: <strong x-text="sl.nextSerial"></strong>
+                            </span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" name="sku" x-model="sl.sku"
+                                   @input="sl.sku = sl.sku.toUpperCase()"
+                                   @blur="sl.formatSku()"
+                                   class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-semibold text-slate-900 pr-16" required>
+                            <button type="button"
+                                    @click="sl.formatSku()"
+                                    title="Auto-append next serial"
+                                    class="absolute right-1 top-1 bottom-1 px-2.5 rounded bg-blue-100/70 hover:bg-blue-200 text-blue-800 text-[10px] font-mono font-bold border border-blue-300 transition-colors flex items-center gap-1">
+                                <span>+</span><span x-text="sl.nextSerial"></span>
+                            </button>
+                        </div>
+                        <div class="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[11px]">
+                            <div class="text-slate-500 flex items-center gap-1">
+                                <span>Preview:</span>
+                                <span class="font-mono font-bold text-blue-900 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200"
+                                      x-text="sl.previewSku || sl.sku"></span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="sm:col-span-2">

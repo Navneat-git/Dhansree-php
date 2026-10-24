@@ -144,6 +144,9 @@
             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
             <span>Smart Living & Gadgets</span>
             <span class="px-2 py-0.5 rounded-full text-[11px] {{ $tab === 'smart_living' ? 'bg-blue-200 text-blue-900 font-bold' : 'bg-slate-100 text-slate-600' }}">{{ $smartCount }}</span>
+            @if(!empty($nextSmartLivingSerial))
+                <span class="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 text-blue-800 border border-blue-200" title="Next Available Serial">Next: {{ $nextSmartLivingSerial }}</span>
+            @endif
         </a>
     </div>
 

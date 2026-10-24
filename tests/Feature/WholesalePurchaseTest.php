@@ -180,6 +180,68 @@ class WholesalePurchaseTest extends TestCase
         $this->assertEquals('Supplier A', $entry->supplier);
     }
 
+    public function test_smart_living_sku_auto_picks_up_next_serial_number_when_base_sku_is_entered(): void
+    {
+        // 1. Create product with serial 061 (like DS-MSG-GUN-061)
+        WholesalePurchase::create([
+            'purchase_type' => WholesalePurchase::TYPE_SMART_LIVING,
+            'sku' => 'DS-MSG-GUN-061',
+            'product_name' => 'Handheld Percussion Massage Gun',
+            'status' => 'Available',
+            'cost_price' => 300.00,
+        ]);
+
+        $this->assertEquals('062', WholesalePurchase::getNextSmartLivingSerialNumber());
+
+        // 2. Submit new product with base SKU DS-JWL-BOX (no serial)
+        $res = $this->actingAsAdmin()->post(route('admin.wholesale.store'), [
+            'purchase_type' => WholesalePurchase::TYPE_SMART_LIVING,
+            'sku' => 'DS-JWL-BOX',
+            'product_name' => 'Portable Jewelry Organizer Box',
+            'status' => 'Available',
+            'cost_price' => 200.00,
+            'markup' => 1.5,
+            'retail_markup' => 2.0,
+        ]);
+
+        $res->assertRedirect();
+
+        // 3. Verify it was saved with auto-picked serial 062: DS-JWL-BOX-062
+        $entry = WholesalePurchase::where('product_name', 'Portable Jewelry Organizer Box')->first();
+        $this->assertNotNull($entry);
+        $this->assertEquals('DS-JWL-BOX-062', $entry->sku);
+
+        // 4. Next serial should now be 063
+        $this->assertEquals('063', WholesalePurchase::getNextSmartLivingSerialNumber());
+    }
+
+    public function test_smart_living_next_serial_endpoint_returns_json(): void
+    {
+        WholesalePurchase::create([
+            'purchase_type' => WholesalePurchase::TYPE_SMART_LIVING,
+            'sku' => 'DS-TEST-061',
+            'product_name' => 'Test Product',
+            'status' => 'Available',
+        ]);
+
+        $res = $this->actingAsAdmin()->get(route('admin.wholesale.next-serial'));
+        $res->assertOk();
+        $res->assertJson([
+            'success' => true,
+            'next_serial' => '062',
+        ]);
+    }
+
+    public function test_smart_living_sku_pads_short_digits_and_preserves_custom_serials(): void
+    {
+        // Two digits gets padded to 3 digits (e.g. DS-JWL-BOX-62 -> DS-JWL-BOX-062)
+        $this->assertEquals('DS-JWL-BOX-062', WholesalePurchase::completeSmartLivingSku('DS-JWL-BOX-62'));
+
+        // Existing 3-digit serial preserved
+        $this->assertEquals('DS-MSG-GUN-061', WholesalePurchase::completeSmartLivingSku('DS-MSG-GUN-061'));
+        $this->assertEquals('DS-JWL-BOX-099', WholesalePurchase::completeSmartLivingSku('DS-JWL-BOX-099'));
+    }
+
     public function test_admin_can_upload_product_image_and_generate_public_url(): void
     {
         Storage::fake('public');
@@ -188,7 +250,7 @@ class WholesalePurchaseTest extends TestCase
 
         $res = $this->actingAsAdmin()->post(route('admin.wholesale.store'), [
             'purchase_type' => WholesalePurchase::TYPE_SMART_LIVING,
-            'sku' => 'DS-IMG-TEST',
+            'sku' => 'DS-IMG-050',
             'product_name' => 'Product With Image',
             'status' => 'Available',
             'cost_price' => 100.00,
@@ -197,7 +259,7 @@ class WholesalePurchaseTest extends TestCase
 
         $res->assertRedirect();
 
-        $entry = WholesalePurchase::where('sku', 'DS-IMG-TEST')->first();
+        $entry = WholesalePurchase::where('product_name', 'Product With Image')->first();
         $this->assertNotNull($entry);
         $this->assertNotNull($entry->image_path);
         $this->assertNotNull($entry->image_url);

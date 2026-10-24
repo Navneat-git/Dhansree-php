@@ -247,6 +247,7 @@ Route::prefix('admin')->group(function () {
         Route::prefix('wholesale')->name('admin.wholesale.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'create'])->name('create');
+            Route::get('/next-serial', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'nextSerial'])->name('next-serial');
             Route::post('/', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'store'])->name('store');
             Route::get('/export', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'export'])->name('export');
             Route::get('/copy', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'copyTsv'])->name('copy');

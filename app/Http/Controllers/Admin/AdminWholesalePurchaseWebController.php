@@ -103,6 +103,7 @@ class AdminWholesalePurchaseWebController extends Controller
             'totalStockUnits' => $totalStockUnits,
             'categories' => $categories,
             'colorCodes' => $colorCodes,
+            'nextSmartLivingSerial' => WholesalePurchase::getNextSmartLivingSerialNumber(),
         ]);
     }
 
@@ -114,11 +115,24 @@ class AdminWholesalePurchaseWebController extends Controller
         $type = $request->query('type', WholesalePurchase::TYPE_WOMEN_FASHION);
         $categories = Category::orderBy('name')->get();
         $colorCodes = WholesaleColorCode::orderBy('sort_order')->orderBy('color_name')->get();
+        $nextSmartLivingSerial = WholesalePurchase::getNextSmartLivingSerialNumber();
 
         return view('admin.wholesale.create', [
             'type' => $type,
             'categories' => $categories,
             'colorCodes' => $colorCodes,
+            'nextSmartLivingSerial' => $nextSmartLivingSerial,
+        ]);
+    }
+
+    /**
+     * Get next Smart Living serial number JSON.
+     */
+    public function nextSerial(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'next_serial' => WholesalePurchase::getNextSmartLivingSerialNumber(),
         ]);
     }
 
@@ -151,6 +165,9 @@ class AdminWholesalePurchaseWebController extends Controller
                 'image_url' => 'nullable|string|max:1000',
                 'notes' => 'nullable|string',
             ]);
+
+            // Auto-complete Smart Living SKU with serial if user typed base SKU (e.g. DS-JWL-BOX -> DS-JWL-BOX-062)
+            $data['sku'] = WholesalePurchase::completeSmartLivingSku($data['sku']);
 
             // Auto calculate wholesale & retail price
             $costPrice = (float) ($data['cost_price'] ?? 0);
@@ -315,11 +332,14 @@ class AdminWholesalePurchaseWebController extends Controller
         $categories = Category::orderBy('name')->get();
         $colorCodes = WholesaleColorCode::orderBy('sort_order')->orderBy('color_name')->get();
 
+        $nextSmartLivingSerial = WholesalePurchase::getNextSmartLivingSerialNumber();
+
         return view('admin.wholesale.edit', [
             'purchase' => $purchase,
             'type' => $purchase->purchase_type,
             'categories' => $categories,
             'colorCodes' => $colorCodes,
+            'nextSmartLivingSerial' => $nextSmartLivingSerial,
         ]);
     }
 
@@ -351,6 +371,9 @@ class AdminWholesalePurchaseWebController extends Controller
                 'image_url' => 'nullable|string|max:1000',
                 'notes' => 'nullable|string',
             ]);
+
+            // Auto-complete SKU if modified without serial
+            $data['sku'] = WholesalePurchase::completeSmartLivingSku($data['sku']);
 
             $costPrice = (float) ($data['cost_price'] ?? 0);
             $markup = (float) ($data['markup'] ?? 1);

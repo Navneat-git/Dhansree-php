@@ -222,4 +222,83 @@ class WholesalePurchase extends Model
             'retail_price' => $retailPrice,
         ];
     }
+
+    /**
+     * Get next 3-digit serial number for Smart Living & Gadgets SKUs.
+     * Scans both WholesalePurchase (smart_living) and ProductVariant (DS-*-###) to find highest serial.
+     * e.g., if max is 61 (from 'DS-MSG-GUN-061'), returns '062'.
+     */
+    public static function getNextSmartLivingSerialNumber(): string
+    {
+        $maxSerial = 0;
+
+        // 1. Scan wholesale_purchases where purchase_type = smart_living
+        $wpSkus = self::withTrashed()
+            ->where('purchase_type', self::TYPE_SMART_LIVING)
+            ->whereNotNull('sku')
+            ->pluck('sku');
+
+        foreach ($wpSkus as $sku) {
+            if (preg_match('/-(\d{1,5})$/', trim((string) $sku), $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxSerial) {
+                    $maxSerial = $num;
+                }
+            }
+        }
+
+        // 2. Also scan existing catalog product variants (e.g. DS-TMR-009, DS-IRON-MINI-016, DS-DT-CBL-018)
+        try {
+            $variantSkus = ProductVariant::where('sku', 'like', 'DS-%')
+                ->pluck('sku');
+
+            foreach ($variantSkus as $sku) {
+                // Must match DS-...-### (at least 3 digits at end to avoid matching fashion sizes like -S, -M, -L or random letters)
+                if (preg_match('/^DS-[A-Za-z0-9-]+-(\d{3,5})$/', trim((string) $sku), $matches)) {
+                    $num = (int) $matches[1];
+                    if ($num > $maxSerial) {
+                        $maxSerial = $num;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            // Fallback gracefully
+        }
+
+        $next = $maxSerial + 1;
+
+        return str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Format/complete a Smart Living SKU with the next serial number if not already present.
+     * e.g. 'DS-JWL-BOX' -> 'DS-JWL-BOX-062'
+     * e.g. 'DS-MSG-GUN-061' -> 'DS-MSG-GUN-061' (keeps existing 3-digit serial)
+     * e.g. 'DS-JWL-BOX-62' -> 'DS-JWL-BOX-062' (pads 1-2 digits to 3 digits)
+     */
+    public static function completeSmartLivingSku(?string $rawSku, ?string $explicitSerial = null): string
+    {
+        $sku = strtoupper(trim((string) $rawSku));
+        if ($sku === '') {
+            return '';
+        }
+
+        // If it already ends with 3+ digits preceded by a hyphen, e.g. DS-MSG-GUN-061
+        if (preg_match('/-(\d{3,})$/', $sku)) {
+            return $sku;
+        }
+
+        // If it ends with 1 or 2 digits preceded by a hyphen, e.g. DS-JWL-BOX-62 -> pad to 062
+        if (preg_match('/^(.*?)-(\d{1,2})$/', $sku, $matches)) {
+            $base = $matches[1];
+            $padded = str_pad($matches[2], 3, '0', STR_PAD_LEFT);
+            return $base . '-' . $padded;
+        }
+
+        // Otherwise it has no serial suffix e.g. 'DS-JWL-BOX' or 'DS-JWL-BOX-'
+        $base = rtrim($sku, '-_ ');
+        $serial = $explicitSerial ?: self::getNextSmartLivingSerialNumber();
+
+        return $base . '-' . $serial;
+    }
 }
