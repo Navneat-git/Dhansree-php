@@ -108,6 +108,48 @@ class WholesalePurchaseTest extends TestCase
         $this->assertEquals(1575.00, (float) $entry->selling_price);
     }
 
+    public function test_admin_can_create_women_fashion_with_multiple_sizes_creates_multiple_rows(): void
+    {
+        $res = $this->actingAsAdmin()->post(route('admin.wholesale.store'), [
+            'purchase_type' => WholesalePurchase::TYPE_WOMEN_FASHION,
+            'brand_code' => 'DS',
+            'purchase_date' => '2026-04-19',
+            'vcode' => 'ICF',
+            'design_number' => '25',
+            'category_name' => 'KURTI',
+            'color' => 'Pink',
+            'sizes' => ['S', 'M', 'L', 'XL'],
+            'product_name' => 'Festive Pink Anarkali Kurti',
+            'thread_count' => '60x60',
+            'cost' => 600.00,
+            'gst_percent' => 5.0,
+            'markup' => 1.8,
+            'status' => 'Available',
+        ]);
+
+        $res->assertRedirect();
+        $res->assertSessionHas('success');
+
+        $entries = WholesalePurchase::where('product_name', 'Festive Pink Anarkali Kurti')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $this->assertCount(4, $entries);
+
+        $expectedSizes = ['S', 'M', 'L', 'XL'];
+        foreach ($entries as $i => $entry) {
+            $expectedSize = $expectedSizes[$i];
+            $this->assertEquals($expectedSize, $entry->size);
+            $this->assertEquals('ICF19042625', $entry->pcode);
+            $this->assertEquals('KT', $entry->category_code);
+            $this->assertEquals('PNK', $entry->color_code);
+            $this->assertEquals("DSICF19042625-KT-PNK-{$expectedSize}", $entry->sku);
+            $this->assertEquals(30.00, (float) $entry->gst_amount);
+            $this->assertEquals(630.00, (float) $entry->total_cost);
+            $this->assertEquals(1134.00, (float) $entry->selling_price);
+        }
+    }
+
     public function test_admin_can_create_smart_living_entry_with_auto_markup_pricing(): void
     {
         $res = $this->actingAsAdmin()->post(route('admin.wholesale.store'), [

@@ -18,7 +18,8 @@
         pcode: '',
         color: '',
         colorCode: '',
-        size: 'M',
+        sizes: ['S', 'M', 'L', 'XL'],
+        availableSizes: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', 'Free Size'],
         sku: '',
         status: 'Available',
         productName: '',
@@ -28,6 +29,59 @@
         markup: 1.5,
         imageUrl: '',
         notes: '',
+
+        toggleSize(s) {
+            const idx = this.sizes.indexOf(s);
+            if (idx === -1) {
+                this.sizes.push(s);
+            } else {
+                this.sizes.splice(idx, 1);
+            }
+            this.recalculateAll();
+        },
+
+        selectCommon() {
+            this.sizes = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+            this.recalculateAll();
+        },
+
+        selectAll() {
+            this.sizes = [...this.availableSizes];
+            this.recalculateAll();
+        },
+
+        clearAll() {
+            this.sizes = [];
+            this.recalculateAll();
+        },
+
+        get generatedSkusList() {
+            const brand = (this.brandCode || 'DS').toUpperCase().slice(0, 2);
+            const p = this.pcode || '';
+            const cat = this.categoryCode ? this.categoryCode.toUpperCase().trim() : '';
+            const col = this.colorCode ? this.colorCode.toUpperCase().trim() : '';
+
+            if (!this.sizes.length) {
+                let parts = [];
+                if (cat) parts.push(cat);
+                if (col) parts.push(col);
+                return [{
+                    size: 'No size',
+                    sku: brand + p + (parts.length ? '-' + parts.join('-') : '')
+                }];
+            }
+
+            return this.sizes.map(sz => {
+                let parts = [];
+                if (cat) parts.push(cat);
+                if (col) parts.push(col);
+                if (sz) parts.push(sz.toUpperCase().trim());
+                return {
+                    size: sz,
+                    sku: brand + p + (parts.length ? '-' + parts.join('-') : '')
+                };
+            });
+        },
 
         // Update Category Code based on Category Name
         updateCategoryCode() {
@@ -69,12 +123,13 @@
             const des = (this.designNumber || '').trim();
             this.pcode = v + ddmmyy + des;
 
-            // 3. SKU = Brand(2) + pcode + '-' + catCode + '-' + colCode + '-' + size
+            // 3. First generated sku for single display
             const brand = (this.brandCode || 'DS').toUpperCase().slice(0, 2);
             let skuParts = [];
             if (this.categoryCode) skuParts.push(this.categoryCode.toUpperCase().trim());
             if (this.colorCode) skuParts.push(this.colorCode.toUpperCase().trim());
-            if (this.size) skuParts.push(this.size.toUpperCase().trim());
+            const firstSize = this.sizes.length ? this.sizes[0] : '';
+            if (firstSize) skuParts.push(firstSize.toUpperCase().trim());
 
             this.sku = brand + this.pcode + (skuParts.length ? '-' + skuParts.join('-') : '');
         },
@@ -283,7 +338,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 pt-2">
                     <!-- Category Name -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Category Name <span class="text-rose-500">*</span></label>
@@ -310,30 +365,10 @@
                         <label class="block text-xs font-semibold text-purple-800 mb-1">Product Code (pcode)</label>
                         <input type="text" name="pcode" x-model="wf.pcode" readonly
                                class="w-full px-3 py-2 bg-purple-50 border border-purple-300 rounded-lg text-xs font-mono font-bold text-purple-900">
-                        <p class="text-[10px] text-purple-600 mt-1">Formula: vcode + ddmmyy + designNo</p>
+                        <p class="text-[10px] text-purple-600 mt-1">vcode + ddmmyy + designNo</p>
                     </div>
 
-                    <!-- Size -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Size <span class="text-rose-500">*</span></label>
-                        <select name="size" x-model="wf.size" @change="wf.recalculateAll()"
-                                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
-                                :required="purchaseType === 'women_fashion'">
-                            <option value="S">S</option>
-                            <option value="M">M</option>
-                            <option value="L">L</option>
-                            <option value="XL">XL</option>
-                            <option value="2XL">2XL</option>
-                            <option value="3XL">3XL</option>
-                            <option value="4XL">4XL</option>
-                            <option value="5XL">5XL</option>
-                            <option value="Free Size">Free Size</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Color & Color Code Row -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                    <!-- Color -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Color <span class="text-rose-500">*</span></label>
                         <select name="color" x-model="wf.color" @change="wf.updateColorCode(colorMap)"
@@ -346,25 +381,89 @@
                         </select>
                     </div>
 
+                    <!-- Color Code (Auto) -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Color Code (Auto)</label>
                         <input type="text" name="color_code" x-model="wf.colorCode" @input="wf.recalculateAll()"
                                placeholder="e.g. BLU"
                                class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-xs font-mono uppercase font-bold text-slate-800">
+                        <p class="text-[10px] text-slate-400 mt-1">e.g. BLU, GRN</p>
                     </div>
+                </div>
 
-                    <!-- Generated SKU Box (Highlight) -->
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-amber-800 mb-1">Generated Product SKU (Auto)</label>
-                        <div class="flex items-center gap-2">
-                            <input type="text" name="sku" x-model="wf.sku"
-                                   class="flex-1 px-3 py-2 bg-amber-50/70 border border-amber-300 rounded-lg text-xs font-mono font-bold text-amber-950">
-                            <button type="button" @click="navigator.clipboard.writeText(wf.sku); alert('SKU copied: ' + wf.sku)"
-                                    class="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold">
-                                Copy
+                <!-- MULTI-SIZE SELECTION & MULTI-ROW SKU GENERATION -->
+                <div class="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50/40 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-amber-200/60 pb-2.5">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white uppercase">Multi-Size Enabled</span>
+                                <h4 class="text-xs font-bold text-amber-950">Select Sizes for this Product (Creates 1 row per size)</h4>
+                            </div>
+                            <p class="text-[11px] text-amber-800/80 mt-0.5">
+                                Select all sizes this design comes in. Each size will automatically receive its own unique SKU and create a separate row in the table!
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
+                            <button type="button" @click="wf.selectCommon()"
+                                    class="px-2.5 py-1 rounded bg-white hover:bg-amber-100 text-[11px] font-semibold text-amber-900 border border-amber-300 shadow-2xs transition-colors">
+                                Standard (S-3XL)
+                            </button>
+                            <button type="button" @click="wf.selectAll()"
+                                    class="px-2.5 py-1 rounded bg-white hover:bg-amber-100 text-[11px] font-semibold text-amber-900 border border-amber-300 shadow-2xs transition-colors">
+                                Select All
+                            </button>
+                            <button type="button" @click="wf.clearAll()"
+                                    class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 text-[11px] font-medium text-slate-600 border border-slate-300 shadow-2xs transition-colors">
+                                Clear
                             </button>
                         </div>
-                        <p class="text-[10px] text-amber-700 mt-1">e.g. DSICF19042610-S3-BLU-XL</p>
+                    </div>
+
+                    <!-- Size Pills -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <template x-for="sz in wf.availableSizes" :key="sz">
+                            <button type="button"
+                                    @click="wf.toggleSize(sz)"
+                                    :class="wf.sizes.includes(sz) ? 'bg-amber-600 text-white font-bold border-amber-600 shadow-xs ring-2 ring-amber-500/20' : 'bg-white text-slate-700 border-slate-300 hover:border-amber-500 hover:bg-amber-50/50'"
+                                    class="px-3 py-1.5 rounded-lg border text-xs transition-all flex items-center gap-1.5">
+                                <span x-show="wf.sizes.includes(sz)" class="text-[11px]">✓</span>
+                                <span x-text="sz"></span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Hidden inputs for each selected size -->
+                    <template x-for="sz in wf.sizes" :key="'input_' + sz">
+                        <input type="hidden" name="sizes[]" :value="sz">
+                    </template>
+
+                    <!-- Real-Time Multi-SKU Generation Preview -->
+                    <div class="mt-3 p-3 rounded-lg bg-white border border-amber-200 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                Generating <strong class="text-amber-700" x-text="wf.sizes.length"></strong> Wholesale Entries (1 row per size):
+                            </span>
+                            <button type="button"
+                                    x-show="wf.sizes.length > 0"
+                                    @click="navigator.clipboard.writeText(wf.generatedSkusList.map(x => x.sku).join('\n')); alert('Copied ' + wf.sizes.length + ' SKUs to clipboard!')"
+                                    class="text-[11px] font-semibold text-amber-700 hover:underline">
+                                Copy All SKUs
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="item in wf.generatedSkusList" :key="item.sku">
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/80 text-amber-950 text-xs font-mono">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white" x-text="item.size"></span>
+                                    <span class="font-semibold" x-text="item.sku"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div x-show="!wf.sizes.length" class="text-xs text-rose-600 font-semibold py-1">
+                            ⚠️ Please select at least one size above to generate the SKU and entries.
+                        </div>
                     </div>
                 </div>
             </div>

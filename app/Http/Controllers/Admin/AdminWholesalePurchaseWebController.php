@@ -181,6 +181,8 @@ class AdminWholesalePurchaseWebController extends Controller
                 'color' => 'nullable|string|max:100',
                 'color_code' => 'nullable|string|max:20',
                 'size' => 'nullable|string|max:50',
+                'sizes' => 'nullable|array',
+                'sizes.*' => 'string|max:50',
                 'sku' => 'nullable|string|max:120',
                 'status' => 'required|string|max:50',
                 'product_name' => 'required|string|max:255',
@@ -211,17 +213,6 @@ class AdminWholesalePurchaseWebController extends Controller
                     $data['vcode'],
                     $data['purchase_date'] ?? null,
                     $data['design_number'] ?? null
-                );
-            }
-
-            // Auto generate SKU
-            if (empty($data['sku'])) {
-                $data['sku'] = WholesalePurchase::generateWomenSku(
-                    $data['brand_code'],
-                    $data['pcode'] ?? '',
-                    $data['category_code'] ?? '',
-                    $data['color_code'] ?? '',
-                    $data['size'] ?? ''
                 );
             }
 
@@ -264,6 +255,51 @@ class AdminWholesalePurchaseWebController extends Controller
         $adminUser = $request->attributes->get('admin_user');
         $data['created_by'] = $adminUser?->id;
 
+        // Multi-size bulk creation for Women Fashion
+        if ($type === WholesalePurchase::TYPE_WOMEN_FASHION) {
+            $sizes = $request->input('sizes', []);
+            if (!is_array($sizes) || empty($sizes)) {
+                $sizes = !empty($data['size']) ? [$data['size']] : [];
+            }
+            $sizes = array_values(array_filter(array_map('trim', $sizes)));
+
+            if (count($sizes) > 1) {
+                $createdEntries = [];
+                unset($data['sizes']);
+
+                foreach ($sizes as $sz) {
+                    $itemData = $data;
+                    $itemData['size'] = $sz;
+                    $itemData['sku'] = WholesalePurchase::generateWomenSku(
+                        $data['brand_code'],
+                        $data['pcode'] ?? '',
+                        $data['category_code'] ?? '',
+                        $data['color_code'] ?? '',
+                        $sz
+                    );
+                    $createdEntries[] = WholesalePurchase::create($itemData);
+                }
+
+                $sizeList = implode(', ', $sizes);
+                return redirect()
+                    ->route('admin.wholesale.index', ['tab' => WholesalePurchase::TYPE_WOMEN_FASHION])
+                    ->with('success', "Added " . count($createdEntries) . " wholesale entries for sizes ({$sizeList}) with individual SKUs.");
+            } elseif (count($sizes) === 1) {
+                $data['size'] = $sizes[0];
+            }
+
+            if (empty($data['sku'])) {
+                $data['sku'] = WholesalePurchase::generateWomenSku(
+                    $data['brand_code'],
+                    $data['pcode'] ?? '',
+                    $data['category_code'] ?? '',
+                    $data['color_code'] ?? '',
+                    $data['size'] ?? ''
+                );
+            }
+        }
+
+        unset($data['sizes']);
         $purchase = WholesalePurchase::create($data);
 
         return redirect()
