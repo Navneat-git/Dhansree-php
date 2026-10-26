@@ -54,6 +54,12 @@ Route::post('/api/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\Shiprock
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/newsletter/unsubscribe', [NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
+// ─── Meta & Google Product Feeds ─────────────────────────────────────────────
+Route::get('/feeds/meta_catalog.csv', [\App\Http\Controllers\Storefront\ProductFeedDeliveryController::class, 'metaFeed'])->name('feeds.meta');
+Route::get('/feeds/meta-catalog.csv', [\App\Http\Controllers\Storefront\ProductFeedDeliveryController::class, 'metaFeed']);
+Route::get('/feeds/google_merchant.csv', [\App\Http\Controllers\Storefront\ProductFeedDeliveryController::class, 'googleFeed'])->name('feeds.google');
+Route::get('/feeds/google-merchant.csv', [\App\Http\Controllers\Storefront\ProductFeedDeliveryController::class, 'googleFeed']);
+
 // ─── Customer Passwordless Auth & Portal ──────────────────────────────────
 Route::prefix('account')->name('storefront.account.')->group(function () {
     // Guest Auth Routes
@@ -241,6 +247,13 @@ Route::prefix('admin')->group(function () {
             Route::get('/export', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'export'])->name('export');
             Route::get('/copy', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'copyTsv'])->name('copy');
             Route::post('/products/{product}/values', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'saveProductValues'])->name('products.values');
+        });
+
+        // Google Merchant Center & Meta Business Product Feeds
+        Route::prefix('feeds')->name('admin.feeds.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminProductFeedWebController::class, 'index'])->name('index');
+            Route::post('/generate', [\App\Http\Controllers\Admin\AdminProductFeedWebController::class, 'generate'])->name('generate');
+            Route::get('/download/{type}', [\App\Http\Controllers\Admin\AdminProductFeedWebController::class, 'download'])->name('download');
         });
 
         // Wholesale Purchases & Procurement (Women Fashion & Smart Living)

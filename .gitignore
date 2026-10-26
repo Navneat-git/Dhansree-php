@@ -27,3 +27,4 @@ Thumbs.db
 # rather than committed.
 /bin/tailwindcss
 /public/media/products
+/public/feeds/*.csv
