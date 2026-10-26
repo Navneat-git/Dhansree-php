@@ -272,6 +272,20 @@
                             </div>
                         </div>
 
+                        <!-- Policy Pages Quick Banner -->
+                        <div class="rounded-lg bg-amber-50 border border-amber-200 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9Z"/></svg>
+                                <div class="text-xs text-amber-950 space-y-0.5">
+                                    <p class="font-bold">Need to modify your Store Policies &amp; Legal Content?</p>
+                                    <p class="text-amber-800">Edit clauses and terms for Privacy Policy, Shipping Policy, Returns &amp; Exchanges, and Terms of Use.</p>
+                                </div>
+                            </div>
+                            <a href="{{ route('admin.pages.index') }}" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs tracking-wider uppercase shrink-0 transition-colors shadow-2xs self-start sm:self-auto">
+                                Manage Policy Pages &rsaquo;
+                            </a>
+                        </div>
+
                         <!-- In-House Tracking Notice -->
                         <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3.5 flex items-start gap-3">
                             <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>

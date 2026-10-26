@@ -342,6 +342,18 @@ Route::prefix('admin')->group(function () {
             Route::delete('/links/{id}', [\App\Http\Controllers\Admin\AdminQuickLinkWebController::class, 'destroyLink'])->name('links.destroy');
         });
 
+        // Policy & Static Pages
+        Route::prefix('pages')->name('admin.pages.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'index'])->name('index');
+            Route::get('/{page}/edit', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'edit'])->name('edit');
+            Route::put('/{page}', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'update'])->name('update');
+            Route::post('/{page}/toggle', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'toggle'])->name('toggle');
+            Route::post('/{page}/sections', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'storeSection'])->name('sections.store');
+            Route::put('/sections/{section}', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'updateSection'])->name('sections.update');
+            Route::delete('/sections/{section}', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'destroySection'])->name('sections.destroy');
+            Route::post('/{page}/sections/move', [\App\Http\Controllers\Admin\AdminContentPageWebController::class, 'moveSection'])->name('sections.move');
+        });
+
         // SEO Redirects Management
         Route::prefix('seo')->name('admin.seo.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminSeoRedirectWebController::class, 'index'])->name('index');

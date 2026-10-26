@@ -27,4 +27,34 @@ class ContentPage extends Model
     {
         return $this->hasMany(ContentPageSection::class, 'page_id', 'id');
     }
+
+    public function getStorefrontPathAttribute(): string
+    {
+        $keyValue = $this->key instanceof \App\Enums\ContentPageKey ? $this->key->value : (string) $this->key;
+        return match ($keyValue) {
+            'ABOUT' => '/about',
+            'CONTACT' => '/contact',
+            'FAQ' => '/faq',
+            'SHIPPING_POLICY' => '/shipping-policy',
+            'RETURN_POLICY' => '/return-policy',
+            'PRIVACY_POLICY' => '/privacy-policy',
+            'TERMS' => '/terms',
+            default => '/',
+        };
+    }
+
+    public function getStorefrontUrlAttribute(): string
+    {
+        return url($this->storefront_path);
+    }
+
+    public function getCategoryNameAttribute(): string
+    {
+        $keyValue = $this->key instanceof \App\Enums\ContentPageKey ? $this->key->value : (string) $this->key;
+        return match ($keyValue) {
+            'PRIVACY_POLICY', 'SHIPPING_POLICY', 'RETURN_POLICY', 'TERMS' => 'Legal Policy',
+            'ABOUT', 'CONTACT', 'FAQ' => 'Company Info',
+            default => 'General Page',
+        };
+    }
 }
