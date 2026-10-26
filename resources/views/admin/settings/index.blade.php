@@ -307,7 +307,7 @@
 
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1.5">Meta Pixel ID (Facebook / Instagram Ads)</label>
-                                <input type="text" name="ads_meta_pixel_id" value="{{ old('ads_meta_pixel_id', $settings->ads_meta_pixel_id) }}" placeholder="e.g. 123456789012345"
+                                <input type="text" name="ads_meta_pixel_id" value="{{ old('ads_meta_pixel_id', $settings->ads_meta_pixel_id ?? '1783488586189258') }}" placeholder="e.g. 1783488586189258"
                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                                 <p class="text-[10px] text-slate-400 mt-1">Pushes PageView, ViewContent, AddToCart, InitiateCheckout, and Purchase to Meta Ads Manager.</p>
                             </div>

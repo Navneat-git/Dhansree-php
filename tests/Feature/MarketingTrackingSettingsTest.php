@@ -143,4 +143,66 @@ class MarketingTrackingSettingsTest extends TestCase
         $frontResponse2 = $this->get('/');
         $frontResponse2->assertSee('<meta name="facebook-domain-verification" content="jaur6cwxsewazavl4qh5goy7ylgewz" />', false);
     }
+
+    public function test_storefront_renders_meta_pixel_code_by_default(): void
+    {
+        $settings = StoreSettings::current();
+        $settings->ads_meta_pixel_id = '1783488586189258';
+        $settings->save();
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('<!-- Meta Pixel Code -->', false);
+        $response->assertSee("fbq('init', '1783488586189258');", false);
+        $response->assertSee("fbq('track', 'PageView');", false);
+        $response->assertSee('https://www.facebook.com/tr?id=1783488586189258&ev=PageView&noscript=1', false);
+        $response->assertSee('<!-- End Meta Pixel Code -->', false);
+    }
+
+    public function test_storefront_renders_meta_pixel_code_fallback_when_setting_is_null(): void
+    {
+        $settings = StoreSettings::current();
+        $settings->ads_meta_pixel_id = null;
+        $settings->save();
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee("fbq('init', '1783488586189258');", false);
+        $response->assertSee('https://www.facebook.com/tr?id=1783488586189258&ev=PageView&noscript=1', false);
+    }
+
+    public function test_admin_can_update_ads_meta_pixel_id_with_code_or_full_snippet(): void
+    {
+        $snippet = <<<HTML
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1783488586189258');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1783488586189258&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+HTML;
+
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'ads_meta_pixel_id' => $snippet,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $settings = StoreSettings::current();
+        $this->assertSame('1783488586189258', $settings->ads_meta_pixel_id);
+    }
 }

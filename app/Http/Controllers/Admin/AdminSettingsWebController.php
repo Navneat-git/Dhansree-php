@@ -128,8 +128,20 @@ class AdminSettingsWebController extends Controller
                 }
 
                 if ($request->has('ads_meta_pixel_id') && Schema::hasColumn('store_settings', 'ads_meta_pixel_id')) {
-                    $val = trim((string) $request->input('ads_meta_pixel_id'));
-                    $settings->ads_meta_pixel_id = $val !== '' ? $val : null;
+                    $raw = trim((string) $request->input('ads_meta_pixel_id'));
+                    if ($raw !== '') {
+                        if (preg_match('/fbq\s*\(\s*[\'"]init[\'"]\s*,\s*[\'"](\d+)[\'"]\s*\)/i', $raw, $m)) {
+                            $settings->ads_meta_pixel_id = trim($m[1]);
+                        } elseif (preg_match('/id=(\d+)/i', $raw, $m)) {
+                            $settings->ads_meta_pixel_id = trim($m[1]);
+                        } elseif (preg_match('/\b\d{14,18}\b/', $raw, $m)) {
+                            $settings->ads_meta_pixel_id = trim($m[0]);
+                        } else {
+                            $settings->ads_meta_pixel_id = trim(strip_tags($raw));
+                        }
+                    } else {
+                        $settings->ads_meta_pixel_id = null;
+                    }
                 }
 
                 if ($request->has('facebook_domain_verification') && Schema::hasColumn('store_settings', 'facebook_domain_verification')) {

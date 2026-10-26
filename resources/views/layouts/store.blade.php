@@ -44,7 +44,7 @@
         $facebookDomainVerification = $storeSettings->facebook_domain_verification ?: (config('services.meta.domain_verification') ?: 'jaur6cwxsewazavl4qh5goy7ylgewz');
         $analyticsId = config('services.google.analytics_id') ?: ($storeSettings->analytics_google_measurement_id ?? null);
         $gtmId = config('services.google.gtm_id') ?: ($storeSettings->gtm_container_id ?? null);
-        $metaPixelId = config('services.meta.pixel_id') ?: ($storeSettings->ads_meta_pixel_id ?? null);
+        $metaPixelId = $storeSettings->ads_meta_pixel_id ?: (config('services.meta.pixel_id') ?: '1783488586189258');
         $topBarCouponCode = $storeSettings->featured_coupon_code ?? 'FESTIVE10';
         $topBarCoupon = \App\Models\Coupon::where('code', $topBarCouponCode)->where('is_active', true)->first();
         if ($topBarCoupon) {
@@ -107,6 +107,7 @@
             <img height="1" width="1" style="display:none"
                  src="https://www.facebook.com/tr?id={{ $metaPixelId }}&ev=PageView&noscript=1"/>
         </noscript>
+        <!-- End Meta Pixel Code -->
     @endif
 
     <!-- Universal E-Commerce Event Tracker Bridge -->
