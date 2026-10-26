@@ -32,6 +32,24 @@
         </div>
     </div>
 
+    @if(!$publicDirectoryWritable)
+    <!-- Server Permissions Notice -->
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="space-y-1">
+            <p class="font-bold text-amber-900">Note on Web Server Directory Permissions</p>
+            <p class="text-amber-800 leading-relaxed">
+                The web server process does not currently have write permission for <code class="font-mono bg-amber-100 px-1 py-0.5 rounded font-semibold">public/feeds/</code>.
+                Feeds are automatically generated, saved to application storage, and served live via their URLs (<code class="font-mono font-semibold">/feeds/meta_catalog.csv</code> and <code class="font-mono font-semibold">/feeds/google_merchant.csv</code>).
+            </p>
+            <p class="text-[11px] text-amber-700">
+                To enable direct static web caching in the public folder on your server, run:
+                <code class="font-mono bg-amber-200/80 text-slate-900 px-1.5 py-0.5 rounded font-bold select-all">chmod -R 777 public/feeds</code>
+            </p>
+        </div>
+    </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs">
@@ -134,7 +152,7 @@
                         </button>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1.5">
-                        File location: <code class="font-mono text-slate-600">public/feeds/meta_catalog.csv</code> &bull; Publicly accessible for Meta crawlers 24/7.
+                        File location: <code class="font-mono text-slate-600">{{ $meta['is_in_public'] ? 'public/feeds/meta_catalog.csv' : 'app storage (served live via /feeds/meta_catalog.csv)' }}</code> &bull; Publicly accessible for Meta crawlers 24/7.
                     </p>
                 </div>
             </div>
@@ -279,7 +297,7 @@
                         </button>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1.5">
-                        File location: <code class="font-mono text-slate-600">public/feeds/google_merchant.csv</code> &bull; Publicly accessible for Google Shopping crawler.
+                        File location: <code class="font-mono text-slate-600">{{ $google['is_in_public'] ? 'public/feeds/google_merchant.csv' : 'app storage (served live via /feeds/google_merchant.csv)' }}</code> &bull; Publicly accessible for Google Shopping crawler.
                     </p>
                 </div>
             </div>

@@ -90,8 +90,8 @@ class ProductFeedService
      */
     public function generateAllFeeds(): array
     {
-        $metaContent = $this->generateMetaCatalogCsv();
-        $googleContent = $this->generateGoogleMerchantCsv();
+        $metaContent = $this->generateMetaCatalogCsv(save: false);
+        $googleContent = $this->generateGoogleMerchantCsv(save: false);
 
         return [
             'meta' => $this->saveFeed(self::META_FILENAME, $metaContent, ['meta-catalog.csv']),
@@ -102,7 +102,7 @@ class ProductFeedService
     /**
      * Generate CSV content for Meta Business Catalog.
      */
-    public function generateMetaCatalogCsv(): string
+    public function generateMetaCatalogCsv(bool $save = true): string
     {
         $products = $this->getActiveProducts();
         $stream = fopen('php://temp', 'r+');
@@ -155,8 +155,9 @@ class ProductFeedService
         $csvContent = stream_get_contents($stream);
         fclose($stream);
 
-        // Also persist to public feeds directory
-        $this->saveFeed(self::META_FILENAME, $csvContent, ['meta-catalog.csv']);
+        if ($save) {
+            $this->saveFeed(self::META_FILENAME, $csvContent, ['meta-catalog.csv']);
+        }
 
         return $csvContent;
     }
@@ -164,7 +165,7 @@ class ProductFeedService
     /**
      * Generate CSV content for Google Merchant Center.
      */
-    public function generateGoogleMerchantCsv(): string
+    public function generateGoogleMerchantCsv(bool $save = true): string
     {
         $products = $this->getActiveProducts();
         $stream = fopen('php://temp', 'r+');
@@ -210,10 +211,31 @@ class ProductFeedService
         $csvContent = stream_get_contents($stream);
         fclose($stream);
 
-        // Also persist to public feeds directory
-        $this->saveFeed(self::GOOGLE_FILENAME, $csvContent, ['google-merchant.csv']);
+        if ($save) {
+            $this->saveFeed(self::GOOGLE_FILENAME, $csvContent, ['google-merchant.csv']);
+        }
 
         return $csvContent;
+    }
+
+    /**
+     * Resolve the active path of a feed file across public and application storage locations.
+     */
+    public function resolveFeedFilePath(string $filename): ?string
+    {
+        $candidatePaths = [
+            public_path('feeds/' . $filename),
+            storage_path('app/public/feeds/' . $filename),
+            storage_path('app/feeds/' . $filename),
+        ];
+
+        foreach ($candidatePaths as $path) {
+            if (file_exists($path) && is_readable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -221,24 +243,29 @@ class ProductFeedService
      */
     public function getFeedStatus(): array
     {
-        $metaPath = public_path('feeds/' . self::META_FILENAME);
-        $googlePath = public_path('feeds/' . self::GOOGLE_FILENAME);
+        $publicDir = public_path('feeds');
+        $isPublicWritable = is_writable($publicDir) || (!file_exists($publicDir) && is_writable(public_path()));
 
         return [
-            'meta' => $this->inspectFeedFile(self::META_FILENAME, $metaPath, self::META_COLUMNS),
-            'google' => $this->inspectFeedFile(self::GOOGLE_FILENAME, $googlePath, self::GOOGLE_COLUMNS),
+            'meta' => $this->inspectFeedFile(self::META_FILENAME, self::META_COLUMNS),
+            'google' => $this->inspectFeedFile(self::GOOGLE_FILENAME, self::GOOGLE_COLUMNS),
+            'public_directory_writable' => $isPublicWritable,
         ];
     }
 
     /**
      * Inspect a feed file for metadata and preview rows.
      */
-    private function inspectFeedFile(string $filename, string $path, array $expectedColumns): array
+    private function inspectFeedFile(string $filename, array $expectedColumns): array
     {
-        $exists = file_exists($path);
+        $path = $this->resolveFeedFilePath($filename);
+        $exists = $path !== null && file_exists($path);
+        $publicPath = public_path('feeds/' . $filename);
+        $isPublic = $exists && $path === $publicPath;
+
         $meta = [
             'filename' => $filename,
-            'path' => $path,
+            'path' => $path ?: $publicPath,
             'url' => url('feeds/' . $filename),
             'exists' => $exists,
             'size_bytes' => $exists ? (int) filesize($path) : 0,
@@ -248,10 +275,11 @@ class ProductFeedService
             'rows_count' => 0,
             'preview_rows' => [],
             'columns' => $expectedColumns,
+            'is_in_public' => $isPublic,
         ];
 
         if ($exists) {
-            $handle = fopen($path, 'r');
+            $handle = @fopen($path, 'r');
             if ($handle !== false) {
                 $header = fgetcsv($handle);
                 $rows = [];
@@ -272,32 +300,106 @@ class ProductFeedService
     }
 
     /**
-     * Save feed content to public directory and optional aliases.
+     * Save feed content to public directory and fallback storage locations.
+     * Resilient against restricted directory permissions on production servers.
      */
-    private function saveFeed(string $filename, string $content, array $aliases = []): array
+    public function saveFeed(string $filename, string $content, array $aliases = []): array
     {
-        $dir = public_path('feeds');
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
+        $publicDir = public_path('feeds');
+        $storagePublicDir = storage_path('app/public/feeds');
+        $storageDir = storage_path('app/feeds');
+
+        // Create directories if they do not exist
+        foreach ([$publicDir, $storagePublicDir, $storageDir] as $dir) {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
+            @chmod($dir, 0777);
         }
 
-        $target = $dir . '/' . $filename;
-        file_put_contents($target, $content);
-        @chmod($target, 0664);
+        $allFilenames = array_unique(array_merge([$filename], $aliases));
+        $savedPath = null;
+        $savedSize = 0;
+        $wroteToPublic = true;
 
-        foreach ($aliases as $alias) {
-            $aliasTarget = $dir . '/' . $alias;
-            file_put_contents($aliasTarget, $content);
-            @chmod($aliasTarget, 0664);
+        // 1. Attempt writing to public directory
+        foreach ($allFilenames as $fname) {
+            $target = $publicDir . '/' . $fname;
+            if (file_exists($target)) {
+                @chmod($target, 0666);
+            }
+            $written = @file_put_contents($target, $content);
+            if ($written !== false) {
+                @chmod($target, 0666);
+                if ($fname === $filename) {
+                    $savedPath = $target;
+                    $savedSize = $written;
+                }
+            } else {
+                $wroteToPublic = false;
+            }
+        }
+
+        // 2. Always persist to storage/app/public/feeds (accessible via storage symlink or route)
+        foreach ($allFilenames as $fname) {
+            $storagePublicTarget = $storagePublicDir . '/' . $fname;
+            if (file_exists($storagePublicTarget)) {
+                @chmod($storagePublicTarget, 0666);
+            }
+            $storageWritten = @file_put_contents($storagePublicTarget, $content);
+            if ($storageWritten !== false) {
+                @chmod($storagePublicTarget, 0666);
+                if (!$savedPath && $fname === $filename) {
+                    $savedPath = $storagePublicTarget;
+                    $savedSize = $storageWritten;
+                }
+            }
+
+            // Also backup to storage/app/feeds
+            $storageTarget = $storageDir . '/' . $fname;
+            if (file_exists($storageTarget)) {
+                @chmod($storageTarget, 0666);
+            }
+            $storageFallbackWritten = @file_put_contents($storageTarget, $content);
+            if ($storageFallbackWritten !== false) {
+                @chmod($storageTarget, 0666);
+                if (!$savedPath && $fname === $filename) {
+                    $savedPath = $storageTarget;
+                    $savedSize = $storageFallbackWritten;
+                }
+            }
+        }
+
+        // 3. If direct public write failed, attempt copying from storage to public
+        if (!$wroteToPublic && $savedPath && file_exists($savedPath)) {
+            foreach ($allFilenames as $fname) {
+                $target = $publicDir . '/' . $fname;
+                @copy($savedPath, $target);
+                if (file_exists($target)) {
+                    @chmod($target, 0666);
+                }
+            }
+            if (file_exists($publicDir . '/' . $filename)) {
+                $savedPath = $publicDir . '/' . $filename;
+                $savedSize = (int) filesize($savedPath);
+                $wroteToPublic = true;
+            }
+        }
+
+        if (!$savedPath) {
+            throw new \RuntimeException(
+                "Unable to write feed to public/feeds or storage/app/public/feeds. Please verify permissions."
+            );
         }
 
         return [
             'filename' => $filename,
-            'path' => $target,
+            'path' => $savedPath,
             'url' => url('feeds/' . $filename),
-            'size' => filesize($target),
-            'size_formatted' => $this->formatFileSize(filesize($target)),
+            'size' => $savedSize,
+            'size_formatted' => $this->formatFileSize($savedSize),
             'updated_at' => now(),
+            'wrote_to_public' => $wroteToPublic,
         ];
     }
 

@@ -19,12 +19,12 @@ class ProductFeedDeliveryController extends Controller
      */
     public function metaFeed(): Response
     {
-        $path = public_path('feeds/' . ProductFeedService::META_FILENAME);
+        $path = $this->feedService->resolveFeedFilePath(ProductFeedService::META_FILENAME);
 
-        if (file_exists($path)) {
+        if ($path && file_exists($path) && is_readable($path)) {
             $content = (string) file_get_contents($path);
         } else {
-            $content = $this->feedService->generateMetaCatalogCsv();
+            $content = $this->feedService->generateMetaCatalogCsv(save: true);
         }
 
         return response($content, 200, [
@@ -39,12 +39,12 @@ class ProductFeedDeliveryController extends Controller
      */
     public function googleFeed(): Response
     {
-        $path = public_path('feeds/' . ProductFeedService::GOOGLE_FILENAME);
+        $path = $this->feedService->resolveFeedFilePath(ProductFeedService::GOOGLE_FILENAME);
 
-        if (file_exists($path)) {
+        if ($path && file_exists($path) && is_readable($path)) {
             $content = (string) file_get_contents($path);
         } else {
-            $content = $this->feedService->generateGoogleMerchantCsv();
+            $content = $this->feedService->generateGoogleMerchantCsv(save: true);
         }
 
         return response($content, 200, [

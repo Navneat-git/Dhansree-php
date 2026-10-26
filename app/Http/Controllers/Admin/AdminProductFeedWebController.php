@@ -35,6 +35,7 @@ class AdminProductFeedWebController extends Controller
         return view('admin.feeds.index', [
             'meta' => $status['meta'],
             'google' => $status['google'],
+            'publicDirectoryWritable' => $status['public_directory_writable'] ?? true,
             'activeProductsCount' => $activeProductsCount,
             'activeVariantsCount' => $activeVariantsCount,
         ]);
@@ -49,14 +50,33 @@ class AdminProductFeedWebController extends Controller
 
         try {
             if ($type === 'meta') {
-                $this->feedService->generateMetaCatalogCsv();
-                $message = 'Meta Catalog Feed (meta_catalog.csv) generated successfully.';
+                $metaContent = $this->feedService->generateMetaCatalogCsv(save: false);
+                $result = $this->feedService->saveFeed(
+                    ProductFeedService::META_FILENAME,
+                    $metaContent,
+                    ['meta-catalog.csv']
+                );
+                $wrotePublic = $result['wrote_to_public'] ?? true;
+                $message = $wrotePublic
+                    ? 'Meta Catalog Feed (meta_catalog.csv) generated and placed in the public folder.'
+                    : 'Meta Catalog Feed generated and saved to application storage. Feed is live at /feeds/meta_catalog.csv. (Optional: run "chmod -R 777 public/feeds" on server for direct public static caching).';
             } elseif ($type === 'google') {
-                $this->feedService->generateGoogleMerchantCsv();
-                $message = 'Google Merchant Center Feed (google_merchant.csv) generated successfully.';
+                $googleContent = $this->feedService->generateGoogleMerchantCsv(save: false);
+                $result = $this->feedService->saveFeed(
+                    ProductFeedService::GOOGLE_FILENAME,
+                    $googleContent,
+                    ['google-merchant.csv']
+                );
+                $wrotePublic = $result['wrote_to_public'] ?? true;
+                $message = $wrotePublic
+                    ? 'Google Merchant Center Feed (google_merchant.csv) generated and placed in the public folder.'
+                    : 'Google Merchant Center Feed generated and saved to application storage. Feed is live at /feeds/google_merchant.csv. (Optional: run "chmod -R 777 public/feeds" on server for direct public static caching).';
             } else {
-                $result = $this->feedService->generateAllFeeds();
-                $message = 'Both Meta Business and Google Merchant Center feeds generated and placed in the public folder.';
+                $results = $this->feedService->generateAllFeeds();
+                $wrotePublic = ($results['meta']['wrote_to_public'] ?? true) && ($results['google']['wrote_to_public'] ?? true);
+                $message = $wrotePublic
+                    ? 'Both Meta Business and Google Merchant Center feeds generated and placed in the public folder.'
+                    : 'Both Meta Business and Google Merchant Center feeds generated and saved to application storage. Feeds are live at /feeds/meta_catalog.csv and /feeds/google_merchant.csv. (Optional: run "chmod -R 777 public/feeds" on server for direct public static caching).';
             }
 
             return redirect()->route('admin.feeds.index')->with('success', $message);
@@ -68,28 +88,37 @@ class AdminProductFeedWebController extends Controller
     /**
      * Download CSV feed file directly.
      */
-    public function download(string $type): BinaryFileResponse|RedirectResponse
+    public function download(string $type): BinaryFileResponse|\Illuminate\Http\Response|RedirectResponse
     {
         $filename = ($type === 'google')
             ? ProductFeedService::GOOGLE_FILENAME
             : ProductFeedService::META_FILENAME;
 
-        $path = public_path('feeds/' . $filename);
+        $path = $this->feedService->resolveFeedFilePath($filename);
 
-        if (!file_exists($path)) {
+        if (!$path || !file_exists($path)) {
             if ($type === 'google') {
                 $this->feedService->generateGoogleMerchantCsv();
             } else {
                 $this->feedService->generateMetaCatalogCsv();
             }
+            $path = $this->feedService->resolveFeedFilePath($filename);
         }
 
-        if (!file_exists($path)) {
-            return redirect()->route('admin.feeds.index')->with('error', 'Feed file could not be generated.');
+        if ($path && file_exists($path) && is_readable($path)) {
+            return response()->download($path, $filename, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]);
         }
 
-        return response()->download($path, $filename, [
+        // Stream generated in-memory fallback
+        $content = ($type === 'google')
+            ? $this->feedService->generateGoogleMerchantCsv(save: false)
+            : $this->feedService->generateMetaCatalogCsv(save: false);
+
+        return response($content, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 }

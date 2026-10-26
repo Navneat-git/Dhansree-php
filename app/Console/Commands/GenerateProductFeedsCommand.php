@@ -34,17 +34,21 @@ class GenerateProductFeedsCommand extends Command
 
         if ($type === 'meta') {
             $feedService->generateMetaCatalogCsv();
-            $this->info("✓ Meta Catalog Feed generated at: " . public_path('feeds/' . ProductFeedService::META_FILENAME));
+            $path = $feedService->resolveFeedFilePath(ProductFeedService::META_FILENAME) ?: public_path('feeds/' . ProductFeedService::META_FILENAME);
+            $this->info("✓ Meta Catalog Feed generated at: {$path}");
         } elseif ($type === 'google') {
             $feedService->generateGoogleMerchantCsv();
-            $this->info("✓ Google Merchant Center Feed generated at: " . public_path('feeds/' . ProductFeedService::GOOGLE_FILENAME));
+            $path = $feedService->resolveFeedFilePath(ProductFeedService::GOOGLE_FILENAME) ?: public_path('feeds/' . ProductFeedService::GOOGLE_FILENAME);
+            $this->info("✓ Google Merchant Center Feed generated at: {$path}");
         } else {
             $results = $feedService->generateAllFeeds();
             $this->info("✓ Meta Catalog Feed: {$results['meta']['url']} ({$results['meta']['size_formatted']})");
+            $this->info("  Stored at: {$results['meta']['path']}");
             $this->info("✓ Google Merchant Feed: {$results['google']['url']} ({$results['google']['size_formatted']})");
+            $this->info("  Stored at: {$results['google']['path']}");
         }
 
-        $this->info("Feeds are placed in the public folder and accessible for scheduled fetching.");
+        $this->info("Feeds are accessible for scheduled fetching.");
 
         return Command::SUCCESS;
     }

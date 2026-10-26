@@ -119,4 +119,42 @@ class ProductFeedsTest extends TestCase
             ->expectsOutputToContain('Google Merchant Feed')
             ->assertExitCode(0);
     }
+
+    public function test_feed_generation_succeeds_even_when_public_feeds_is_readonly(): void
+    {
+        $feedService = app(ProductFeedService::class);
+        $publicDir = public_path('feeds');
+
+        // Make existing files and public directory temporarily read-only
+        if (is_dir($publicDir)) {
+            foreach (glob($publicDir . '/*.csv') as $f) {
+                chmod($f, 0444);
+            }
+            chmod($publicDir, 0555);
+        }
+
+        try {
+            // Should not throw Permission denied ErrorException!
+            $results = $feedService->generateAllFeeds();
+            $this->assertNotEmpty($results['meta']);
+            $this->assertNotEmpty($results['google']);
+
+            // Both endpoints should still serve valid CSV feeds
+            $metaResp = $this->get('/feeds/meta_catalog.csv');
+            $metaResp->assertStatus(200);
+            $metaResp->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+            $googleResp = $this->get('/feeds/google_merchant.csv');
+            $googleResp->assertStatus(200);
+            $googleResp->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        } finally {
+            // Restore permissions
+            if (is_dir($publicDir)) {
+                chmod($publicDir, 0775);
+                foreach (glob($publicDir . '/*.csv') as $f) {
+                    chmod($f, 0664);
+                }
+            }
+        }
+    }
 }
