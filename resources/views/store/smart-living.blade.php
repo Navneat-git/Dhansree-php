@@ -1,7 +1,7 @@
 @extends('layouts.store')
 
 @section('content')
-<div class="bg-tech-dark text-white" x-data="{ activeFilter: 'all', searchQuery: '' }">
+<div class="bg-tech-dark text-white">
     
     <!-- Hero Section -->
     <section class="relative py-12 md:py-20 border-b border-tech-border overflow-hidden bg-gradient-to-b from-rich-black via-[#231010] to-tech-dark">
@@ -82,10 +82,10 @@
         <div class="text-center space-y-2 mb-10">
             <p class="text-xs uppercase tracking-widest text-gold-400 font-semibold">Tech &amp; Accessories</p>
             <h2 class="font-serif text-3xl sm:text-4xl text-white">Explore Modern Essentials</h2>
-            <p class="text-xs sm:text-sm text-white/60 max-w-md mx-auto">Filter by category to find high-utility products tailored for modern lifestyles.</p>
+            <p class="text-xs sm:text-sm text-white/60 max-w-md mx-auto">High-utility products and innovative accessories tailored for modern lifestyles.</p>
         </div>
 
-        <!-- Category Filter Pills -->
+        {{-- Category Filter Pills (Temporarily hidden until more products are added per category)
         <div class="flex flex-wrap items-center justify-center gap-2 mb-10">
             <button type="button"
                     @click="activeFilter = 'all'"
@@ -102,6 +102,7 @@
                 </button>
             @endforeach
         </div>
+        --}}
 
         <!-- Products Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -110,9 +111,7 @@
                     $firstVariant = $product->variants->whereNull('archived_at')->first();
                     $catSlug = $product->category?->slug ?? '';
                 @endphp
-                <div class="bg-tech-card rounded-xl p-3 border border-tech-border shadow-md hover:border-gold-500/50 transition-all flex flex-col justify-between"
-                     x-show="activeFilter === 'all' || activeFilter === '{{ $catSlug }}'"
-                     x-transition>
+                <div class="bg-tech-card rounded-xl p-3 border border-tech-border shadow-md hover:border-gold-500/50 transition-all flex flex-col justify-between">
                     
                     <div>
                         <!-- Image Container -->

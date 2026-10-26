@@ -35,6 +35,8 @@ class StorefrontTest extends TestCase
         $response->assertSee('Smarter Living');
         $response->assertSee("Women's Ethnic Wear", false);
         $response->assertSee('Direct-to-Customer Value');
+        $response->assertDontSee('All Products');
+        $response->assertDontSee('Filter by category');
     }
 
     public function test_category_page_renders_with_products(): void
