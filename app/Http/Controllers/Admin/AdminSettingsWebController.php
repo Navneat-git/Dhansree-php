@@ -8,10 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AdminUser;
 use App\Models\StoreSettings;
 use App\Support\Rbac\Permissions;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use Throwable;
 
 class AdminSettingsWebController extends Controller
 {
@@ -25,6 +29,8 @@ class AdminSettingsWebController extends Controller
         if (!$admin->hasPermission(Permissions::SETTINGS_VIEW)) {
             abort(403, 'You do not have permission to view store settings.');
         }
+
+        $this->ensureStoreSettingsColumns();
 
         $settings = StoreSettings::findOr(1, fn() => StoreSettings::first() ?? new StoreSettings(['id' => 1]));
 
@@ -45,71 +51,140 @@ class AdminSettingsWebController extends Controller
             abort(403, 'You do not have permission to update store settings.');
         }
 
+        $this->ensureStoreSettingsColumns();
+
         $settings = StoreSettings::firstOrCreate(['id' => 1]);
 
         $section = $request->input('section', 'all');
 
-        if ($section === 'general' || $section === 'all') {
-            $settings->store_name = $request->input('store_name', $settings->store_name);
-            $settings->support_email = $request->input('support_email', $settings->support_email);
-            $settings->support_phone = $request->input('support_phone', $settings->support_phone);
-            $settings->order_notification_email = $request->input('order_notification_email', $settings->order_notification_email);
-            if ($request->has('featured_coupon_code')) {
-                $settings->featured_coupon_code = strtoupper(trim((string) $request->input('featured_coupon_code')));
+        try {
+            if ($section === 'general' || $section === 'all') {
+                $settings->store_name = $request->input('store_name', $settings->store_name);
+                $settings->support_email = $request->input('support_email', $settings->support_email);
+                $settings->support_phone = $request->input('support_phone', $settings->support_phone);
+                $settings->order_notification_email = $request->input('order_notification_email', $settings->order_notification_email);
+                if ($request->has('featured_coupon_code') && Schema::hasColumn('store_settings', 'featured_coupon_code')) {
+                    $settings->featured_coupon_code = strtoupper(trim((string) $request->input('featured_coupon_code')));
+                }
             }
-        }
 
-        if ($section === 'business' || $section === 'all') {
-            $settings->legal_name = $request->input('legal_name', $settings->legal_name);
-            $settings->gstin = $request->input('gstin', $settings->gstin);
-            $settings->gst_registration_type = $request->input('gst_registration_type', $settings->gst_registration_type);
-            $settings->address_line1 = $request->input('address_line1', $settings->address_line1);
-            $settings->address_line2 = $request->input('address_line2', $settings->address_line2);
-            $settings->city = $request->input('city', $settings->city);
-            $settings->state_code = $request->input('state_code', $settings->state_code);
-            $settings->postal_code = $request->input('postal_code', $settings->postal_code);
-            if ($request->has('default_gst_rate_bps')) {
-                $settings->default_gst_rate_bps = (int) $request->input('default_gst_rate_bps');
+            if ($section === 'business' || $section === 'all') {
+                $settings->legal_name = $request->input('legal_name', $settings->legal_name);
+                $settings->gstin = $request->input('gstin', $settings->gstin);
+                $settings->gst_registration_type = $request->input('gst_registration_type', $settings->gst_registration_type);
+                $settings->address_line1 = $request->input('address_line1', $settings->address_line1);
+                $settings->address_line2 = $request->input('address_line2', $settings->address_line2);
+                $settings->city = $request->input('city', $settings->city);
+                $settings->state_code = $request->input('state_code', $settings->state_code);
+                $settings->postal_code = $request->input('postal_code', $settings->postal_code);
+                if ($request->has('default_gst_rate_bps')) {
+                    $settings->default_gst_rate_bps = (int) $request->input('default_gst_rate_bps');
+                }
+                $settings->prices_include_tax = $request->boolean('prices_include_tax');
             }
-            $settings->prices_include_tax = $request->boolean('prices_include_tax');
-        }
 
-        if ($section === 'whatsapp' || $section === 'all') {
-            $settings->whatsapp_enabled = $request->boolean('whatsapp_enabled');
-            $settings->whatsapp_phone = $request->input('whatsapp_phone', $settings->whatsapp_phone);
-            $settings->whatsapp_default_message = $request->input('whatsapp_default_message', $settings->whatsapp_default_message);
-            $settings->whatsapp_button_label = $request->input('whatsapp_button_label', $settings->whatsapp_button_label);
-        }
-
-        if ($section === 'payments_shipping' || $section === 'all') {
-            $settings->razorpay_enabled = $request->boolean('razorpay_enabled');
-            $settings->cod_enabled = $request->boolean('cod_enabled');
-            if ($request->has('free_shipping_threshold_rupees')) {
-                $settings->free_shipping_threshold_paise = (int) round(((float) $request->input('free_shipping_threshold_rupees')) * 100);
+            if ($section === 'whatsapp' || $section === 'all') {
+                $settings->whatsapp_enabled = $request->boolean('whatsapp_enabled');
+                $settings->whatsapp_phone = $request->input('whatsapp_phone', $settings->whatsapp_phone);
+                $settings->whatsapp_default_message = $request->input('whatsapp_default_message', $settings->whatsapp_default_message);
+                $settings->whatsapp_button_label = $request->input('whatsapp_button_label', $settings->whatsapp_button_label);
             }
-            if ($request->has('shipping_flat_rate_rupees')) {
-                $settings->shipping_flat_rate_paise = (int) round(((float) $request->input('shipping_flat_rate_rupees')) * 100);
+
+            if ($section === 'payments_shipping' || $section === 'shipping_payments' || $section === 'all') {
+                $settings->razorpay_enabled = $request->boolean('razorpay_enabled');
+                $settings->cod_enabled = $request->boolean('cod_enabled');
+                if ($request->has('free_shipping_threshold_rupees')) {
+                    $settings->free_shipping_threshold_paise = (int) round(((float) $request->input('free_shipping_threshold_rupees')) * 100);
+                }
+                if ($request->has('shipping_flat_rate_rupees')) {
+                    $settings->shipping_flat_rate_paise = (int) round(((float) $request->input('shipping_flat_rate_rupees')) * 100);
+                }
+                $settings->shiprocket_enabled = $request->boolean('shiprocket_enabled');
+                $settings->shiprocket_pickup_location = $request->input('shiprocket_pickup_location', $settings->shiprocket_pickup_location);
             }
-            $settings->shiprocket_enabled = $request->boolean('shiprocket_enabled');
-            $settings->shiprocket_pickup_location = $request->input('shiprocket_pickup_location', $settings->shiprocket_pickup_location);
+
+            if ($section === 'social_seo' || $section === 'all') {
+                $settings->instagram_url = $request->has('instagram_url') ? $request->input('instagram_url') : $settings->instagram_url;
+                $settings->facebook_url = $request->has('facebook_url') ? $request->input('facebook_url') : $settings->facebook_url;
+                $settings->youtube_url = $request->has('youtube_url') ? $request->input('youtube_url') : $settings->youtube_url;
+                $settings->pinterest_url = $request->has('pinterest_url') ? $request->input('pinterest_url') : $settings->pinterest_url;
+                $settings->x_url = $request->has('x_url') ? $request->input('x_url') : $settings->x_url;
+                $settings->seo_home_title = $request->has('seo_home_title') ? $request->input('seo_home_title') : $settings->seo_home_title;
+                $settings->seo_home_description = $request->has('seo_home_description') ? $request->input('seo_home_description') : $settings->seo_home_description;
+
+                if ($request->has('seo_google_verification') && Schema::hasColumn('store_settings', 'seo_google_verification')) {
+                    $val = trim((string) $request->input('seo_google_verification'));
+                    $settings->seo_google_verification = $val !== '' ? $val : null;
+                }
+
+                if ($request->has('analytics_google_measurement_id') && Schema::hasColumn('store_settings', 'analytics_google_measurement_id')) {
+                    $val = strtoupper(trim((string) $request->input('analytics_google_measurement_id')));
+                    $settings->analytics_google_measurement_id = $val !== '' ? $val : null;
+                }
+
+                if ($request->has('gtm_container_id') && Schema::hasColumn('store_settings', 'gtm_container_id')) {
+                    $val = strtoupper(trim((string) $request->input('gtm_container_id')));
+                    $settings->gtm_container_id = $val !== '' ? $val : null;
+                }
+
+                if ($request->has('ads_meta_pixel_id') && Schema::hasColumn('store_settings', 'ads_meta_pixel_id')) {
+                    $val = trim((string) $request->input('ads_meta_pixel_id'));
+                    $settings->ads_meta_pixel_id = $val !== '' ? $val : null;
+                }
+            }
+
+            $settings->save();
+
+            // Map active tab for UI
+            $tabName = match ($section) {
+                'payments_shipping' => 'shipping_payments',
+                default => $section,
+            };
+
+            return back()
+                ->with('success', 'Store settings updated successfully.')
+                ->with('active_tab', $tabName);
+        } catch (Throwable $e) {
+            Log::error('Failed to update store settings: ' . $e->getMessage(), ['exception' => $e]);
+
+            return back()
+                ->with('error', 'Failed to update store settings: ' . $e->getMessage())
+                ->withInput()
+                ->with('active_tab', $section);
         }
+    }
 
-        if ($section === 'social_seo' || $section === 'all') {
-            $settings->instagram_url = $request->has('instagram_url') ? $request->input('instagram_url') : $settings->instagram_url;
-            $settings->facebook_url = $request->has('facebook_url') ? $request->input('facebook_url') : $settings->facebook_url;
-            $settings->youtube_url = $request->has('youtube_url') ? $request->input('youtube_url') : $settings->youtube_url;
-            $settings->pinterest_url = $request->has('pinterest_url') ? $request->input('pinterest_url') : $settings->pinterest_url;
-            $settings->x_url = $request->has('x_url') ? $request->input('x_url') : $settings->x_url;
-            $settings->seo_home_title = $request->has('seo_home_title') ? $request->input('seo_home_title') : $settings->seo_home_title;
-            $settings->seo_home_description = $request->has('seo_home_description') ? $request->input('seo_home_description') : $settings->seo_home_description;
-            $settings->seo_google_verification = $request->has('seo_google_verification') ? $request->input('seo_google_verification') : $settings->seo_google_verification;
-            $settings->analytics_google_measurement_id = $request->has('analytics_google_measurement_id') ? $request->input('analytics_google_measurement_id') : $settings->analytics_google_measurement_id;
-            $settings->gtm_container_id = $request->has('gtm_container_id') ? $request->input('gtm_container_id') : $settings->gtm_container_id;
-            $settings->ads_meta_pixel_id = $request->has('ads_meta_pixel_id') ? $request->input('ads_meta_pixel_id') : $settings->ads_meta_pixel_id;
+    /**
+     * Ensure tracking, verification and SEO columns exist in store_settings table.
+     */
+    private function ensureStoreSettingsColumns(): void
+    {
+        try {
+            $table = 'store_settings';
+            $columns = [
+                'seo_google_verification' => fn(Blueprint $t) => $t->string('seo_google_verification', 100)->nullable(),
+                'analytics_google_measurement_id' => fn(Blueprint $t) => $t->string('analytics_google_measurement_id', 40)->nullable(),
+                'gtm_container_id' => fn(Blueprint $t) => $t->string('gtm_container_id', 64)->nullable(),
+                'ads_meta_pixel_id' => fn(Blueprint $t) => $t->string('ads_meta_pixel_id', 64)->nullable(),
+                'featured_coupon_code' => fn(Blueprint $t) => $t->string('featured_coupon_code', 64)->nullable()->default('FESTIVE10'),
+            ];
+
+            $missing = [];
+            foreach ($columns as $column => $definition) {
+                if (!Schema::hasColumn($table, $column)) {
+                    $missing[$column] = $definition;
+                }
+            }
+
+            if (!empty($missing)) {
+                Schema::table($table, function (Blueprint $t) use ($missing) {
+                    foreach ($missing as $col => $def) {
+                        $def($t);
+                    }
+                });
+            }
+        } catch (Throwable $e) {
+            Log::warning('Could not auto-add missing columns to store_settings: ' . $e->getMessage());
         }
-
-        $settings->save();
-
-        return back()->with('success', 'Store settings updated successfully.');
     }
 }

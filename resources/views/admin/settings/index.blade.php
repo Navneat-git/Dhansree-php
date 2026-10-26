@@ -3,7 +3,7 @@
 @section('title', 'Store Settings')
 
 @section('content')
-<div class="space-y-6" x-data="{ currentTab: 'general' }">
+<div class="space-y-6" x-data="{ currentTab: '{{ session('active_tab', request('tab', 'general')) }}' }">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
@@ -44,10 +44,10 @@
     <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-6">
         @csrf
         @method('PUT')
+        <input type="hidden" name="section" :value="currentTab === 'shipping_payments' ? 'payments_shipping' : currentTab" value="{{ session('active_tab', request('tab', 'general')) }}">
 
         <!-- TAB 1: GENERAL STORE -->
         <div x-show="currentTab === 'general'" class="space-y-6">
-            <input type="hidden" name="section" value="general">
             <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
                 <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3">Store Contact & Identity</h2>
 
@@ -91,7 +91,6 @@
 
         <!-- TAB 2: BUSINESS & GST -->
         <div x-show="currentTab === 'business'" class="space-y-6">
-            <input type="hidden" name="section" value="business">
             <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
                 <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3">Legal Entity & Tax Configuration</h2>
 
@@ -144,7 +143,6 @@
 
         <!-- TAB 3: WHATSAPP CHAT -->
         <div x-show="currentTab === 'whatsapp'" class="space-y-6">
-            <input type="hidden" name="section" value="whatsapp">
             <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-3">
                     <h2 class="text-base font-bold text-slate-900">WhatsApp Floating Widget & Chat</h2>
@@ -180,7 +178,6 @@
 
         <!-- TAB 4: PAYMENTS & SHIPPING -->
         <div x-show="currentTab === 'shipping_payments'" class="space-y-6">
-            <input type="hidden" name="section" value="payments_shipping">
             <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
                 <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3">Payment Gateways & Delivery Fees</h2>
 
@@ -239,7 +236,6 @@
 
         <!-- TAB 5: SOCIAL & SEO -->
         <div x-show="currentTab === 'social_seo'" class="space-y-6">
-            <input type="hidden" name="section" value="social_seo">
             <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-5">
                 <h2 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3">Social Profiles & Search Engine Verification</h2>
 

@@ -55,11 +55,34 @@ class MarketingTrackingSettingsTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
+        $response->assertSessionHas('active_tab', 'social_seo');
 
         $settings = StoreSettings::current();
         $this->assertSame('GTM-TEST1234', $settings->gtm_container_id);
         $this->assertSame('987654321098765', $settings->ads_meta_pixel_id);
         $this->assertSame('G-TESTGA4XYZ', $settings->analytics_google_measurement_id);
+    }
+
+    public function test_admin_can_update_ga4_measurement_id_alone_with_sanitization(): void
+    {
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'analytics_google_measurement_id' => '  g-99abcxyz88  ',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $response->assertSessionHas('active_tab', 'social_seo');
+
+        $settings = StoreSettings::current();
+        $this->assertSame('G-99ABCXYZ88', $settings->analytics_google_measurement_id);
+
+        // Storefront renders gtag.js script with the new ID
+        $frontResponse = $this->get('/');
+        $frontResponse->assertStatus(200);
+        $frontResponse->assertSee('googletagmanager.com/gtag/js?id=G-99ABCXYZ88', false);
+        $frontResponse->assertSee("gtag('config', 'G-99ABCXYZ88');", false);
     }
 
     public function test_storefront_renders_gtm_and_meta_pixel_tags(): void
