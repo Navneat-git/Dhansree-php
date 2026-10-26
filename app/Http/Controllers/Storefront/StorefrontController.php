@@ -57,7 +57,7 @@ class StorefrontController extends Controller
             'featuredWomenProduct' => $data['featuredWomenProduct'] ?? null,
             'store' => $data['store'],
             'isSmartLivingHub' => true,
-            'seoTitle' => 'Smart Living & Tech Essentials | Dhansree Traders Direct',
+            'seoTitle' => 'Smart Living & Tech Essentials | Dhansree Trends Direct',
             'seoDescription' => 'Discover innovative smart gadgets, fast chargers, multi-cables, and home essentials. Quality-tested tech accessories at direct customer prices.',
         ]);
     }
