@@ -42,6 +42,7 @@ return [
 
     'meta' => [
         'pixel_id' => env('META_PIXEL_ID', env('FACEBOOK_PIXEL_ID')),
+        'domain_verification' => env('META_DOMAIN_VERIFICATION', env('FACEBOOK_DOMAIN_VERIFICATION')),
     ],
 
 ];

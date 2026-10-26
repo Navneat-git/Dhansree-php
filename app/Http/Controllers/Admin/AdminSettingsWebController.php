@@ -131,6 +131,19 @@ class AdminSettingsWebController extends Controller
                     $val = trim((string) $request->input('ads_meta_pixel_id'));
                     $settings->ads_meta_pixel_id = $val !== '' ? $val : null;
                 }
+
+                if ($request->has('facebook_domain_verification') && Schema::hasColumn('store_settings', 'facebook_domain_verification')) {
+                    $raw = trim((string) $request->input('facebook_domain_verification'));
+                    if ($raw !== '') {
+                        if (preg_match('/content=[\'"]([^\'"]+)[\'"]/i', $raw, $matches)) {
+                            $settings->facebook_domain_verification = trim($matches[1]);
+                        } else {
+                            $settings->facebook_domain_verification = trim(strip_tags($raw));
+                        }
+                    } else {
+                        $settings->facebook_domain_verification = null;
+                    }
+                }
             }
 
             $settings->save();
@@ -166,6 +179,7 @@ class AdminSettingsWebController extends Controller
                 'analytics_google_measurement_id' => fn(Blueprint $t) => $t->string('analytics_google_measurement_id', 40)->nullable(),
                 'gtm_container_id' => fn(Blueprint $t) => $t->string('gtm_container_id', 64)->nullable(),
                 'ads_meta_pixel_id' => fn(Blueprint $t) => $t->string('ads_meta_pixel_id', 64)->nullable(),
+                'facebook_domain_verification' => fn(Blueprint $t) => $t->string('facebook_domain_verification', 100)->nullable()->default('jaur6cwxsewazavl4qh5goy7ylgewz'),
                 'featured_coupon_code' => fn(Blueprint $t) => $t->string('featured_coupon_code', 64)->nullable()->default('FESTIVE10'),
             ];
 

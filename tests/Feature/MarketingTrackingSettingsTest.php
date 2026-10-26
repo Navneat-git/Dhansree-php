@@ -101,4 +101,46 @@ class MarketingTrackingSettingsTest extends TestCase
         $response->assertSee("fbq('init', '112233445566778');", false);
         $response->assertSee('window.dhansreeTrack = function', false);
     }
+
+    public function test_storefront_renders_facebook_domain_verification_meta_tag(): void
+    {
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('<meta name="facebook-domain-verification" content="jaur6cwxsewazavl4qh5goy7ylgewz" />', false);
+    }
+
+    public function test_admin_can_update_facebook_domain_verification_with_code_or_full_meta_tag(): void
+    {
+        // 1. Update with bare code
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'facebook_domain_verification' => 'abc123xyztoken',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $settings = StoreSettings::current();
+        $this->assertSame('abc123xyztoken', $settings->facebook_domain_verification);
+
+        $frontResponse = $this->get('/');
+        $frontResponse->assertSee('<meta name="facebook-domain-verification" content="abc123xyztoken" />', false);
+
+        // 2. Update with full <meta ...> tag copied directly from Meta Business Manager
+        $response2 = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'facebook_domain_verification' => '<meta name="facebook-domain-verification" content="jaur6cwxsewazavl4qh5goy7ylgewz" />',
+            ]);
+
+        $response2->assertRedirect();
+        $response2->assertSessionHas('success');
+
+        $settings->refresh();
+        $this->assertSame('jaur6cwxsewazavl4qh5goy7ylgewz', $settings->facebook_domain_verification);
+
+        $frontResponse2 = $this->get('/');
+        $frontResponse2->assertSee('<meta name="facebook-domain-verification" content="jaur6cwxsewazavl4qh5goy7ylgewz" />', false);
+    }
 }

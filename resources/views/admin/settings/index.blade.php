@@ -311,6 +311,13 @@
                                        class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                                 <p class="text-[10px] text-slate-400 mt-1">Renders &lt;meta name="google-site-verification"&gt; in &lt;head&gt;.</p>
                             </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Facebook / Meta Domain Verification Code</label>
+                                <input type="text" name="facebook_domain_verification" value="{{ old('facebook_domain_verification', $settings->facebook_domain_verification ?? 'jaur6cwxsewazavl4qh5goy7ylgewz') }}" placeholder="e.g. jaur6cwxsewazavl4qh5goy7ylgewz"
+                                       class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">Renders &lt;meta name="facebook-domain-verification" content="..."&gt; in &lt;head&gt; for Meta Business Manager domain verification.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

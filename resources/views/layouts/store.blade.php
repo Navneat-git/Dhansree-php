@@ -41,6 +41,7 @@
     @php
         $storeSettings = $store ?? \App\Models\StoreSettings::current();
         $siteVerification = config('services.google.site_verification') ?: ($storeSettings->seo_google_verification ?? null);
+        $facebookDomainVerification = $storeSettings->facebook_domain_verification ?: (config('services.meta.domain_verification') ?: 'jaur6cwxsewazavl4qh5goy7ylgewz');
         $analyticsId = config('services.google.analytics_id') ?: ($storeSettings->analytics_google_measurement_id ?? null);
         $gtmId = config('services.google.gtm_id') ?: ($storeSettings->gtm_container_id ?? null);
         $metaPixelId = config('services.meta.pixel_id') ?: ($storeSettings->ads_meta_pixel_id ?? null);
@@ -61,6 +62,10 @@
 
     @if($siteVerification)
         <meta name="google-site-verification" content="{{ $siteVerification }}">
+    @endif
+
+    @if($facebookDomainVerification)
+        <meta name="facebook-domain-verification" content="{{ $facebookDomainVerification }}" />
     @endif
 
     @if($gtmId)
