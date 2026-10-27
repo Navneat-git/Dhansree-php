@@ -340,9 +340,20 @@
             </form>
 
             @if($product->options->isNotEmpty())
+                @php
+                    $suggestedBaseSku = '';
+                    $firstSku = $product->variants->firstWhere('sku')?->sku;
+                    if ($firstSku) {
+                        $suggestedBaseSku = preg_replace('/-(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|FREE|OS|\d+)$/i', '', $firstSku);
+                    }
+                @endphp
                 <div class="border-t border-slate-200/80 pt-4">
                     <form method="POST" action="{{ route('admin.products.generate-variants', $product) }}" class="flex items-end gap-3 flex-wrap">
                         @csrf
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Base SKU Prefix</label>
+                            <input type="text" name="base_sku" value="{{ old('base_sku', $suggestedBaseSku) }}" placeholder="e.g. DSGES-S2-11102602-RED" class="w-52 px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-mono uppercase text-slate-900 shadow-2xs">
+                        </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-slate-700 mb-1">Default Price (₹)</label>
                             <input type="number" step="0.01" name="price_rupees" value="{{ $product->min_price_rupees ?? 699 }}" required class="w-28 px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
@@ -355,6 +366,9 @@
                             Generate Missing Variant Matrix
                         </button>
                     </form>
+                    <p class="text-[11px] text-slate-500 mt-2">
+                        SKUs will be generated as <span class="font-mono text-slate-700 font-semibold">[Base SKU]-[Size]</span>. Existing variants matching combinations will be linked with their stock preserved.
+                    </p>
                 </div>
             @endif
         </div>

@@ -131,30 +131,47 @@
         }
 
         $stock = $variant->inventoryLevels->sum('on_hand') - $variant->inventoryLevels->sum('reserved');
+        $effectivePrice = $variant->price_rupees > 0 ? $variant->price_rupees : ($product->min_price_rupees ?: 0);
+        $effectiveMrp = $variant->mrp_rupees > 0 ? $variant->mrp_rupees : ($product->mrp_rupees ?: 0);
+        $discountLabel = ($effectiveMrp > $effectivePrice && $effectiveMrp > 0)
+            ? (int) round((($effectiveMrp - $effectivePrice) / $effectiveMrp) * 100) . '% OFF'
+            : '';
+
         $variantsMatrix[] = [
             'id' => $variant->id,
             'sku' => $variant->sku,
             'color' => $colorVal ?? '',
             'size' => $sizeVal,
-            'price' => '₹' . number_format($variant->price_rupees, 0),
-            'mrp' => $variant->mrp_rupees ? '₹' . number_format($variant->mrp_rupees, 0) : '',
-            'discount' => $variant->discount_percentage ? $variant->discount_percentage . '% OFF' : '',
+            'price' => $effectivePrice > 0 ? '₹' . number_format($effectivePrice, 0) : $product->formatted_price,
+            'mrp' => ($effectiveMrp > $effectivePrice && $effectivePrice > 0) ? '₹' . number_format($effectiveMrp, 0) : '',
+            'discount' => $discountLabel,
             'inStock' => $stock > 0,
             'stock' => $stock,
         ];
     }
 
-    $defaultVariant = $liveVariants->first();
+    // Determine initial color and size, PREFERRING in-stock variants!
     $firstColor = !empty($colorsList) ? $colorsList[0]['name'] : '';
     $firstSize = '';
+    $defaultVariant = null;
+
     if ($firstColor) {
-        $firstMatch = collect($variantsMatrix)->firstWhere('color', $firstColor);
+        $colorMatches = collect($variantsMatrix)->where('color', $firstColor);
+        $firstMatch = $colorMatches->firstWhere('inStock', true) ?? $colorMatches->first();
         if ($firstMatch) {
             $firstSize = $firstMatch['size'];
-            $defaultVariant = $liveVariants->firstWhere('id', $firstMatch['id']) ?? $defaultVariant;
+            $defaultVariant = $liveVariants->firstWhere('id', $firstMatch['id']);
         }
     } else {
-        $firstSize = $variantsMatrix[0]['size'] ?? '';
+        $firstMatch = collect($variantsMatrix)->firstWhere('inStock', true) ?? ($variantsMatrix[0] ?? null);
+        if ($firstMatch) {
+            $firstSize = $firstMatch['size'];
+            $defaultVariant = $liveVariants->firstWhere('id', $firstMatch['id']);
+        }
+    }
+
+    if (!$defaultVariant) {
+        $defaultVariant = $liveVariants->first();
     }
 
     $firstImg = $defaultVariant ? ($product->images->first(function($img) use ($defaultVariant) {
@@ -209,7 +226,8 @@
             const sizes = this.getSizesForColor(colorName);
             if (!sizes.some(s => s.size === this.selectedSize)) {
                 if (sizes.length > 0) {
-                    this.selectSize(sizes[0].size);
+                    const inStockSize = sizes.find(s => s.inStock);
+                    this.selectSize(inStockSize ? inStockSize.size : sizes[0].size);
                 }
             } else {
                 this.updateSelectedVariant();
@@ -232,7 +250,7 @@
             }
             if (found) {
                 this.selectedVariantId = found.id;
-                this.selectedVariantPrice = found.price;
+                this.selectedVariantPrice = (found.price && found.price !== '₹0') ? found.price : '{{ $product->formatted_price }}';
                 this.selectedVariantMrp = found.mrp;
                 this.selectedVariantDiscount = found.discount;
                 this.inStock = found.inStock;
@@ -460,11 +478,11 @@
                             <template x-for="v in getSizesForColor(selectedColor)" :key="v.id">
                                 <button type="button"
                                         @click="selectSize(v.size)"
-                                        :disabled="!v.inStock"
                                         :class="{
                                             'border-maroon-800 bg-maroon-50 text-maroon-800 ring-1 ring-maroon-800 font-bold': selectedSize === v.size && v.inStock,
+                                            'border-rose-400 bg-rose-50/50 text-rose-700 ring-1 ring-rose-400 font-bold': selectedSize === v.size && !v.inStock,
                                             'border-light-gold text-rich-black hover:border-maroon-800/50 bg-white': selectedSize !== v.size && v.inStock,
-                                            'border-slate-200 text-slate-300 bg-slate-50 cursor-not-allowed line-through': !v.inStock
+                                            'border-slate-200 text-slate-300 bg-slate-50 line-through': selectedSize !== v.size && !v.inStock
                                         }"
                                         class="min-w-11 px-3.5 h-11 rounded-lg border text-xs font-semibold flex items-center justify-center transition-all shadow-xs relative">
                                     <span x-text="v.size"></span>

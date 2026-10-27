@@ -3,7 +3,7 @@
 @section('title', 'Inventory & Stock Levels')
 
 @section('content')
-<div class="space-y-6" x-data="{ adjustingVariant: null }">
+<div class="space-y-6" x-data="{ adjustingVariant: null, mode: 'set', qty: 0 }">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
@@ -117,7 +117,7 @@
                                         id: {{ $variant->id }},
                                         title: '{{ addslashes($variant->product?->name . ' (' . ($optNames ?: $variant->sku) . ')') }}',
                                         currentOnHand: {{ $onHand }}
-                                    }" class="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] shadow-2xs transition-colors">
+                                    }; mode = 'set'; qty = {{ $onHand }};" class="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] shadow-2xs transition-colors">
                                         Adjust Stock
                                     </button>
                                 @endif
@@ -152,9 +152,10 @@
                  @click.stop>
                 <form method="POST" :action="'{{ url('/admin/inventory/adjust') }}/' + (adjustingVariant ? adjustingVariant.id : '')">
                     @csrf
+                    <input type="hidden" name="mode" :value="mode">
                     <div class="bg-white px-6 pt-5 pb-4 space-y-4">
                         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                            <h3 class="text-base font-bold text-slate-900">Adjust Stock Level</h3>
+                            <h3 class="text-base font-bold text-slate-900">Manage Stock Level</h3>
                             <button type="button" @click="adjustingVariant = null" class="text-slate-400 hover:text-slate-700">
                                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -162,9 +163,33 @@
                             </button>
                         </div>
 
+                        <!-- Current Item & On Hand Info -->
+                        <div class="rounded-lg bg-amber-50/60 border border-amber-200/70 p-3 flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-800">Product Variant</p>
+                                <p class="text-xs font-bold text-slate-900 mt-0.5 line-clamp-1" x-text="adjustingVariant ? adjustingVariant.title : ''"></p>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-amber-800">Current On-Hand</p>
+                                <p class="text-base font-extrabold text-slate-900 font-mono mt-0.5" x-text="(adjustingVariant ? adjustingVariant.currentOnHand : 0) + ' units'"></p>
+                            </div>
+                        </div>
+
+                        <!-- Mode Selector (Set Exact vs Add/Deduct) -->
                         <div>
-                            <p class="text-xs text-slate-500 font-semibold mb-1">Product Variant:</p>
-                            <p class="text-xs font-bold text-slate-900" x-text="adjustingVariant ? adjustingVariant.title : ''"></p>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Action</label>
+                            <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                                <button type="button" @click="mode = 'set'; qty = (adjustingVariant ? adjustingVariant.currentOnHand : 0)"
+                                        :class="mode === 'set' ? 'bg-white shadow-xs font-bold text-slate-900 border border-slate-200' : 'text-slate-600 hover:text-slate-900'"
+                                        class="py-1.5 px-3 rounded-md text-xs transition-all text-center">
+                                    Set Exact Stock
+                                </button>
+                                <button type="button" @click="mode = 'adjust'; qty = 0"
+                                        :class="mode === 'adjust' ? 'bg-white shadow-xs font-bold text-slate-900 border border-slate-200' : 'text-slate-600 hover:text-slate-900'"
+                                        class="py-1.5 px-3 rounded-md text-xs transition-all text-center">
+                                    Add / Deduct Stock
+                                </button>
+                            </div>
                         </div>
 
                         <div>
@@ -177,10 +202,11 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Adjustment Quantity</label>
-                            <input type="number" name="quantity" required placeholder="+10 or -5"
+                            <label class="block text-xs font-semibold text-slate-700 mb-1" x-text="mode === 'set' ? 'New Total Stock (On-Hand)' : 'Stock to Add (+) or Deduct (-)'"></label>
+                            <input type="number" name="quantity" x-model="qty" required
+                                   :placeholder="mode === 'set' ? 'e.g. 10' : '+10 or -5'"
                                    class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
-                            <p class="text-[11px] text-slate-400 mt-1">Enter positive number (e.g. +10) to add stock, or negative (e.g. -2) to deduct.</p>
+                            <p class="text-[11px] text-slate-400 mt-1" x-text="mode === 'set' ? 'The stock will be set directly to this number.' : 'Enter positive number (e.g. 10) to add stock, or negative (e.g. -2) to deduct.'"></p>
                         </div>
 
                         <div>
@@ -197,7 +223,7 @@
                         </button>
                         <button type="submit"
                                 class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs">
-                            Apply Adjustment
+                            <span x-text="mode === 'set' ? 'Update Stock' : 'Apply Adjustment'"></span>
                         </button>
                     </div>
                 </form>

@@ -311,6 +311,11 @@ class ProductVariantService
             if (isset($data['stock_quantity'])) {
                 $defaultLocation = InventoryLocation::where('is_default', true)->first();
                 if ($defaultLocation) {
+                    InventoryItem::firstOrCreate(
+                        ['variant_id' => $current->id],
+                        ['backorder_policy' => BackorderPolicy::STOP_SALE]
+                    );
+
                     $level = InventoryLevel::where('variant_id', $current->id)
                         ->where('location_id', $defaultLocation->id)
                         ->first();
@@ -463,15 +468,39 @@ class ProductVariantService
                 $cartesian = $append;
             }
 
-            $base = $baseSku ?: strtoupper(Str::slug($product->name, ''));
+            // Smart Base SKU deduction if not explicitly provided
+            if (empty($baseSku)) {
+                $existingSku = ProductVariant::where('product_id', $product->id)
+                    ->whereNotNull('sku')
+                    ->where('sku', '!=', '')
+                    ->value('sku');
+
+                if ($existingSku) {
+                    // Strip trailing standard size or number slug (e.g. -S, -M, -XL, -XXL, -FREE, etc.)
+                    $cleaned = preg_replace('/-(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|FREE|OS|\d+)$/i', '', $existingSku);
+                    $base = strtoupper(trim((string) $cleaned));
+                } else {
+                    $base = strtoupper(Str::slug($product->name, ''));
+                }
+            } else {
+                $base = strtoupper(trim($baseSku));
+            }
+
+            // Find any unassigned live variant(s) on the product (empty option_signature or no option values)
+            $unassignedVariants = ProductVariant::where('product_id', $product->id)
+                ->where(function ($q) {
+                    $q->whereNull('option_signature')->orWhere('option_signature', '');
+                })
+                ->whereNull('archived_at')
+                ->get();
+
             $createdVariants = [];
 
             foreach ($cartesian as $combo) {
                 $valueIds = array_map(fn($v) => (int) $v->id, $combo);
-                $valueNames = array_map(fn($v) => Str::slug($v->value, ''), $combo);
                 $sig = self::signature($valueIds);
 
-                // Skip if live variant already has this combination
+                // Skip if a live variant already has this exact option signature
                 $exists = ProductVariant::where('product_id', $product->id)
                     ->where('option_signature', $sig)
                     ->whereNull('archived_at')
@@ -480,7 +509,74 @@ class ProductVariantService
                     continue;
                 }
 
-                $skuCandidate = strtoupper($base . '-' . implode('-', $valueNames));
+                // Construct clean SKU tokens from option values, avoiding duplicate slugs already in $base
+                $tokens = [];
+                foreach ($combo as $optVal) {
+                    $valSlug = strtoupper(Str::slug($optVal->value, ''));
+                    // Check if $base already ends with '-' . $valSlug or contains '-' . $valSlug . '-'
+                    if (str_ends_with($base, '-' . $valSlug) || str_contains($base, '-' . $valSlug . '-')) {
+                        continue;
+                    }
+                    $tokens[] = $valSlug;
+                }
+                $skuCandidate = empty($tokens) ? $base : ($base . '-' . implode('-', $tokens));
+
+                // Check if an unassigned variant matches this combo (e.g. its SKU matches $skuCandidate or ends with the size)
+                $matchedUnassigned = null;
+                if ($unassignedVariants->isNotEmpty()) {
+                    // First check exact SKU match
+                    $matchedUnassigned = $unassignedVariants->first(fn($uv) => strtoupper($uv->sku) === $skuCandidate);
+                    // If not found, check if unassigned SKU ends with any token from this combo
+                    if (!$matchedUnassigned && !empty($tokens)) {
+                        $matchedUnassigned = $unassignedVariants->first(function ($uv) use ($tokens) {
+                            foreach ($tokens as $t) {
+                                if (str_ends_with(strtoupper($uv->sku), '-' . $t)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        });
+                    }
+                    // If still not found and only 1 unassigned variant exists and total combinations equals 1, adopt it
+                    if (!$matchedUnassigned && $unassignedVariants->count() === 1 && count($cartesian) === 1) {
+                        $matchedUnassigned = $unassignedVariants->first();
+                    }
+                }
+
+                if ($matchedUnassigned) {
+                    // Adopt this existing variant!
+                    // Link option values
+                    $pivotData = [];
+                    $optionValues = ProductOptionValue::whereIn('id', $valueIds)->get();
+                    foreach ($optionValues as $ov) {
+                        $pivotData[] = [
+                            'variant_id' => $matchedUnassigned->id,
+                            'option_id' => $ov->option_id,
+                            'option_value_id' => $ov->id,
+                        ];
+                    }
+                    DB::table('product_variant_option_values')->where('variant_id', $matchedUnassigned->id)->delete();
+                    DB::table('product_variant_option_values')->insert($pivotData);
+
+                    // If its SKU was empty or mismatched, update it to skuCandidate if available
+                    $newSku = $matchedUnassigned->sku;
+                    if (empty($newSku) || $newSku !== $skuCandidate) {
+                        if (!ProductVariant::where('sku', $skuCandidate)->where('id', '!=', $matchedUnassigned->id)->exists()) {
+                            $newSku = $skuCandidate;
+                        }
+                    }
+
+                    $matchedUnassigned->update([
+                        'option_signature' => $sig,
+                        'sku' => $newSku,
+                    ]);
+
+                    // Remove from unassigned pool
+                    $unassignedVariants = $unassignedVariants->reject(fn($v) => $v->id === $matchedUnassigned->id);
+                    $createdVariants[] = $matchedUnassigned->fresh();
+                    continue;
+                }
+
                 // Ensure unique SKU across catalog
                 $finalSku = $skuCandidate;
                 $attempt = 1;

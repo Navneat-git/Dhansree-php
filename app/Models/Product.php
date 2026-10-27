@@ -149,7 +149,12 @@ class Product extends Model
 
     public function getMinPriceRupeesAttribute(): ?float
     {
-        $min = $this->variants->whereNull('archived_at')->min('price_paise');
+        $live = $this->variants->whereNull('archived_at');
+        $minPositive = $live->where('price_paise', '>', 0)->min('price_paise');
+        if ($minPositive !== null) {
+            return $minPositive / 100;
+        }
+        $min = $live->min('price_paise');
         return $min !== null ? $min / 100 : null;
     }
 

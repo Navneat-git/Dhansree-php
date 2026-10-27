@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\BackorderPolicy;
 use App\Http\Controllers\Controller;
 use App\Models\AdminUser;
+use App\Models\InventoryItem;
 use App\Models\InventoryLevel;
 use App\Models\InventoryLocation;
 use App\Models\ProductVariant;
@@ -75,20 +77,32 @@ class AdminInventoryWebController extends Controller
         $validated = $request->validate([
             'location_id' => 'required|integer|exists:inventory_locations,id',
             'quantity' => 'required|integer',
+            'mode' => 'nullable|string|in:set,adjust',
             'reason' => 'nullable|string|max:100',
         ]);
 
-        DB::transaction(function () use ($variantId, $validated) {
+        $mode = $validated['mode'] ?? $request->input('mode', 'adjust');
+
+        DB::transaction(function () use ($variantId, $validated, $mode) {
+            // Ensure inventory item exists for foreign key constraint
+            InventoryItem::firstOrCreate(
+                ['variant_id' => $variantId],
+                ['backorder_policy' => BackorderPolicy::STOP_SALE]
+            );
+
             $level = InventoryLevel::firstOrCreate(
                 ['variant_id' => $variantId, 'location_id' => $validated['location_id']],
                 ['on_hand' => 0, 'reserved' => 0]
             );
 
-            $level->on_hand = max(0, $level->on_hand + (int) $validated['quantity']);
-            $level->version = ($level->version ?? 0) + 1;
+            if ($mode === 'set') {
+                $level->on_hand = max(0, (int) $validated['quantity']);
+            } else {
+                $level->on_hand = max(0, $level->on_hand + (int) $validated['quantity']);
+            }
             $level->save();
         });
 
-        return back()->with('success', 'Inventory adjusted successfully.');
+        return back()->with('success', 'Inventory updated successfully.');
     }
 }
