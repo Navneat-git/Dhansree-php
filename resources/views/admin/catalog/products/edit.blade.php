@@ -362,6 +362,10 @@
                             <label class="block text-[11px] font-semibold text-slate-700 mb-1">Default MRP (₹)</label>
                             <input type="number" step="0.01" name="mrp_rupees" value="{{ $product->mrp_rupees ?? 1299 }}" class="w-28 px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
                         </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Default Stock Qty</label>
+                            <input type="number" min="0" name="default_stock" value="10" class="w-24 px-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs font-bold text-emerald-700">
+                        </div>
                         <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition-colors">
                             Generate Missing Variant Matrix
                         </button>
@@ -375,71 +379,123 @@
 
         <!-- Variants Table Card -->
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 class="text-sm font-bold text-slate-900">Live Variants ({{ $product->variants->count() }})</h3>
-                <span class="text-xs text-slate-500">Each variant tracks separate stock on-hand, prices and SKU</span>
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Live Variants ({{ $product->variants->count() }})</h3>
+                    <span class="text-xs text-slate-500">Each variant tracks separate stock on-hand, prices and SKU</span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    @if($product->variants->isNotEmpty())
+                        <!-- Bulk Stock Tool -->
+                        <form method="POST" action="{{ route('admin.products.variants.bulk-stock', $product) }}" class="inline-flex items-center gap-1.5 bg-white border border-emerald-300 px-2.5 py-1 rounded-lg shadow-2xs">
+                            @csrf
+                            <span class="text-[11px] font-semibold text-emerald-800">Set all stock:</span>
+                            <input type="number" min="0" name="bulk_stock_quantity" value="10" class="w-16 px-1.5 py-0.5 text-xs bg-emerald-50/50 border border-emerald-200 rounded font-bold text-emerald-800 text-center">
+                            <button type="submit" class="px-2.5 py-0.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded transition shadow-2xs" onclick="return confirm('Update stock on-hand to ' + this.form.bulk_stock_quantity.value + ' for all {{ $product->variants->count() }} variants?')">
+                                Apply
+                            </button>
+                        </form>
+
+                        <!-- Delete All Variants Button -->
+                        <form method="POST" action="{{ route('admin.products.variants.delete-all', $product) }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-3 py-1.5 text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition inline-flex items-center gap-1 shadow-2xs" onclick="return confirm('WARNING: Are you sure you want to permanently delete ALL {{ $product->variants->count() }} variants of this product?\n\nThis will remove old or incorrect variants so you can cleanly regenerate the variant matrix. Variants with active customer orders will not be deleted.')">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <span>Delete All Variants</span>
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
 
             <div class="divide-y divide-slate-200">
                 @foreach($product->variants as $variant)
+                    <!-- Hidden delete form for HTML5 external button linkage -->
+                    <form id="delete-variant-{{ $variant->id }}" method="POST" action="{{ route('admin.variants.destroy', $variant) }}" class="hidden">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+
                     <div class="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
-                        <form method="POST" action="{{ route('admin.variants.update', $variant) }}" class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-8 gap-3 items-center">
+                        <form method="POST" action="{{ route('admin.variants.update', $variant) }}" class="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-12 gap-3 items-center">
                             @csrf
                             @method('PUT')
 
-                            <!-- Variant Option Combo Title -->
-                            <div class="col-span-2">
-                                <span class="text-xs font-bold text-slate-900">
-                                    @php
-                                        $combo = $variant->optionValues->pluck('value')->implode(' / ');
-                                    @endphp
-                                    {{ $combo ?: 'Default' }}
-                                </span>
-                                @if($variant->archived_at)
-                                    <span class="ml-2 text-[10px] text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded font-medium">Archived</span>
-                                @endif
+                            <!-- Variant Option Combo Title & Badges -->
+                            <div class="col-span-2 lg:col-span-3">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-xs font-bold text-slate-900">
+                                        @php
+                                            $combo = $variant->optionValues->pluck('value')->implode(' / ');
+                                        @endphp
+                                        {{ $combo ?: 'Default' }}
+                                    </span>
+                                    @if($variant->archived_at)
+                                        <span class="text-[10px] text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded font-medium">Archived</span>
+                                    @endif
+                                    @if($variant->stock_on_hand > 0)
+                                        <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-semibold">{{ $variant->stock_on_hand }} in stock</span>
+                                    @else
+                                        <span class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-semibold">Out of stock (0)</span>
+                                    @endif
+                                </div>
                                 <div class="text-[11px] text-slate-500 font-mono mt-0.5">{{ $variant->sku }}</div>
                             </div>
 
                             <!-- SKU Input -->
-                            <div>
+                            <div class="col-span-2 sm:col-span-2 lg:col-span-2">
                                 <label class="block text-[10px] font-semibold text-slate-500 uppercase">SKU</label>
                                 <input type="text" name="sku" value="{{ $variant->sku }}" required
                                        class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 font-mono uppercase shadow-2xs">
                             </div>
 
                             <!-- Price Input -->
-                            <div>
+                            <div class="col-span-1 lg:col-span-1">
                                 <label class="block text-[10px] font-semibold text-slate-500 uppercase">Price (₹)</label>
                                 <input type="number" step="0.01" name="price_rupees" value="{{ $variant->price_rupees }}" required
                                        class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
                             </div>
 
                             <!-- MRP Input -->
-                            <div>
+                            <div class="col-span-1 lg:col-span-1">
                                 <label class="block text-[10px] font-semibold text-slate-500 uppercase">MRP (₹)</label>
                                 <input type="number" step="0.01" name="mrp_rupees" value="{{ $variant->mrp_rupees }}"
                                        class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
                             </div>
 
-                            <!-- Stock Input -->
-                            <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 uppercase">Stock Qty</label>
-                                <input type="number" min="0" name="stock_quantity" value="{{ $variant->stock_on_hand }}"
-                                       class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-bold text-emerald-700 shadow-2xs">
+                            <!-- Stock Input with Quick +5 / +10 helpers -->
+                            <div class="col-span-2 sm:col-span-1 lg:col-span-2" x-data="{ currentStock: {{ $variant->stock_on_hand }} }">
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <label class="block text-[10px] font-semibold text-slate-600 uppercase">Stock Qty</label>
+                                    <div class="inline-flex gap-1">
+                                        <button type="button" @click="currentStock = parseInt(currentStock || 0) + 5" class="text-[9px] px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold transition" title="Add 5 to stock">+5</button>
+                                        <button type="button" @click="currentStock = parseInt(currentStock || 0) + 10" class="text-[9px] px-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold transition" title="Add 10 to stock">+10</button>
+                                    </div>
+                                </div>
+                                <input type="number" min="0" name="stock_quantity" x-model="currentStock"
+                                       class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-bold text-emerald-700 shadow-2xs focus:ring-emerald-500 focus:border-emerald-500">
                             </div>
 
                             <!-- Weight Input -->
-                            <div>
+                            <div class="col-span-1 lg:col-span-1">
                                 <label class="block text-[10px] font-semibold text-slate-500 uppercase">Weight (g)</label>
                                 <input type="number" min="0" name="weight_grams" value="{{ $variant->weight_grams ?? 250 }}"
                                        class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs text-slate-900 shadow-2xs">
                             </div>
 
                             <!-- Actions -->
-                            <div class="col-span-2 sm:col-span-6 lg:col-span-1 flex items-center justify-end gap-2 pt-2 lg:pt-0">
-                                <button type="submit" class="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded transition-colors shadow-2xs" title="Save changes">
-                                    Save
+                            <div class="col-span-2 sm:col-span-6 lg:col-span-2 flex items-center justify-end gap-1.5 pt-2 lg:pt-0">
+                                <button type="submit" class="px-3 py-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded transition-colors shadow-2xs inline-flex items-center gap-1" title="Save changes (SKU, Price, Stock)">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span>Save</span>
+                                </button>
+                                <button type="submit" form="delete-variant-{{ $variant->id }}"
+                                        onclick="return confirm('Are you sure you want to permanently delete variant {{ $variant->sku }}? This cannot be undone.')"
+                                        class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded transition-colors shadow-2xs inline-flex items-center gap-1"
+                                        title="Delete this variant">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    <span>Delete</span>
                                 </button>
                             </div>
                         </form>

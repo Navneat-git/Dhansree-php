@@ -289,11 +289,75 @@ class AdminProductWebController extends Controller
 
         try {
             $this->variantService->updateVariant($variant, $validated, $adminUser?->id, $request);
+            $fresh = $variant->fresh();
             return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')
-                ->with('success', "Variant '{$variant->sku}' updated successfully.");
+                ->with('success', "Variant '{$fresh->sku}' updated successfully (Stock on-hand: {$fresh->stock_on_hand}).");
         } catch (Throwable $e) {
             return redirect()->route('admin.products.edit', ['product' => $variant->product_id, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete single variant.
+     */
+    public function destroyVariant(Request $request, ProductVariant $variant): RedirectResponse
+    {
+        $adminUser = $request->attributes->get('admin_user');
+        $productId = $variant->product_id;
+        $sku = $variant->sku;
+
+        try {
+            $this->variantService->deleteVariant($variant, $adminUser?->id, $request);
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "Variant '{$sku}' deleted successfully.");
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete all variants of a product.
+     */
+    public function destroyAllVariants(Request $request, Product $product): RedirectResponse
+    {
+        $adminUser = $request->attributes->get('admin_user');
+
+        try {
+            $count = $this->variantService->deleteAllVariants($product, $adminUser?->id, $request);
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "All {$count} variant(s) deleted successfully. You can now generate the variant matrix with clean SKUs.");
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk update stock quantity across all variants of a product.
+     */
+    public function bulkStock(Request $request, Product $product): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bulk_stock_quantity' => 'required|integer|min:0',
+        ]);
+
+        $adminUser = $request->attributes->get('admin_user');
+
+        try {
+            $count = $this->variantService->bulkUpdateStock($product, (int) $validated['bulk_stock_quantity'], $adminUser?->id, $request);
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
+                ->with('active_tab', 'variants')
+                ->with('success', "Stock set to {$validated['bulk_stock_quantity']} for all {$count} variant(s).");
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')
                 ->with('error', $e->getMessage());
         }
@@ -384,9 +448,11 @@ class AdminProductWebController extends Controller
             'price_rupees' => 'required|numeric|min:0',
             'mrp_rupees' => 'nullable|numeric|min:0',
             'base_sku' => 'nullable|string|max:40',
+            'default_stock' => 'nullable|integer|min:0',
         ]);
 
         $adminUser = $request->attributes->get('admin_user');
+        $defaultStock = isset($validated['default_stock']) ? (int) $validated['default_stock'] : 0;
 
         try {
             $created = $this->variantService->generateVariantMatrix(
@@ -395,13 +461,15 @@ class AdminProductWebController extends Controller
                 (float) ($validated['mrp_rupees'] ?: $validated['price_rupees']),
                 $validated['base_sku'] ?? null,
                 $adminUser?->id,
-                $request
+                $request,
+                $defaultStock
             );
 
             $count = count($created);
+            $stockMsg = $defaultStock > 0 ? " with stock initialized to {$defaultStock}" : "";
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')
-                ->with('success', "{$count} variant(s) generated successfully.");
+                ->with('success', "{$count} variant(s) generated successfully{$stockMsg}.");
         } catch (Throwable $e) {
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'variants'])
                 ->with('active_tab', 'variants')

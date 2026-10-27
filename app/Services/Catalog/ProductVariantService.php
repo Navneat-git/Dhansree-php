@@ -317,29 +317,25 @@ class ProductVariantService
             ]);
 
             // Stock update if passed
-            if (isset($data['stock_quantity'])) {
-                $defaultLocation = InventoryLocation::where('is_default', true)->first();
-                if ($defaultLocation) {
-                    InventoryItem::firstOrCreate(
-                        ['variant_id' => $current->id],
-                        ['backorder_policy' => BackorderPolicy::STOP_SALE]
+            if (array_key_exists('stock_quantity', $data) && $data['stock_quantity'] !== null) {
+                $defaultLocation = InventoryLocation::where('is_default', true)->first()
+                    ?? InventoryLocation::firstOrCreate(
+                        ['code' => 'MAIN'],
+                        ['name' => 'Main location', 'is_active' => true, 'is_default' => true]
                     );
 
-                    $level = InventoryLevel::where('variant_id', $current->id)
-                        ->where('location_id', $defaultLocation->id)
-                        ->first();
-                    $newQty = max(0, (int) $data['stock_quantity']);
-                    if ($level) {
-                        $level->update(['on_hand' => $newQty]);
-                    } else {
-                        InventoryLevel::create([
-                            'variant_id' => $current->id,
-                            'location_id' => $defaultLocation->id,
-                            'on_hand' => $newQty,
-                            'reserved' => 0,
-                        ]);
-                    }
-                }
+                InventoryItem::firstOrCreate(
+                    ['variant_id' => $current->id],
+                    ['backorder_policy' => BackorderPolicy::STOP_SALE]
+                );
+
+                $level = InventoryLevel::firstOrCreate(
+                    ['variant_id' => $current->id, 'location_id' => $defaultLocation->id],
+                    ['on_hand' => 0, 'reserved' => 0]
+                );
+
+                $newQty = max(0, (int) $data['stock_quantity']);
+                $level->update(['on_hand' => $newQty]);
             }
 
             if ($adminUserId) {
@@ -433,6 +429,132 @@ class ProductVariantService
     }
 
     /**
+     * Permanently delete a variant and its associated inventory/images mappings.
+     * Prevents deletion if linked to existing customer orders or shipments.
+     */
+    public function deleteVariant(ProductVariant $variant, ?int $adminUserId = null, ?Request $request = null): bool
+    {
+        return DB::transaction(function () use ($variant, $adminUserId, $request) {
+            $current = ProductVariant::lockForUpdate()->findOrFail($variant->id);
+
+            // Safety Check 1: Order items
+            $hasOrders = DB::table('order_items')->where('variant_id', $current->id)->exists();
+            if ($hasOrders) {
+                throw new InvalidArgumentException("Variant '{$current->sku}' cannot be deleted because it is linked to existing customer orders. You can archive it instead.");
+            }
+
+            // Safety Check 2: Shipment items
+            $hasShipments = DB::table('shipment_items')->where('variant_id', $current->id)->exists();
+            if ($hasShipments) {
+                throw new InvalidArgumentException("Variant '{$current->sku}' cannot be deleted because it is linked to customer shipments.");
+            }
+
+            // 1. Delete inventory movements & reservations
+            DB::table('inventory_movements')->where('variant_id', $current->id)->delete();
+            DB::table('inventory_reservations')->where('variant_id', $current->id)->delete();
+
+            // 2. Delete inventory levels & item
+            DB::table('inventory_levels')->where('variant_id', $current->id)->delete();
+            DB::table('inventory_items')->where('variant_id', $current->id)->delete();
+
+            // 3. Detach from images and option values
+            DB::table('product_image_variants')->where('variant_id', $current->id)->delete();
+            DB::table('product_images')->where('variant_id', $current->id)->update(['variant_id' => null]);
+            DB::table('product_variant_option_values')->where('variant_id', $current->id)->delete();
+            DB::table('variant_marketplace_values')->where('variant_id', $current->id)->delete();
+
+            $deletedSku = $current->sku;
+            $deletedId = $current->id;
+
+            $current->delete();
+
+            if ($adminUserId) {
+                AuditLogger::log(
+                    'catalog.variant.deleted',
+                    AuditActorType::ADMIN,
+                    actorAdminUserId: $adminUserId,
+                    entityType: 'product_variant',
+                    entityId: $deletedId,
+                    metadata: ['sku' => $deletedSku],
+                    request: $request
+                );
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * Delete all variants of a product (skips variants with existing orders).
+     */
+    public function deleteAllVariants(Product $product, ?int $adminUserId = null, ?Request $request = null): int
+    {
+        $variants = ProductVariant::where('product_id', $product->id)->get();
+        $deletedCount = 0;
+        $skipped = [];
+
+        foreach ($variants as $variant) {
+            try {
+                $this->deleteVariant($variant, $adminUserId, $request);
+                $deletedCount++;
+            } catch (InvalidArgumentException $e) {
+                $skipped[] = $variant->sku;
+            }
+        }
+
+        if (!empty($skipped)) {
+            throw new InvalidArgumentException("Deleted {$deletedCount} variants. Could not delete variants with existing orders: " . implode(', ', $skipped));
+        }
+
+        return $deletedCount;
+    }
+
+    /**
+     * Bulk update stock quantity across all variants of a product.
+     */
+    public function bulkUpdateStock(Product $product, int $quantity, ?int $adminUserId = null, ?Request $request = null): int
+    {
+        return DB::transaction(function () use ($product, $quantity, $adminUserId, $request) {
+            $defaultLocation = InventoryLocation::where('is_default', true)->first()
+                ?? InventoryLocation::firstOrCreate(
+                    ['code' => 'MAIN'],
+                    ['name' => 'Main location', 'is_active' => true, 'is_default' => true]
+                );
+
+            $variants = ProductVariant::where('product_id', $product->id)->get();
+            $qty = max(0, $quantity);
+
+            foreach ($variants as $variant) {
+                InventoryItem::firstOrCreate(
+                    ['variant_id' => $variant->id],
+                    ['backorder_policy' => BackorderPolicy::STOP_SALE]
+                );
+
+                $level = InventoryLevel::firstOrCreate(
+                    ['variant_id' => $variant->id, 'location_id' => $defaultLocation->id],
+                    ['on_hand' => 0, 'reserved' => 0]
+                );
+
+                $level->update(['on_hand' => $qty]);
+            }
+
+            if ($adminUserId) {
+                AuditLogger::log(
+                    'catalog.variant.bulk_stock_updated',
+                    AuditActorType::ADMIN,
+                    actorAdminUserId: $adminUserId,
+                    entityType: 'product',
+                    entityId: $product->id,
+                    metadata: ['stock_quantity' => $qty, 'variants_count' => $variants->count()],
+                    request: $request
+                );
+            }
+
+            return $variants->count();
+        });
+    }
+
+    /**
      * Generate Cartesian matrix of variants from existing product options.
      * Skips combinations that already exist.
      *
@@ -444,9 +566,10 @@ class ProductVariantService
         float $defaultMrpRupees,
         ?string $baseSku = null,
         ?int $adminUserId = null,
-        ?Request $request = null
+        ?Request $request = null,
+        int $defaultStock = 0
     ): array {
-        return DB::transaction(function () use ($product, $defaultPriceRupees, $defaultMrpRupees, $baseSku, $adminUserId, $request) {
+        return DB::transaction(function () use ($product, $defaultPriceRupees, $defaultMrpRupees, $baseSku, $adminUserId, $request, $defaultStock) {
             $options = ProductOption::where('product_id', $product->id)
                 ->with(['values' => fn($q) => $q->orderBy('position')])
                 ->orderBy('position')
@@ -638,6 +761,26 @@ class ProductVariantService
 
                     // Remove from unassigned pool
                     $unassignedVariants = $unassignedVariants->reject(fn($v) => $v->id === $matchedUnassigned->id);
+
+                    if ($defaultStock > 0) {
+                        $defaultLocation = InventoryLocation::where('is_default', true)->first()
+                            ?? InventoryLocation::firstOrCreate(
+                                ['code' => 'MAIN'],
+                                ['name' => 'Main location', 'is_active' => true, 'is_default' => true]
+                            );
+                        InventoryItem::firstOrCreate(
+                            ['variant_id' => $matchedUnassigned->id],
+                            ['backorder_policy' => BackorderPolicy::STOP_SALE]
+                        );
+                        $level = InventoryLevel::firstOrCreate(
+                            ['variant_id' => $matchedUnassigned->id, 'location_id' => $defaultLocation->id],
+                            ['on_hand' => 0, 'reserved' => 0]
+                        );
+                        if ($level->on_hand === 0) {
+                            $level->update(['on_hand' => $defaultStock]);
+                        }
+                    }
+
                     $createdVariants[] = $matchedUnassigned->fresh();
                     continue;
                 }
@@ -655,7 +798,7 @@ class ProductVariantService
                     'price_rupees' => $defaultPriceRupees,
                     'mrp_rupees' => $defaultMrpRupees,
                     'option_value_ids' => $valueIds,
-                    'stock_quantity' => 0,
+                    'stock_quantity' => $defaultStock,
                 ], $adminUserId, $request);
             }
 

@@ -62,6 +62,18 @@ class VariantMatrixAndInventoryAdjustmentTest extends TestCase
             ->get($uri);
     }
 
+    private function adminPut(string $uri, array $data = [])
+    {
+        return $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put($uri, $data);
+    }
+
+    private function adminDelete(string $uri, array $data = [])
+    {
+        return $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->delete($uri, $data);
+    }
+
     public function test_inventory_adjust_endpoint_updates_stock_without_500_error(): void
     {
         $product = Product::create([
@@ -182,6 +194,183 @@ class VariantMatrixAndInventoryAdjustmentTest extends TestCase
         $this->assertTrue($allVariants->contains('sku', "DSGES-S2-{$upperUid}-RED-XS"));
         $this->assertTrue($allVariants->contains('sku', "DSGES-S2-{$upperUid}-RED-M"));
         $this->assertTrue($allVariants->contains('sku', "DSGES-S2-{$upperUid}-RED-L"));
+    }
+
+    public function test_admin_can_delete_individual_variant(): void
+    {
+        $product = Product::create([
+            'name' => 'Delete Variant Test ' . uniqid(),
+            'slug' => 'del-var-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'TEST-DEL-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'del-sig-1',
+            'position' => 0,
+            'version' => 0,
+        ]);
+
+        $response = $this->adminDelete("/admin/catalog/variants/{$variant->id}");
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('product_variants', ['id' => $variant->id]);
+    }
+
+    public function test_admin_can_delete_all_variants_of_product(): void
+    {
+        $product = Product::create([
+            'name' => 'Delete All Variants Test ' . uniqid(),
+            'slug' => 'del-all-var-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'TEST-ALL-1-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'sig-1',
+            'position' => 0,
+            'version' => 0,
+        ]);
+
+        ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'TEST-ALL-2-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'sig-2',
+            'position' => 1,
+            'version' => 0,
+        ]);
+
+        $response = $this->adminDelete("/admin/catalog/products/{$product->id}/variants/delete-all");
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(0, ProductVariant::where('product_id', $product->id)->count());
+    }
+
+    public function test_admin_can_bulk_update_stock_across_all_variants(): void
+    {
+        $product = Product::create([
+            'name' => 'Bulk Stock Test ' . uniqid(),
+            'slug' => 'bulk-stock-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        $v1 = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'BULK-1-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'bsig-1',
+            'position' => 0,
+            'version' => 0,
+        ]);
+
+        $v2 = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'BULK-2-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'bsig-2',
+            'position' => 1,
+            'version' => 0,
+        ]);
+
+        $response = $this->adminPost("/admin/catalog/products/{$product->id}/variants/bulk-stock", [
+            'bulk_stock_quantity' => 25,
+        ]);
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(25, $v1->fresh()->stock_on_hand);
+        $this->assertEquals(25, $v2->fresh()->stock_on_hand);
+    }
+
+    public function test_admin_can_update_variant_stock_directly_from_edit_form(): void
+    {
+        $product = Product::create([
+            'name' => 'Direct Stock Test ' . uniqid(),
+            'slug' => 'dir-stock-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'DIR-1-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'dsig-1',
+            'position' => 0,
+            'version' => 0,
+        ]);
+
+        $response = $this->adminPut("/admin/catalog/variants/{$variant->id}", [
+            'sku' => $variant->sku,
+            'price_rupees' => 899.00,
+            'mrp_rupees' => 1499.00,
+            'stock_quantity' => 18,
+            'weight_grams' => 300,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertEquals(18, $variant->fresh()->stock_on_hand);
+    }
+
+    public function test_product_edit_page_renders_delete_button_and_stock_tools(): void
+    {
+        $product = Product::create([
+            'name' => 'UI Variant Tools Test ' . uniqid(),
+            'slug' => 'ui-tools-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        $opt = ProductOption::create([
+            'product_id' => $product->id,
+            'name' => 'Size',
+            'position' => 0,
+        ]);
+        ProductOptionValue::create(['option_id' => $opt->id, 'value' => 'S', 'position' => 0]);
+
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'sku' => 'UI-TEST-' . uniqid(),
+            'price_paise' => 99900,
+            'mrp_paise' => 149900,
+            'option_signature' => 'uisig-1',
+            'position' => 0,
+            'version' => 0,
+        ]);
+
+        $response = $this->adminGet("/admin/catalog/products/{$product->id}/edit?tab=variants");
+        $response->assertStatus(200);
+
+        // Verify Delete button exists for variant
+        $response->assertSee('form="delete-variant-' . $variant->id . '"', false);
+        $response->assertSee('Delete All Variants');
+        // Verify Set all stock bulk tool exists
+        $response->assertSee('Set all stock:');
+        $response->assertSee('name="bulk_stock_quantity"', false);
+        // Verify +5 / +10 quick stock adjustment buttons exist
+        $response->assertSee('+5');
+        $response->assertSee('+10');
+        // Verify Default Stock Qty in matrix generator
+        $response->assertSee('Default Stock Qty');
+        $response->assertSee('name="default_stock"', false);
     }
 
     public function test_admin_layout_renders_mobile_navigation_drawer(): void

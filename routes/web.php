@@ -233,8 +233,11 @@ Route::prefix('admin')->group(function () {
 
         // Direct Variant & Image actions
         Route::put('/catalog/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateVariant'])->name('admin.variants.update');
+        Route::delete('/catalog/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'destroyVariant'])->name('admin.variants.destroy');
         Route::post('/catalog/variants/{variant}/archive', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'archiveVariant'])->name('admin.variants.archive');
         Route::post('/catalog/variants/{variant}/restore', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'restoreVariant'])->name('admin.variants.restore');
+        Route::post('/catalog/products/{product}/variants/bulk-stock', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'bulkStock'])->name('admin.products.variants.bulk-stock');
+        Route::delete('/catalog/products/{product}/variants/delete-all', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'destroyAllVariants'])->name('admin.products.variants.delete-all');
 
         Route::delete('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'deleteImage'])->name('admin.images.delete');
         Route::put('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateImage'])->name('admin.images.update');
