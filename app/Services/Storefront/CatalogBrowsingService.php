@@ -219,6 +219,9 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
+        $featuredBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::PRODUCT_RAIL)->first();
+        $cardLimit = $featuredBlock?->rail_size ?: 16;
+
         $featuredProducts = Product::with([
             'category',
             'variants.inventoryLevels',
@@ -229,15 +232,19 @@ class CatalogBrowsingService
             'options.values',
         ])
             ->where('status', ProductStatus::ACTIVE)
-            ->whereHas('category', function (Builder $cq) {
-                $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
-                   ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
+            ->whereHas('category', function (Builder $cq) use ($featuredBlock) {
+                if ($featuredBlock?->rail_category_id) {
+                    $cq->where('id', $featuredBlock->rail_category_id);
+                } else {
+                    $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
+                       ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
+                }
             })
             ->latest('published_at')
-            ->take(8)
+            ->take(max(24, (int) $cardLimit * 2))
             ->get();
 
-        $featuredCards = $this->expandProductsForListing($featuredProducts);
+        $featuredCards = $this->expandProductsForListing($featuredProducts)->take($cardLimit);
 
         $smartLivingCategories = Category::whereNull('archived_at')
             ->where('is_visible', true)
@@ -263,6 +270,7 @@ class CatalogBrowsingService
         return [
             'categories' => $womenCategories,
             'featuredProducts' => $featuredCards,
+            'featuredBlock' => $featuredBlock,
             'smartLivingCategories' => $smartLivingCategories,
             'banners' => $banners,
             'store' => $store,

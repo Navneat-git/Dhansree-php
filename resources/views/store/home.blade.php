@@ -308,17 +308,18 @@
 </section>
 
 <!-- Featured Products Section -->
+@if(($featuredBlock?->is_visible ?? true) && (!empty($featuredProducts) && count($featuredProducts) > 0))
 <section class="py-12 md:py-16 bg-warm-beige/20 border-t border-b border-light-gold/60">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-10">
             <div>
-                <p class="text-xs uppercase tracking-widest text-gold-600 font-semibold">Festive Radiance</p>
-                <h2 class="font-serif text-3xl sm:text-4xl text-maroon-800">Featured Ethnic Styles</h2>
+                <p class="text-xs uppercase tracking-widest text-gold-600 font-semibold">{{ $featuredBlock?->eyebrow ?: 'Festive Radiance' }}</p>
+                <h2 class="font-serif text-3xl sm:text-4xl text-maroon-800">{{ $featuredBlock?->heading ?: 'Featured Ethnic Styles' }}</h2>
             </div>
-            <a href="{{ url('/kurta-set') }}"
+            <a href="{{ $featuredBlock?->primary_path ?: url('/kurta-set') }}"
                class="text-xs font-semibold uppercase tracking-wider text-maroon-800 hover:text-maroon-900 flex items-center gap-1 group">
-                <span>View All Products</span>
+                <span>{{ $featuredBlock?->primary_label ?: 'View All Products' }}</span>
                 <span class="group-hover:translate-x-1 transition-transform">➔</span>
             </a>
         </div>
@@ -448,6 +449,7 @@
         </div>
     </div>
 </section>
+@endif
 
 <!-- Cross-Hub Spotlight Banner: Smart Living & Tech Essentials -->
 <section class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

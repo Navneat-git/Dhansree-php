@@ -32,6 +32,7 @@ class StorefrontController extends Controller
         return view('store.home', [
             'categories' => $data['categories'],
             'featuredProducts' => $data['featuredProducts'],
+            'featuredBlock' => $data['featuredBlock'] ?? null,
             'smartLivingCategories' => $data['smartLivingCategories'],
             'banners' => $data['banners'],
             'store' => $data['store'],

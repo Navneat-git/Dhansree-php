@@ -60,8 +60,15 @@
                                     @elseif($block->type->value === 'PRODUCT_RAIL') bg-emerald-100 text-emerald-800 border border-emerald-200
                                     @elseif($block->type->value === 'PROMO_BANNER') bg-rose-100 text-rose-800 border border-rose-200
                                     @else bg-slate-100 text-slate-800 border border-slate-200 @endif">
-                                    {{ $block->type->value === 'HERO' ? 'HERO (FESTIVE SHOWCASE)' : str_replace('_', ' ', $block->type->value) }}
+                                    {{ $block->type->value === 'HERO' ? 'HERO (FESTIVE SHOWCASE)' : ($block->type->value === 'PRODUCT_RAIL' ? 'PRODUCT RAIL (FEATURED ETHNIC STYLES)' : str_replace('_', ' ', $block->type->value)) }}
                                 </span>
+
+                                @if($block->type->value === 'PRODUCT_RAIL')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
+                                        <svg class="size-3 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                        {{ $block->rail_size ?: 16 }} Cards Displayed
+                                    </span>
+                                @endif
 
                                 @if($block->is_visible)
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -164,9 +171,9 @@
                         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
                             <div>
                                 <h3 class="text-base font-bold text-slate-900">
-                                    Edit Section: <span class="text-amber-600" x-text="editingBlock ? (editingBlock.type === 'HERO' ? 'Festive Signature Showcase (HERO)' : editingBlock.type) : ''"></span>
+                                    Edit Section: <span class="text-amber-600" x-text="editingBlock ? (editingBlock.type === 'HERO' ? 'Festive Signature Showcase (HERO)' : (editingBlock.type === 'PRODUCT_RAIL' ? 'Featured Ethnic Styles (PRODUCT RAIL)' : editingBlock.type)) : ''"></span>
                                 </h3>
-                                <p class="text-xs text-slate-500 mt-0.5" x-text="editingBlock && editingBlock.type === 'HERO' ? 'Manages the Festive Collection hero showcase card on the homepage.' : 'Manage section content, texts, and imagery.'"></p>
+                                <p class="text-xs text-slate-500 mt-0.5" x-text="editingBlock && editingBlock.type === 'HERO' ? 'Manages the Festive Collection hero showcase card on the homepage.' : (editingBlock && editingBlock.type === 'PRODUCT_RAIL' ? 'Manage title, subtitle, and number of product cards displayed on the storefront home page.' : 'Manage section content, texts, and imagery.')"></p>
                             </div>
                             <button type="button" @click="editingBlock = null" class="text-slate-400 hover:text-slate-700 p-1">
                                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -182,6 +189,43 @@
                                 <div class="space-y-0.5">
                                     <p class="text-xs font-bold text-amber-950">Current Section Image</p>
                                     <p class="text-[11px] text-slate-600">This image is currently displayed on this section. Upload a new file below or supply a direct image URL to replace it.</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Cards count for PRODUCT_RAIL (Featured Ethnic Styles) -->
+                        <template x-if="editingBlock && editingBlock.type === 'PRODUCT_RAIL'">
+                            <div class="p-4 bg-gradient-to-r from-amber-50 to-orange-50/50 border border-amber-200/90 rounded-xl space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                        <svg class="size-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                        <span>Product Cards to Display (Count)</span>
+                                    </label>
+                                    <span class="text-[11px] font-semibold text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                                        Currently: <strong class="font-bold font-mono" x-text="editingBlock.rail_size || 16"></strong> cards
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">
+                                    Choose how many product cards (including color variation cards) appear in the Featured Ethnic Styles grid on the home page.
+                                </p>
+                                <div class="flex items-center gap-3 pt-1 flex-wrap">
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" min="1" max="100" name="rail_size"
+                                               :value="editingBlock ? (editingBlock.rail_size || 16) : 16"
+                                               x-model="editingBlock.rail_size"
+                                               class="w-24 px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-sm font-bold text-amber-900 shadow-2xs focus:ring-amber-500 focus:border-amber-500 text-center">
+                                        <span class="text-xs text-slate-600 font-semibold">cards</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-1.5 ml-auto flex-wrap">
+                                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Quick Presets:</span>
+                                        <button type="button" @click="editingBlock.rail_size = 8" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">8</button>
+                                        <button type="button" @click="editingBlock.rail_size = 12" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">12</button>
+                                        <button type="button" @click="editingBlock.rail_size = 16" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">16</button>
+                                        <button type="button" @click="editingBlock.rail_size = 20" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">20</button>
+                                        <button type="button" @click="editingBlock.rail_size = 24" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">24</button>
+                                        <button type="button" @click="editingBlock.rail_size = 32" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">32</button>
+                                    </div>
                                 </div>
                             </div>
                         </template>

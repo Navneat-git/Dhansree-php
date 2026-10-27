@@ -92,7 +92,7 @@ class AdminHomepageWebController extends Controller
             'secondary_label' => 'nullable|string|max:60',
             'secondary_path' => 'nullable|string|max:200',
             'rail_source' => 'nullable|string|max:40',
-            'rail_size' => 'nullable|integer|min:2|max:20',
+            'rail_size' => 'nullable|integer|min:1|max:100',
             'rail_category_id' => 'nullable|integer|exists:categories,id',
             'layout_width' => 'nullable|string|max:20',
             'text_mode' => 'nullable|string|max:20',
