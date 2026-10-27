@@ -150,8 +150,20 @@
         ];
     }
 
-    // Determine initial color and size, PREFERRING in-stock variants!
+    // Determine initial color and size, PREFERRING requested ?color=... parameter or in-stock variants!
+    $requestedColorParam = trim((string) request()->query('color', ''));
     $firstColor = !empty($colorsList) ? $colorsList[0]['name'] : '';
+
+    if ($requestedColorParam !== '' && !empty($colorsList)) {
+        $matchedColorItem = collect($colorsList)->first(function($c) use ($requestedColorParam) {
+            return strcasecmp($c['name'], $requestedColorParam) === 0
+                || strcasecmp(\App\Models\WholesaleColorCode::resolveCode($c['name']), $requestedColorParam) === 0;
+        });
+        if ($matchedColorItem) {
+            $firstColor = $matchedColorItem['name'];
+        }
+    }
+
     $firstSize = '';
     $defaultVariant = null;
 
@@ -174,9 +186,19 @@
         $defaultVariant = $liveVariants->first();
     }
 
-    $firstImg = $defaultVariant ? ($product->images->first(function($img) use ($defaultVariant) {
-        return $img->productImageVariants->contains('variant_id', $defaultVariant->id);
-    })?->url ?? $product->primary_image_url ?? $product->images->first()?->url) : ($product->primary_image_url ?? $product->images->first()?->url);
+    // Resolve initial image corresponding to the selected color
+    $selectedColorItem = !empty($firstColor) ? collect($colorsList)->firstWhere('name', $firstColor) : null;
+    $firstImg = $selectedColorItem['imageUrl'] ?? null;
+
+    if (!$firstImg && $defaultVariant) {
+        $firstImg = $product->images->first(function($img) use ($defaultVariant) {
+            return $img->productImageVariants->contains('variant_id', $defaultVariant->id);
+        })?->url;
+    }
+
+    if (!$firstImg) {
+        $firstImg = $product->primary_image_url ?? $product->images->first()?->url;
+    }
 @endphp
 
 @include('store.partials.quick-links')

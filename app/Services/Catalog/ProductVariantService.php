@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
+use App\Models\WholesaleColorCode;
 use App\Support\Audit\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -33,6 +34,14 @@ class ProductVariantService
     {
         sort($valueIds, SORT_NUMERIC);
         return implode('-', $valueIds);
+    }
+
+    /**
+     * Resolve standard 3-4 letter uppercase color code for wholesale/fashion SKUs (e.g. Pink -> PNK, Blue -> BLU, Brown -> BRW).
+     */
+    public static function resolveColorCode(?string $colorName): string
+    {
+        return WholesaleColorCode::resolveCode($colorName);
     }
 
     /**
@@ -468,6 +477,9 @@ class ProductVariantService
                 $cartesian = $append;
             }
 
+            $hasColorOption = $options->contains(fn($o) => in_array(strtolower(trim($o->name)), ['color', 'colour', 'shade', 'rang'], true));
+            $optionMap = $options->keyBy('id');
+
             // Smart Base SKU deduction if not explicitly provided
             if (empty($baseSku)) {
                 $existingSku = ProductVariant::where('product_id', $product->id)
@@ -478,6 +490,16 @@ class ProductVariantService
                 if ($existingSku) {
                     // Strip trailing standard size or number slug (e.g. -S, -M, -XL, -XXL, -FREE, etc.)
                     $cleaned = preg_replace('/-(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|FREE|OS|\d+)$/i', '', $existingSku);
+
+                    // If product has a Color option, also check if $cleaned ends with a color code/name and strip it from the base
+                    if ($hasColorOption) {
+                        $colorCodesPattern = '(BLK|WHT|RED|BLU|GRN|YLW|PNK|MRN|PPL|PCH|ORG|BEG|OFWHT|GRE|BRW|PRGRN|MGT|[A-Z]{3,4})';
+                        $cleanedWithoutColor = preg_replace('/-' . $colorCodesPattern . '$/i', '', $cleaned);
+                        if ($cleanedWithoutColor !== '' && $cleanedWithoutColor !== $cleaned) {
+                            $cleaned = $cleanedWithoutColor;
+                        }
+                    }
+
                     $base = strtoupper(trim((string) $cleaned));
                 } else {
                     $base = strtoupper(Str::slug($product->name, ''));
@@ -509,27 +531,69 @@ class ProductVariantService
                     continue;
                 }
 
-                // Construct clean SKU tokens from option values, avoiding duplicate slugs already in $base
-                $tokens = [];
+                // Categorize option values to enforce standard SKU structure:
+                // [Base]-[OtherOptions]-[ColorCode]-[Size]
+                // (Size is always the last slug; Color code is immediately before Size)
+                $colorVal = null;
+                $sizeVal = null;
+                $otherVals = [];
+
                 foreach ($combo as $optVal) {
-                    $valSlug = strtoupper(Str::slug($optVal->value, ''));
-                    // Check if $base already ends with '-' . $valSlug or contains '-' . $valSlug . '-'
-                    if (str_ends_with($base, '-' . $valSlug) || str_contains($base, '-' . $valSlug . '-')) {
+                    $parentOpt = $optionMap->get($optVal->option_id);
+                    $optName = strtolower(trim($parentOpt?->name ?? ''));
+                    if (in_array($optName, ['color', 'colour', 'shade', 'rang'], true)) {
+                        $colorVal = $optVal;
+                    } elseif (in_array($optName, ['size', 'sizes', 'size (uk)', 'size (us)', 'fit'], true)) {
+                        $sizeVal = $optVal;
+                    } else {
+                        $otherVals[] = $optVal;
+                    }
+                }
+
+                $tokens = [];
+                foreach ($otherVals as $ov) {
+                    $tokens[] = strtoupper(Str::slug($ov->value, ''));
+                }
+                if ($colorVal !== null) {
+                    $tokens[] = self::resolveColorCode($colorVal->value);
+                }
+                if ($sizeVal !== null) {
+                    $tokens[] = strtoupper(Str::slug($sizeVal->value, ''));
+                }
+
+                // Construct clean SKU candidate, avoiding duplicate slugs already present in $base
+                $filteredTokens = [];
+                $checkBase = $base;
+                foreach ($tokens as $t) {
+                    if (str_ends_with($checkBase, '-' . $t) || str_contains($checkBase, '-' . $t . '-')) {
                         continue;
                     }
-                    $tokens[] = $valSlug;
+                    $filteredTokens[] = $t;
+                    $checkBase .= '-' . $t;
                 }
-                $skuCandidate = empty($tokens) ? $base : ($base . '-' . implode('-', $tokens));
+                $skuCandidate = empty($filteredTokens) ? $base : ($base . '-' . implode('-', $filteredTokens));
 
-                // Check if an unassigned variant matches this combo (e.g. its SKU matches $skuCandidate or ends with the size)
+                // Check if an unassigned variant matches this combo
                 $matchedUnassigned = null;
                 if ($unassignedVariants->isNotEmpty()) {
-                    // First check exact SKU match
+                    // 1. Exact SKU match
                     $matchedUnassigned = $unassignedVariants->first(fn($uv) => strtoupper($uv->sku) === $skuCandidate);
-                    // If not found, check if unassigned SKU ends with any token from this combo
-                    if (!$matchedUnassigned && !empty($tokens)) {
-                        $matchedUnassigned = $unassignedVariants->first(function ($uv) use ($tokens) {
-                            foreach ($tokens as $t) {
+
+                    // 2. If both color and size exist, check if SKU contains color code AND ends with size
+                    if (!$matchedUnassigned && $colorVal && $sizeVal) {
+                        $cCode = self::resolveColorCode($colorVal->value);
+                        $sSlug = strtoupper(Str::slug($sizeVal->value, ''));
+                        $matchedUnassigned = $unassignedVariants->first(function ($uv) use ($cCode, $sSlug) {
+                            $sku = strtoupper($uv->sku);
+                            return (str_contains($sku, '-' . $cCode) || str_contains($sku, $cCode))
+                                && str_ends_with($sku, '-' . $sSlug);
+                        });
+                    }
+
+                    // 3. Check if unassigned SKU ends with the size slug or any token from this combo
+                    if (!$matchedUnassigned && !empty($filteredTokens)) {
+                        $matchedUnassigned = $unassignedVariants->first(function ($uv) use ($filteredTokens) {
+                            foreach ($filteredTokens as $t) {
                                 if (str_ends_with(strtoupper($uv->sku), '-' . $t)) {
                                     return true;
                                 }
@@ -537,7 +601,8 @@ class ProductVariantService
                             return false;
                         });
                     }
-                    // If still not found and only 1 unassigned variant exists and total combinations equals 1, adopt it
+
+                    // 4. If only 1 unassigned variant exists and total combinations equals 1, adopt it
                     if (!$matchedUnassigned && $unassignedVariants->count() === 1 && count($cartesian) === 1) {
                         $matchedUnassigned = $unassignedVariants->first();
                     }

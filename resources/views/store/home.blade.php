@@ -327,8 +327,8 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             @foreach($featuredProducts as $product)
                 @php
-                    $firstVariant = $product->variants->whereNull('archived_at')->first();
-                    $hasMultipleVariants = $product->variants->whereNull('archived_at')->count() > 1;
+                    $firstVariant = $product->firstVariant ?? $product->variants->whereNull('archived_at')->first();
+                    $hasMultipleVariants = $product->hasMultipleVariants ?? ($product->variants->whereNull('archived_at')->count() > 1);
                 @endphp
                 <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                      x-data="{ selectedVariantId: {{ $firstVariant?->id ?? 'null' }} }">
@@ -336,7 +336,7 @@
                     <div>
                         <!-- Image Container (3:4 ratio) -->
                         <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-warm-beige mb-3">
-                            <a href="{{ url('/product/' . $product->slug) }}">
+                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}">
                                 <img src="{{ $product->primary_image_url }}"
                                      alt="{{ $product->name }}"
                                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -346,6 +346,13 @@
                             @if($product->discount_percentage)
                                 <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase">
                                     {{ $product->discount_percentage }}% OFF
+                                </span>
+                            @endif
+
+                            @if(!empty($product->color_name))
+                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60">
+                                    <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
+                                    <span>{{ $product->color_name }}</span>
                                 </span>
                             @endif
 
@@ -368,11 +375,18 @@
 
                         <!-- Product Info -->
                         <div class="space-y-1">
-                            <p class="text-[0.625rem] uppercase tracking-wider text-rich-black/50 font-semibold truncate">
-                                {{ $product->brand ?? 'DHANSREE ETHNIC' }}
-                            </p>
+                            <div class="flex items-center justify-between gap-1">
+                                <p class="text-[0.625rem] uppercase tracking-wider text-rich-black/50 font-semibold truncate">
+                                    {{ $product->brand ?? 'DHANSREE ETHNIC' }}
+                                </p>
+                                @if(!empty($product->color_name))
+                                    <span class="text-[0.625rem] font-medium text-maroon-800 truncate">
+                                        {{ $product->color_name }}
+                                    </span>
+                                @endif
+                            </div>
                             <h3 class="text-xs sm:text-sm font-medium text-rich-black line-clamp-2 h-10 leading-snug">
-                                <a href="{{ url('/product/' . $product->slug) }}" class="hover:text-maroon-800 transition-colors">
+                                <a href="{{ $product->url ?? url('/product/' . $product->slug) }}" class="hover:text-maroon-800 transition-colors">
                                     {{ $product->name }}
                                 </a>
                             </h3>
@@ -393,14 +407,14 @@
                         <!-- Variant Selector (Sizes) -->
                         @if($hasMultipleVariants)
                             <div class="mt-2.5 flex flex-wrap gap-1">
-                                @foreach($product->variants->whereNull('archived_at')->take(6) as $v)
+                                @foreach($product->variants->take(6) as $v)
                                     @php
-                                        $sizeOption = $v->optionValues->first(function($ov) {
+                                        $sizeOption = $v->optionValues?->first(function($ov) {
                                             return strtolower($ov->option?->name ?? '') === 'size';
-                                        }) ?? $v->optionValues->first(function($ov) {
+                                        }) ?? $v->optionValues?->first(function($ov) {
                                             return !in_array(strtolower($ov->option?->name ?? ''), ['color', 'colour']);
-                                        }) ?? $v->optionValues->first();
-                                        $label = $sizeOption?->value ?? $v->title ?? 'Std';
+                                        }) ?? $v->optionValues?->first();
+                                        $label = $sizeOption?->value ?? $v->display_option_label ?? $v->title ?? 'Std';
                                     @endphp
                                     <button type="button"
                                             @click="selectedVariantId = {{ $v->id }}"
@@ -423,7 +437,7 @@
                                 <span>Quick Add</span>
                             </button>
                         @else
-                            <a href="{{ url('/product/' . $product->slug) }}"
+                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}"
                                class="w-full py-2.5 rounded-lg border border-light-gold text-rich-black/60 text-xs font-semibold text-center block hover:border-maroon-800 hover:text-maroon-800 transition-colors">
                                 View Details
                             </a>

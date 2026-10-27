@@ -11,6 +11,8 @@ use App\Models\ProductOption;
 use App\Models\ProductVariant;
 use App\Models\SizeChart;
 use App\Models\StoreSettings;
+use App\Models\WholesaleColorCode;
+use App\Support\Catalog\ProductListingCard;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -62,6 +64,148 @@ class CatalogBrowsingService
     }
 
     /**
+     * Expands products into color-specific listing cards.
+     * If a product has multiple colors, each color is yielded as a separate listing card.
+     * If a product has no color options (e.g. single color, or smart-living), yields a standard listing card.
+     *
+     * @param iterable<Product> $products
+     * @param string[]|null $colorFilter Active color filters to restrict to
+     * @return Collection<int, ProductListingCard>
+     */
+    public function expandProductsForListing(iterable $products, ?array $colorFilter = null): Collection
+    {
+        $cards = collect();
+        $normalizedColorFilter = !empty($colorFilter)
+            ? array_map(fn($c) => strtolower(trim((string) $c)), $colorFilter)
+            : null;
+
+        foreach ($products as $product) {
+            $liveVariants = $product->variants->whereNull('archived_at');
+            $colorOption = $product->options->first(fn($o) => in_array(strtolower(trim($o->name)), ['color', 'colour', 'shade', 'rang'], true));
+
+            $colorCardsGenerated = 0;
+
+            if ($colorOption && $colorOption->values->isNotEmpty()) {
+                foreach ($colorOption->values as $cVal) {
+                    $colorName = trim((string) $cVal->value);
+                    $normColor = strtolower($colorName);
+
+                    // If color filter is active, skip non-matching colors
+                    if ($normalizedColorFilter !== null && !in_array($normColor, $normalizedColorFilter, true)) {
+                        continue;
+                    }
+
+                    // Variants matching this color
+                    $varsForColor = $liveVariants->filter(function ($v) use ($cVal) {
+                        return $v->optionValues->contains('id', $cVal->id);
+                    });
+
+                    // If option values aren't linked on legacy variants, fallback to SKU matching
+                    if ($varsForColor->isEmpty()) {
+                        $colorCode = WholesaleColorCode::resolveCode($colorName);
+                        $varsForColor = $liveVariants->filter(function ($v) use ($colorCode, $colorName) {
+                            $sku = strtoupper($v->sku);
+                            return str_contains($sku, '-' . $colorCode) || str_contains($sku, strtoupper($colorName));
+                        });
+                    }
+
+                    if ($varsForColor->isEmpty()) {
+                        continue;
+                    }
+
+                    // Find image specifically assigned to this color
+                    $varIds = $varsForColor->pluck('id')->all();
+                    $colorImage = $product->images->first(function ($img) use ($cVal, $varIds) {
+                        return $img->productImageOptionValues->contains('option_value_id', $cVal->id)
+                            || $img->productImageVariants->whereIn('variant_id', $varIds)->isNotEmpty();
+                    }) ?? $product->primaryImage ?? $product->images->first();
+
+                    $imageUrl = $colorImage?->url ?? $product->primary_image_url;
+
+                    // Pricing calculation for this color's variants
+                    $minPriceRupees = (float) ($varsForColor->where('price_rupees', '>', 0)->min('price_rupees') ?? $product->min_price_rupees);
+                    $maxMrpRupees = (float) ($varsForColor->where('mrp_rupees', '>', 0)->max('mrp_rupees') ?? $product->mrp_rupees);
+
+                    $formattedPrice = $minPriceRupees > 0 ? '₹' . number_format($minPriceRupees, 0) : $product->formatted_price;
+                    $formattedMrp = ($maxMrpRupees > $minPriceRupees && $minPriceRupees > 0) ? '₹' . number_format($maxMrpRupees, 0) : null;
+                    $discountPct = ($maxMrpRupees > $minPriceRupees && $maxMrpRupees > 0)
+                        ? (int) round((($maxMrpRupees - $minPriceRupees) / $maxMrpRupees) * 100)
+                        : null;
+
+                    // In-stock variant
+                    $firstVar = $varsForColor->first(function ($v) {
+                        $stock = $v->inventoryLevels->sum('on_hand') - $v->inventoryLevels->sum('reserved');
+                        return $stock > 0;
+                    }) ?? $varsForColor->first();
+
+                    $inStock = $varsForColor->some(function ($v) {
+                        return ($v->inventoryLevels->sum('on_hand') - $v->inventoryLevels->sum('reserved')) > 0;
+                    });
+
+                    $colorCode = WholesaleColorCode::resolveCode($colorName);
+                    $colorHex = WholesaleColorCode::resolveHex($colorName);
+                    $url = url('/product/' . $product->slug . '?color=' . urlencode($colorName));
+
+                    $cards->push(new ProductListingCard(
+                        product: $product,
+                        name: $product->name,
+                        slug: $product->slug,
+                        brand: $product->brand ?? 'DHANSREE ETHNIC',
+                        colorName: $colorName,
+                        colorCode: $colorCode,
+                        colorHex: $colorHex,
+                        primaryImageUrl: $imageUrl,
+                        url: $url,
+                        formattedPrice: $formattedPrice,
+                        formattedMrp: $formattedMrp,
+                        discountPercentage: $discountPct,
+                        firstVariant: $firstVar,
+                        variants: $varsForColor->values(),
+                        hasMultipleVariants: $varsForColor->count() > 1,
+                        inStock: $inStock,
+                    ));
+
+                    $colorCardsGenerated++;
+                }
+            }
+
+            // Fallback: If no color cards generated (e.g. product without color option),
+            // and no color filter was explicitly restricting it, yield standard product card
+            if ($colorCardsGenerated === 0 && empty($normalizedColorFilter)) {
+                $firstVar = $liveVariants->first(function ($v) {
+                    $stock = $v->inventoryLevels->sum('on_hand') - $v->inventoryLevels->sum('reserved');
+                    return $stock > 0;
+                }) ?? $liveVariants->first();
+
+                $inStock = $liveVariants->some(function ($v) {
+                    return ($v->inventoryLevels->sum('on_hand') - $v->inventoryLevels->sum('reserved')) > 0;
+                });
+
+                $cards->push(new ProductListingCard(
+                    product: $product,
+                    name: $product->name,
+                    slug: $product->slug,
+                    brand: $product->brand ?? 'DHANSREE',
+                    colorName: null,
+                    colorCode: null,
+                    colorHex: null,
+                    primaryImageUrl: $product->primary_image_url ?? $product->images->first()?->url,
+                    url: url('/product/' . $product->slug),
+                    formattedPrice: $product->formatted_price,
+                    formattedMrp: $product->formatted_mrp,
+                    discountPercentage: $product->discount_percentage,
+                    firstVariant: $firstVar,
+                    variants: $liveVariants->values(),
+                    hasMultipleVariants: $liveVariants->count() > 1,
+                    inStock: $inStock,
+                ));
+            }
+        }
+
+        return $cards;
+    }
+
+    /**
      * Data for Women's Fashion Homepage (Hub 1).
      */
     public function getWomenFashionHomeData(): array
@@ -75,7 +219,15 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
-        $featuredProducts = Product::with(['category', 'variants.inventoryLevels', 'variants.optionValues.option', 'primaryImage', 'images'])
+        $featuredProducts = Product::with([
+            'category',
+            'variants.inventoryLevels',
+            'variants.optionValues.option',
+            'primaryImage',
+            'images.productImageOptionValues',
+            'images.productImageVariants',
+            'options.values',
+        ])
             ->where('status', ProductStatus::ACTIVE)
             ->whereHas('category', function (Builder $cq) {
                 $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
@@ -84,6 +236,8 @@ class CatalogBrowsingService
             ->latest('published_at')
             ->take(8)
             ->get();
+
+        $featuredCards = $this->expandProductsForListing($featuredProducts);
 
         $smartLivingCategories = Category::whereNull('archived_at')
             ->where('is_visible', true)
@@ -108,7 +262,7 @@ class CatalogBrowsingService
 
         return [
             'categories' => $womenCategories,
-            'featuredProducts' => $featuredProducts,
+            'featuredProducts' => $featuredCards,
             'smartLivingCategories' => $smartLivingCategories,
             'banners' => $banners,
             'store' => $store,
@@ -222,6 +376,7 @@ class CatalogBrowsingService
         return [
             'category' => $category,
             'products' => $listing['products'],
+            'productCards' => $listing['productCards'],
             'isSmartLiving' => $this->isSmartLivingCategory($category),
             'filters' => $filters,
             'availableOptions' => $listing['availableOptions'],
@@ -302,6 +457,7 @@ class CatalogBrowsingService
         return [
             'collection' => $collection,
             'products' => $listing['products'],
+            'productCards' => $listing['productCards'],
             'isSmartLiving' => $isSmartLiving,
             'filters' => $filters,
             'availableOptions' => $listing['availableOptions'],
@@ -404,7 +560,15 @@ class CatalogBrowsingService
             }
         }
 
-        $query = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images', 'options.values'])
+        $query = Product::with([
+            'category',
+            'variants.inventoryLevels',
+            'variants.optionValues.option',
+            'primaryImage',
+            'images.productImageOptionValues',
+            'images.productImageVariants',
+            'options.values',
+        ])
             ->where('status', ProductStatus::ACTIVE)
             ->whereIn('category_id', $categoryIds);
 
@@ -454,9 +618,11 @@ class CatalogBrowsingService
         };
 
         $products = $query->paginate(16)->withQueryString();
+        $productCards = $this->expandProductsForListing($products->items(), $selectedOptions['Color'] ?? null);
 
         return [
             'products' => $products,
+            'productCards' => $productCards,
             'availableOptions' => $availableOptions,
             'selectedOptions' => $selectedOptions,
         ];
@@ -602,7 +768,15 @@ class CatalogBrowsingService
         $term = '%' . $clean . '%';
         $words = array_values(array_filter(explode(' ', $clean), fn($w) => mb_strlen($w) > 1));
 
-        $query = Product::with(['category', 'variants.inventoryLevels', 'primaryImage', 'images'])
+        $query = Product::with([
+            'category',
+            'variants.inventoryLevels',
+            'variants.optionValues.option',
+            'primaryImage',
+            'images.productImageOptionValues',
+            'images.productImageVariants',
+            'options.values',
+        ])
             ->where('status', ProductStatus::ACTIVE)
             ->where(function (Builder $q) use ($clean, $term, $words) {
                 // Exact phrase matching across product fields, category, or SKU

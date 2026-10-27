@@ -79,6 +79,7 @@ class StorefrontController extends Controller
         return view('store.category', [
             'category' => $category,
             'products' => $data['products'],
+            'productCards' => $data['productCards'] ?? null,
             'isSmartLivingHub' => $data['isSmartLiving'],
             'filters' => $data['filters'],
             'availableOptions' => $data['availableOptions'] ?? [],
@@ -107,6 +108,7 @@ class StorefrontController extends Controller
         return view('store.collection', [
             'collection' => $collection,
             'products' => $data['products'],
+            'productCards' => $data['productCards'] ?? null,
             'isSmartLivingHub' => $data['isSmartLiving'],
             'filters' => $data['filters'],
             'availableOptions' => $data['availableOptions'] ?? [],
@@ -160,9 +162,12 @@ class StorefrontController extends Controller
             ? $this->catalogService->search($query, $request->all())
             : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 16);
 
+        $productCards = $this->catalogService->expandProductsForListing($products->items());
+
         return view('store.search', [
             'query' => $query,
             'products' => $products,
+            'productCards' => $productCards,
             'isSmartLivingHub' => false,
             'store' => StoreSettings::current(),
             'seoTitle' => $query !== '' ? "Search results for '{$query}' | Dhansree" : 'Search Products | Dhansree',
