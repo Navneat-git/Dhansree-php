@@ -133,18 +133,17 @@
         $stock = $variant->inventoryLevels->sum('on_hand') - $variant->inventoryLevels->sum('reserved');
         $effectivePrice = $variant->price_rupees > 0 ? $variant->price_rupees : ($product->min_price_rupees ?: 0);
         $effectiveMrp = $variant->mrp_rupees > 0 ? $variant->mrp_rupees : ($product->mrp_rupees ?: 0);
-        $discountLabel = ($effectiveMrp > $effectivePrice && $effectiveMrp > 0)
-            ? (int) round((($effectiveMrp - $effectivePrice) / $effectiveMrp) * 100) . '% OFF'
-            : '';
+        $store = \App\Models\StoreSettings::current();
+        $calc = $store->calculateDiscountedPrice($effectivePrice, $effectiveMrp);
 
         $variantsMatrix[] = [
             'id' => $variant->id,
             'sku' => $variant->sku,
             'color' => $colorVal ?? '',
             'size' => $sizeVal,
-            'price' => $effectivePrice > 0 ? '₹' . number_format($effectivePrice, 0) : $product->formatted_price,
-            'mrp' => ($effectiveMrp > $effectivePrice && $effectivePrice > 0) ? '₹' . number_format($effectiveMrp, 0) : '',
-            'discount' => $discountLabel,
+            'price' => $calc['formatted_price'],
+            'mrp' => $calc['formatted_mrp'] ?? '',
+            'discount' => $calc['discount_percentage'] ? $calc['discount_percentage'] . '% OFF' : '',
             'inStock' => $stock > 0,
             'stock' => $stock,
         ];
@@ -232,9 +231,9 @@
         selectedColor: '{{ $firstColor }}',
         selectedSize: '{{ $firstSize }}',
         selectedVariantId: {{ $defaultVariant?->id ?? 'null' }},
-        selectedVariantPrice: '{{ $defaultVariant?->price_rupees ? '₹' . number_format($defaultVariant->price_rupees, 0) : $product->formatted_price }}',
-        selectedVariantMrp: '{{ $defaultVariant?->mrp_rupees ? '₹' . number_format($defaultVariant->mrp_rupees, 0) : $product->formatted_mrp }}',
-        selectedVariantDiscount: '{{ $defaultVariant?->discount_percentage ? $defaultVariant->discount_percentage . '% OFF' : ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}',
+        selectedVariantPrice: '{{ $firstMatch['price'] ?? $product->formatted_price }}',
+        selectedVariantMrp: '{{ $firstMatch['mrp'] ?? ($product->formatted_mrp ?? '') }}',
+        selectedVariantDiscount: '{{ $firstMatch['discount'] ?? ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}',
         inStock: {{ ($defaultVariant?->inventoryLevels->sum('on_hand') ?? 1) > 0 ? 'true' : 'false' }},
         quantity: 1,
         activeTab: 'description',
@@ -438,6 +437,14 @@
             <p class="text-[0.6875rem] text-rich-black/50 -mt-2">
                 Price inclusive of all taxes. Free express shipping on orders over ₹999.
             </p>
+
+            @php $defaultCoupon = \App\Models\StoreSettings::current()->getDefaultCoupon(); @endphp
+            @if($defaultCoupon)
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                    <span>Special Offer: Includes {{ $defaultCoupon->type === \App\Enums\CouponType::PERCENTAGE ? ($defaultCoupon->value / 100) . '% OFF' : '₹' . ($defaultCoupon->value / 100) . ' OFF' }} with coupon <strong class="font-bold text-emerald-900 tracking-wide">{{ $defaultCoupon->code }}</strong> (auto-applied at checkout)</span>
+                </div>
+            @endif
 
             @if($product->short_description)
                 <p class="text-xs sm:text-sm text-rich-black/75 leading-relaxed">
@@ -862,7 +869,15 @@
                                     {{ $rel->name }}
                                 </a>
                             </h4>
-                            <p class="text-sm font-bold text-maroon-800 mt-1">{{ $rel->formatted_price }}</p>
+                            <div class="flex items-baseline gap-1.5 mt-1">
+                                <span class="text-sm font-bold text-maroon-800">{{ $rel->formatted_price }}</span>
+                                @if($rel->formatted_mrp)
+                                    <del class="text-xs text-rich-black/40">{{ $rel->formatted_mrp }}</del>
+                                @endif
+                                @if($rel->discount_percentage)
+                                    <span class="text-[10px] font-bold text-emerald-700">{{ $rel->discount_percentage }}% OFF</span>
+                                @endif
+                            </div>
                         </div>
                         <a href="{{ url('/product/' . $rel->slug) }}"
                            class="mt-3 block text-center py-2 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold hover:bg-maroon-800 hover:text-white transition-colors">

@@ -82,8 +82,19 @@
                                     <p class="text-xs text-rich-black/60">
                                         Option: <span class="font-semibold text-rich-black">{{ $item['variant_title'] }}</span>
                                     </p>
+                                    @php
+                                        $store = \App\Models\StoreSettings::current();
+                                        $defaultCoupon = $store->getDefaultCoupon();
+                                        $calcItem = $defaultCoupon ? $store->calculateDiscountedPrice($item['price_rupees'], $item['mrp_rupees']) : null;
+                                    @endphp
                                     <p class="text-xs text-rich-black/50">
-                                        Unit Price: ₹{{ number_format($item['price_rupees'], 0) }}
+                                        Unit Price:
+                                        @if($calcItem && $calcItem['discounted_price'] < $item['price_rupees'])
+                                            <span class="font-bold text-maroon-800">{{ $calcItem['formatted_price'] }}</span>
+                                            <del class="text-[11px] text-rich-black/40 ml-1">₹{{ number_format($item['price_rupees'], 0) }}</del>
+                                        @else
+                                            <span class="font-semibold text-rich-black">₹{{ number_format($item['price_rupees'], 0) }}</span>
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -143,11 +154,38 @@
             <div class="lg:col-span-4 bg-white p-6 sm:p-8 rounded-2xl border border-light-gold shadow-md space-y-6 sticky top-28">
                 <h2 class="font-serif text-xl font-bold text-rich-black">Order Summary</h2>
 
+                @php
+                    $store = \App\Models\StoreSettings::current();
+                    $defaultCoupon = $store->getDefaultCoupon();
+                    $cartDiscountPaise = 0;
+                    if ($defaultCoupon && $cart['subtotal_paise'] > 0) {
+                        if ($defaultCoupon->type === \App\Enums\CouponType::PERCENTAGE) {
+                            $cartDiscountPaise = (int) round(($cart['subtotal_paise'] * (int) $defaultCoupon->value) / 10000);
+                            if ($defaultCoupon->max_discount_paise !== null && $cartDiscountPaise > $defaultCoupon->max_discount_paise) {
+                                $cartDiscountPaise = $defaultCoupon->max_discount_paise;
+                            }
+                        } elseif ($defaultCoupon->type === \App\Enums\CouponType::FIXED_AMOUNT) {
+                            $cartDiscountPaise = min((int) $defaultCoupon->value, $cart['subtotal_paise']);
+                        }
+                    }
+                    $effectiveTotalRupees = max(0, $cart['total_rupees'] - ($cartDiscountPaise / 100));
+                @endphp
+
                 <div class="space-y-3 text-xs sm:text-sm divide-y divide-light-gold/60">
                     <div class="flex justify-between py-2 text-rich-black/70">
                         <span>Items Subtotal ({{ $cart['total_quantity'] }})</span>
                         <span class="font-bold text-rich-black">₹{{ number_format($cart['subtotal_rupees'], 0) }}</span>
                     </div>
+
+                    @if($cartDiscountPaise > 0)
+                        <div class="flex justify-between py-2 text-emerald-700 font-medium">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                <span>Coupon {{ $defaultCoupon->code }}</span>
+                            </span>
+                            <span class="font-semibold">−₹{{ number_format($cartDiscountPaise / 100, 0) }}</span>
+                        </div>
+                    @endif
 
                     <div class="flex justify-between py-2 text-rich-black/70">
                         <span>Estimated Shipping</span>
@@ -160,12 +198,21 @@
 
                     <div class="flex justify-between pt-4 text-base font-bold text-rich-black">
                         <span>Total Payable</span>
-                        <span class="text-xl text-maroon-800">₹{{ number_format($cart['total_rupees'], 0) }}</span>
+                        <div class="text-right">
+                            <span class="text-xl text-maroon-800">₹{{ number_format($effectiveTotalRupees, 0) }}</span>
+                            @if($cartDiscountPaise > 0)
+                                <span class="block text-[10px] text-emerald-700 font-normal">({{ $defaultCoupon->code }} auto-applied)</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
                 <p class="text-[0.6875rem] text-rich-black/50 text-center -mt-2">
-                    Inclusive of all GST taxes. Promo codes applied on checkout.
+                    @if($defaultCoupon)
+                        Coupon <strong>{{ $defaultCoupon->code }}</strong> will be applied automatically at checkout.
+                    @else
+                        Inclusive of all GST taxes. Promo codes applied on checkout.
+                    @endif
                 </p>
 
                 <!-- Checkout CTA -->

@@ -185,6 +185,21 @@ class Product extends Model
         if ($min === null) {
             return '₹0';
         }
+
+        $isAdmin = request()?->is('admin*') ?? false;
+
+        if (!$isAdmin) {
+            $store = StoreSettings::current();
+            $minCalc = $store->calculateDiscountedPrice($min, $this->mrp_rupees);
+
+            if ($min === $max || $max === null) {
+                return $minCalc['formatted_price'];
+            }
+
+            $maxCalc = $store->calculateDiscountedPrice($max, $this->mrp_rupees);
+            return $minCalc['formatted_price'] . ' - ' . $maxCalc['formatted_price'];
+        }
+
         if ($min === $max || $max === null) {
             return '₹' . number_format($min, 0);
         }
@@ -197,7 +212,19 @@ class Product extends Model
         $mrp = $this->mrp_rupees;
         $price = $this->min_price_rupees;
 
-        if ($mrp !== null && $price !== null && $mrp > $price) {
+        if ($mrp === null || $price === null) {
+            return null;
+        }
+
+        $isAdmin = request()?->is('admin*') ?? false;
+
+        if (!$isAdmin) {
+            $store = StoreSettings::current();
+            $calc = $store->calculateDiscountedPrice($price, $mrp);
+            return $calc['formatted_mrp'];
+        }
+
+        if ($mrp > $price) {
             return '₹' . number_format($mrp, 0);
         }
 
@@ -209,7 +236,19 @@ class Product extends Model
         $mrp = $this->mrp_rupees;
         $price = $this->min_price_rupees;
 
-        if ($mrp !== null && $price !== null && $mrp > $price) {
+        if ($price === null) {
+            return null;
+        }
+
+        $isAdmin = request()?->is('admin*') ?? false;
+
+        if (!$isAdmin) {
+            $store = StoreSettings::current();
+            $calc = $store->calculateDiscountedPrice($price, $mrp);
+            return $calc['discount_percentage'];
+        }
+
+        if ($mrp !== null && $mrp > $price) {
             return (int) round((($mrp - $price) / $mrp) * 100);
         }
 

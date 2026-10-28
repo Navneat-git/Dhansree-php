@@ -75,6 +75,44 @@ class ProductVariant extends Model
         return $this->cost_paise !== null ? $this->cost_paise / 100 : null;
     }
 
+    public function getFormattedPriceAttribute(): string
+    {
+        $price = $this->price_rupees;
+        $isAdmin = request()?->is('admin*') ?? false;
+
+        if (!$isAdmin) {
+            $store = StoreSettings::current();
+            $calc = $store->calculateDiscountedPrice($price, $this->mrp_rupees);
+            return $calc['formatted_price'];
+        }
+
+        return '₹' . number_format($price, 0);
+    }
+
+    public function getFormattedMrpAttribute(): ?string
+    {
+        $price = $this->price_rupees;
+        $mrp = $this->mrp_rupees;
+
+        if ($mrp === null || $price === null) {
+            return null;
+        }
+
+        $isAdmin = request()?->is('admin*') ?? false;
+
+        if (!$isAdmin) {
+            $store = StoreSettings::current();
+            $calc = $store->calculateDiscountedPrice($price, $mrp);
+            return $calc['formatted_mrp'];
+        }
+
+        if ($mrp > $price) {
+            return '₹' . number_format($mrp, 0);
+        }
+
+        return null;
+    }
+
     public function getDiscountPercentageAttribute(): ?int
     {
         if (!$this->mrp_paise || $this->mrp_paise <= $this->price_paise) {

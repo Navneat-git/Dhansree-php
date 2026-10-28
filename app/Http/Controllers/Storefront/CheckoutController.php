@@ -88,12 +88,17 @@ class CheckoutController extends Controller
             'quantity' => $item['quantity'],
         ], $cart['items']);
 
+        $couponCode = $request->input('coupon_code');
+        if ($request->has('coupon_code') && ($couponCode === null || trim((string) $couponCode) === '')) {
+            $couponCode = '';
+        }
+
         try {
             $quote = $this->checkoutService->quote(
                 $cartLines,
                 $request->input('postal_code'),
                 $request->input('state_code'),
-                $request->input('coupon_code'),
+                $couponCode,
                 $request->input('payment_method', 'COD')
             );
 

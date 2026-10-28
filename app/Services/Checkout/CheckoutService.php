@@ -121,18 +121,36 @@ class CheckoutService
             ];
         }
 
-        // Coupon resolution
+        // Coupon resolution: auto-apply default coupon if no code explicitly specified
         $coupon = null;
         $discountPaise = 0;
+        $isAutoCoupon = false;
+
+        if ($couponCode === null) {
+            $defaultCoupon = $store->getDefaultCoupon();
+            if ($defaultCoupon) {
+                $couponCode = $defaultCoupon->code;
+                $isAutoCoupon = true;
+            }
+        }
+
         if (!empty($couponCode)) {
-            $couponResult = $this->couponService->validateAndCalculate(
-                $couponCode,
-                $subtotalPaise,
-                $customer?->id,
-                $customer?->email
-            );
-            $coupon = $couponResult['coupon'];
-            $discountPaise = $couponResult['discount_paise'];
+            try {
+                $couponResult = $this->couponService->validateAndCalculate(
+                    $couponCode,
+                    $subtotalPaise,
+                    $customer?->id,
+                    $customer?->email
+                );
+                $coupon = $couponResult['coupon'];
+                $discountPaise = $couponResult['discount_paise'];
+            } catch (InvalidArgumentException $e) {
+                if (!$isAutoCoupon) {
+                    throw $e;
+                }
+                $coupon = null;
+                $discountPaise = 0;
+            }
         }
 
         // Shipping resolution

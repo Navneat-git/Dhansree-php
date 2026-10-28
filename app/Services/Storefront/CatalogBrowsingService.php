@@ -126,11 +126,12 @@ class CatalogBrowsingService
                     $minPriceRupees = (float) ($varsForColor->where('price_rupees', '>', 0)->min('price_rupees') ?? $product->min_price_rupees);
                     $maxMrpRupees = (float) ($varsForColor->where('mrp_rupees', '>', 0)->max('mrp_rupees') ?? $product->mrp_rupees);
 
-                    $formattedPrice = $minPriceRupees > 0 ? '₹' . number_format($minPriceRupees, 0) : $product->formatted_price;
-                    $formattedMrp = ($maxMrpRupees > $minPriceRupees && $minPriceRupees > 0) ? '₹' . number_format($maxMrpRupees, 0) : null;
-                    $discountPct = ($maxMrpRupees > $minPriceRupees && $maxMrpRupees > 0)
-                        ? (int) round((($maxMrpRupees - $minPriceRupees) / $maxMrpRupees) * 100)
-                        : null;
+                    $store = StoreSettings::current();
+                    $priceData = $store->calculateDiscountedPrice($minPriceRupees, $maxMrpRupees);
+
+                    $formattedPrice = $priceData['formatted_price'];
+                    $formattedMrp = $priceData['formatted_mrp'];
+                    $discountPct = $priceData['discount_percentage'];
 
                     // In-stock variant
                     $firstVar = $varsForColor->first(function ($v) {

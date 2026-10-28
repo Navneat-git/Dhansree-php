@@ -344,7 +344,7 @@
             submitting: false,
             calculating: false,
             errorMessage: '',
-            couponMessage: '',
+            couponMessage: '{{ ($quote['coupon'] && $quote['discount_paise'] > 0) ? 'Coupon ' . $quote['coupon']->code . ' applied automatically!' : '' }}',
 
             form: {
                 name: '',
@@ -357,7 +357,7 @@
                 state_code: '08',
                 postal_code: '',
                 payment_method: 'COD',
-                coupon_code: '',
+                coupon_code: '{{ $quote['coupon']?->code ?? '' }}',
                 customer_note: ''
             },
 
@@ -409,11 +409,15 @@
                     if (res.ok && data.success) {
                         this.quote = data.quote;
                         if (this.form.coupon_code && this.quote.discount_paise > 0) {
-                            this.couponMessage = 'Coupon applied successfully!';
+                            this.couponMessage = 'Coupon ' + (this.quote.coupon ? this.quote.coupon.code : this.form.coupon_code) + ' applied successfully!';
+                        } else if (!this.form.coupon_code) {
+                            this.couponMessage = '';
                         }
                     } else {
                         if (this.form.coupon_code) {
                             this.couponMessage = data.message || 'Invalid coupon code.';
+                        } else {
+                            this.couponMessage = '';
                         }
                     }
                 } catch (e) {
