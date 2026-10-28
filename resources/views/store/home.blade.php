@@ -516,13 +516,26 @@
 
 <!-- Instagram Reels & Styles Single-Row Slider -->
 @php
-    $feedItems = !empty($instagramFeed) && $instagramFeed->isNotEmpty()
-        ? $instagramFeed
-        : \App\Models\InstagramPost::visible()->with('taggedProduct.primaryVariant')->orderBy('position')->orderByDesc('id')->take(12)->get();
+    $feedItems = $instagramFeed ?? collect();
+    if ($feedItems->isEmpty()) {
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                $feedItems = \App\Models\InstagramPost::visible()
+                    ->with(['taggedProduct.defaultVariant'])
+                    ->orderBy('position')
+                    ->orderByDesc('id')
+                    ->take(12)
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            $feedItems = collect();
+        }
+    }
 @endphp
 
-@if($feedItems->isNotEmpty())
+@if(!empty($feedItems) && $feedItems->isNotEmpty())
 <section class="py-12 md:py-16 bg-white border-t border-b border-light-gold/60 overflow-hidden"
+
          x-data="{
              scrollLeft() {
                  this.$refs.instaSlider.scrollBy({ left: -320, behavior: 'smooth' });

@@ -18,12 +18,30 @@ class InstagramFeedController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
-        $posts = InstagramPost::query()
-            ->visible()
-            ->with(['taggedProduct.primaryVariant', 'taggedProduct.images'])
-            ->orderBy('position')
-            ->orderByDesc('id')
-            ->get();
+        $posts = collect();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                    \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                        '--class' => 'Database\\Seeders\\InstagramFeedSeeder',
+                        '--force' => true,
+                    ]);
+                }
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                $posts = InstagramPost::query()
+                    ->visible()
+                    ->with(['taggedProduct.defaultVariant', 'taggedProduct.images'])
+                    ->orderBy('position')
+                    ->orderByDesc('id')
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Instagram feed lookbook error: ' . $e->getMessage());
+            $posts = collect();
+        }
 
         if ($request->wantsJson() && !$request->header('X-Inertia')) {
             return response()->json([
@@ -37,6 +55,7 @@ class InstagramFeedController extends Controller
         $reels = $posts->where('type', 'reel')->values();
         $regularPosts = $posts->where('type', 'post')->values();
         $shopTheLook = $posts->filter(fn ($p) => $p->tagged_product_id !== null && $p->taggedProduct !== null)->values();
+
 
         return view('store.instagram', [
             'posts' => $posts,

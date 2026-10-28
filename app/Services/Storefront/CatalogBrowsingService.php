@@ -267,13 +267,32 @@ class CatalogBrowsingService
         $store = StoreSettings::current();
         $heroBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->where('is_visible', true)->first();
 
-        $instagramFeed = \App\Models\InstagramPost::query()
-            ->visible()
-            ->with(['taggedProduct.primaryVariant'])
-            ->orderBy('position')
-            ->orderByDesc('id')
-            ->take(12)
-            ->get();
+        $instagramFeed = collect();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                    \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                        '--class' => 'Database\\Seeders\\InstagramFeedSeeder',
+                        '--force' => true,
+                    ]);
+                }
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                $instagramFeed = \App\Models\InstagramPost::query()
+                    ->visible()
+                    ->with(['taggedProduct.defaultVariant'])
+                    ->orderBy('position')
+                    ->orderByDesc('id')
+                    ->take(12)
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Instagram feed load skipped safely: ' . $e->getMessage());
+            $instagramFeed = collect();
+        }
+
 
         return [
             'categories' => $womenCategories,

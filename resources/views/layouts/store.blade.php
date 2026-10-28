@@ -40,14 +40,15 @@
 
     @php
         $storeSettings = $store ?? \App\Models\StoreSettings::current();
-        $siteVerification = config('services.google.site_verification') ?: ($storeSettings->seo_google_verification ?? null);
-        $facebookDomainVerification = $storeSettings->facebook_domain_verification ?: (config('services.meta.domain_verification') ?: 'jaur6cwxsewazavl4qh5goy7ylgewz');
-        $analyticsId = config('services.google.analytics_id') ?: ($storeSettings->analytics_google_measurement_id ?? null);
-        $gtmId = config('services.google.gtm_id') ?: ($storeSettings->gtm_container_id ?? null);
-        $googleAdsId = $storeSettings->google_ads_id ?: (config('services.google.ads_id') ?: 'AW-18539949937');
-        $metaPixelId = $storeSettings->ads_meta_pixel_id ?: (config('services.meta.pixel_id') ?: '1783488586189258');
-        $topBarCouponCode = $storeSettings->featured_coupon_code ?? 'FESTIVE10';
+        $siteVerification = config('services.google.site_verification') ?: ($storeSettings?->seo_google_verification ?? null);
+        $facebookDomainVerification = ($storeSettings?->facebook_domain_verification ?? null) ?: (config('services.meta.domain_verification') ?: 'jaur6cwxsewazavl4qh5goy7ylgewz');
+        $analyticsId = config('services.google.analytics_id') ?: ($storeSettings?->analytics_google_measurement_id ?? null);
+        $gtmId = config('services.google.gtm_id') ?: ($storeSettings?->gtm_container_id ?? null);
+        $googleAdsId = ($storeSettings?->google_ads_id ?? null) ?: (config('services.google.ads_id') ?: 'AW-18539949937');
+        $metaPixelId = ($storeSettings?->ads_meta_pixel_id ?? null) ?: (config('services.meta.pixel_id') ?: '1783488586189258');
+        $topBarCouponCode = $storeSettings?->featured_coupon_code ?? 'FESTIVE10';
         $topBarCoupon = \App\Models\Coupon::where('code', $topBarCouponCode)->where('is_active', true)->first();
+
         if ($topBarCoupon) {
             $isPercentage = ($topBarCoupon->type instanceof \App\Enums\CouponType)
                 ? $topBarCoupon->type === \App\Enums\CouponType::PERCENTAGE

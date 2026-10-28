@@ -30,10 +30,28 @@ class AdminInstagramWebController extends Controller
             abort(403, 'You do not have permission to view Instagram feed management.');
         }
 
-        $posts = InstagramPost::with('taggedProduct')
-            ->orderBy('position')
-            ->orderByDesc('id')
-            ->get();
+        $posts = collect();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                    \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                        '--class' => 'Database\\Seeders\\InstagramFeedSeeder',
+                        '--force' => true,
+                    ]);
+                }
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                $posts = InstagramPost::with('taggedProduct')
+                    ->orderBy('position')
+                    ->orderByDesc('id')
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            $posts = collect();
+        }
+
 
         $products = Product::where('status', ProductStatus::ACTIVE)
             ->orderBy('name')
