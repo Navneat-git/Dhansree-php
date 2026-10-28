@@ -64,10 +64,40 @@
     $variantsMatrix = [];
     $colorsList = [];
 
-    // Map each image to its 0-based position
-    $imagePositions = [];
+    // Map each image and determine its pinned color associations
+    $preparedImages = [];
     foreach ($product->images as $pos => $img) {
-        $imagePositions[$img->id] = $pos;
+        $assignedColors = [];
+        if ($colorOption) {
+            foreach ($colorOption->values as $cVal) {
+                $cValName = trim($cVal->value);
+                $colorCode = \App\Models\WholesaleColorCode::resolveCode($cValName);
+
+                $isPinnedToOption = $img->productImageOptionValues->contains('option_value_id', $cVal->id);
+
+                $varsForColor = $liveVariants->filter(fn($v) => $v->optionValues->contains('id', $cVal->id));
+                if ($varsForColor->isEmpty()) {
+                    $varsForColor = $liveVariants->filter(function ($v) use ($colorCode, $cValName) {
+                        $sku = strtoupper($v->sku);
+                        return ($colorCode !== '' && str_contains($sku, '-' . $colorCode)) || str_contains($sku, strtoupper($cValName));
+                    });
+                }
+                $varIds = $varsForColor->pluck('id')->all();
+                $isPinnedToVariant = !empty($varIds) && $img->productImageVariants->whereIn('variant_id', $varIds)->isNotEmpty();
+
+                if ($isPinnedToOption || $isPinnedToVariant) {
+                    $assignedColors[] = $cValName;
+                }
+            }
+        }
+        $preparedImages[] = [
+            'id' => $img->id,
+            'url' => $img->url,
+            'alt' => $img->alt_text ?? $product->name,
+            'position' => $img->position,
+            'is_primary' => ($pos === 0 || $img->position === 0),
+            'colors' => array_values(array_unique($assignedColors)),
+        ];
     }
 
     $colorHexMap = [
@@ -96,9 +126,17 @@
     if ($colorOption) {
         foreach ($colorOption->values as $cVal) {
             $cName = $cVal->value;
+            $colorCode = \App\Models\WholesaleColorCode::resolveCode($cName);
+
             $varsForColor = $liveVariants->filter(function($v) use ($cVal) {
                 return $v->optionValues->contains('id', $cVal->id);
             });
+            if ($varsForColor->isEmpty()) {
+                $varsForColor = $liveVariants->filter(function ($v) use ($colorCode, $cName) {
+                    $sku = strtoupper($v->sku);
+                    return ($colorCode !== '' && str_contains($sku, '-' . $colorCode)) || str_contains($sku, strtoupper($cName));
+                });
+            }
             if ($varsForColor->isEmpty()) {
                 continue;
             }
@@ -106,19 +144,17 @@
             $varIds = $varsForColor->pluck('id')->all();
             $colorImage = $product->images->first(function($img) use ($cVal, $varIds) {
                 return $img->productImageOptionValues->contains('option_value_id', $cVal->id)
-                    || $img->productImageVariants->whereIn('variant_id', $varIds)->isNotEmpty();
+                    || (!empty($varIds) && $img->productImageVariants->whereIn('variant_id', $varIds)->isNotEmpty());
             }) ?? $product->images->first();
 
-            $imgPos = $colorImage ? ($imagePositions[$colorImage->id] ?? 0) : 0;
             $hexKey = strtolower(trim($cName));
 
             $colorsList[] = [
                 'id' => $cVal->id,
                 'name' => $cName,
-                'hex' => $colorHexMap[$hexKey] ?? '#94a3b8',
+                'hex' => $colorHexMap[$hexKey] ?? (\App\Models\WholesaleColorCode::resolveHex($cName) ?: '#94a3b8'),
                 'thumbnail' => $colorImage?->url,
                 'imageUrl' => $colorImage?->url,
-                'imageIndex' => $imgPos,
             ];
         }
     }
@@ -185,9 +221,32 @@
         $defaultVariant = $liveVariants->first();
     }
 
+    // Prepare initial images array prioritized for firstColor
+    $initialImages = $preparedImages;
+    if (!empty($firstColor)) {
+        $colorImages = collect($preparedImages)->filter(function($img) use ($firstColor) {
+            return collect($img['colors'])->contains(function($c) use ($firstColor) {
+                return strcasecmp($c, $firstColor) === 0
+                    || strcasecmp(\App\Models\WholesaleColorCode::resolveCode($c), $firstColor) === 0;
+            });
+        })->values();
+
+        if ($colorImages->isNotEmpty()) {
+            $commonImages = collect($preparedImages)->filter(function($img) {
+                return empty($img['colors']);
+            })->values();
+
+            $initialImages = $colorImages->concat($commonImages)->all();
+        }
+    }
+
     // Resolve initial image corresponding to the selected color
     $selectedColorItem = !empty($firstColor) ? collect($colorsList)->firstWhere('name', $firstColor) : null;
     $firstImg = $selectedColorItem['imageUrl'] ?? null;
+
+    if (!$firstImg && !empty($initialImages)) {
+        $firstImg = $initialImages[0]['url'];
+    }
 
     if (!$firstImg && $defaultVariant) {
         $firstImg = $product->images->first(function($img) use ($defaultVariant) {
@@ -200,10 +259,20 @@
     }
 @endphp
 
+@push('head')
+    @if(!empty($firstImg))
+        <meta property="og:image" content="{{ $firstImg }}">
+        <meta name="twitter:image" content="{{ $firstImg }}">
+    @endif
+@endpush
+
 @include('store.partials.quick-links')
 
 <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 md:py-12 w-full max-w-full overflow-hidden"
      x-data="{
+        allImages: @js($preparedImages),
+        activeIdx: 0,
+        expanded: false,
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
         sizeChartOpen: false,
@@ -237,13 +306,50 @@
         inStock: {{ ($defaultVariant?->inventoryLevels->sum('on_hand') ?? 1) > 0 ? 'true' : 'false' }},
         quantity: 1,
         activeTab: 'description',
+        get visibleImages() {
+            if (!this.selectedColor) return this.allImages;
+            const sel = (this.selectedColor || '').trim().toLowerCase();
+            const forColor = this.allImages.filter(img => img.colors && img.colors.some(c => c.trim().toLowerCase() === sel));
+            if (forColor.length > 0) {
+                const common = this.allImages.filter(img => !img.colors || img.colors.length === 0);
+                return [...forColor, ...common];
+            }
+            return this.allImages;
+        },
+        updateScroll(el) {
+            const width = el.clientWidth;
+            if (width > 0) {
+                this.activeIdx = Math.round(el.scrollLeft / width);
+            }
+        },
+        scrollToImage(idx) {
+            const track = this.$refs.galleryTrack;
+            if (track && track.clientWidth > 0) {
+                track.scrollTo({ left: track.clientWidth * idx, behavior: 'smooth' });
+                this.activeIdx = idx;
+            }
+        },
         selectColor(colorName) {
             this.selectedColor = colorName;
-            const cInfo = this.colors.find(c => c.name === colorName);
-            if (cInfo && cInfo.imageUrl) {
-                this.activeImage = cInfo.imageUrl;
-                window.dispatchEvent(new CustomEvent('jump-to-image', { detail: { index: cInfo.imageIndex } }));
+            this.activeIdx = 0;
+            this.expanded = false;
+
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('color', colorName);
+                window.history.replaceState({}, '', url.toString());
             }
+
+            this.$nextTick(() => {
+                if (this.visibleImages.length > 0) {
+                    this.activeImage = this.visibleImages[0].url;
+                }
+                const track = this.$refs.galleryTrack;
+                if (track) {
+                    track.scrollTo({ left: 0, behavior: 'instant' });
+                }
+            });
+
             const sizes = this.getSizesForColor(colorName);
             if (!sizes.some(s => s.size === this.selectedSize)) {
                 if (sizes.length > 0) {
@@ -298,43 +404,20 @@
     <div class="grid grid-cols-1 {{ $isSmartLivingHub ? 'lg:grid-cols-12' : 'lg:grid-cols-2' }} gap-8 lg:gap-12 items-start w-full max-w-full">
         
         <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
-            <div class="min-w-0 w-full max-w-full overflow-hidden {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}"
-                 x-data="{
-                    activeIdx: 0,
-                    expanded: false,
-                    imageCount: {{ $product->images->count() }},
-                    updateScroll(el) {
-                        const width = el.clientWidth;
-                        if (width > 0) {
-                            this.activeIdx = Math.round(el.scrollLeft / width);
-                        }
-                    },
-                    scrollToImage(idx) {
-                        const track = this.$refs.galleryTrack;
-                        if (track && track.clientWidth > 0) {
-                            track.scrollTo({ left: track.clientWidth * idx, behavior: 'smooth' });
-                            this.activeIdx = idx;
-                        }
-                    }
-                 }"
-                 @jump-to-image.window="scrollToImage($event.detail.index)">
+        <div class="min-w-0 w-full max-w-full overflow-hidden {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}">
             
             <ul x-ref="galleryTrack"
                 @scroll.passive="updateScroll($el)"
                 aria-label="{{ $product->name }} pictures"
-                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto {{ $product->images->count() === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }}">
+                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto"
+                :class="visibleImages.length === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'">
                 
-                @php
-                    $imgCount = $product->images->count();
-                    $leadIsWide = ($imgCount > 1 && $imgCount % 2 === 1);
-                @endphp
-
-                @forelse($product->images as $position => $img)
-                    <li class="w-full shrink-0 snap-center {{ $leadIsWide && $position === 0 ? 'lg:col-span-2' : '' }}"
-                        @if($position >= 6)
-                            :class="expanded ? '' : 'lg:hidden'"
-                        @endif
-                    >
+                <template x-for="(img, idx) in visibleImages" :key="img.id + '-' + (selectedColor || 'all')">
+                    <li class="w-full shrink-0 snap-center"
+                        :class="{
+                            'lg:col-span-2': (visibleImages.length > 1 && visibleImages.length % 2 === 1 && idx === 0),
+                            'lg:hidden': (!expanded && idx >= 6)
+                        }">
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white group cursor-zoom-in"
                              x-data="{ isHovered: false, origin: '50% 50%' }"
                              @mousemove="
@@ -347,54 +430,69 @@
                                  }
                              "
                              @mouseleave="isHovered = false"
-                             @click="activeImage = '{{ $img->url }}'; zoomModalOpen = true;">
+                             @click="activeImage = img.url; zoomModalOpen = true;">
                             
                             <div class="absolute inset-0 transition-transform duration-200 ease-out"
                                  :style="isHovered ? 'transform: scale(2.2); transform-origin: ' + origin + ';' : ''">
-                                <img src="{{ $img->url }}"
-                                     alt="{{ $img->alt_text ?? $product->name }}"
-                                     loading="{{ $position === 0 ? 'eager' : 'lazy' }}"
+                                <img :src="img.url"
+                                     :alt="img.alt"
+                                     :loading="idx === 0 ? 'eager' : 'lazy'"
                                      class="w-full h-full object-contain">
                             </div>
                         </div>
                     </li>
-                @empty
+                </template>
+
+                <template x-if="visibleImages.length === 0">
                     <li class="w-full lg:col-span-2 {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
                         <svg class="w-12 h-12 stroke-current" fill="none" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
                         </svg>
                     </li>
-                @endforelse
+                </template>
             </ul>
 
+            <!-- Fallback for non-JS / crawlers -->
+            <noscript>
+                <div class="grid grid-cols-1 {{ count($initialImages) === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }} gap-3">
+                    @forelse($initialImages as $position => $img)
+                        <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white {{ count($initialImages) > 1 && count($initialImages) % 2 === 1 && $position === 0 ? 'lg:col-span-2' : '' }}">
+                            <img src="{{ $img['url'] }}" alt="{{ $img['alt'] }}" class="w-full h-full object-contain" loading="{{ $position === 0 ? 'eager' : 'lazy' }}">
+                        </div>
+                    @empty
+                        <div class="w-full lg:col-span-2 {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
+                            No image available
+                        </div>
+                    @endforelse
+                </div>
+            </noscript>
+
             <!-- View all photos button (Desktop, if more than 6 images) -->
-            @if($imgCount > 6)
+            <div x-show="visibleImages.length > 6 && !expanded" class="hidden lg:block">
                 <button type="button"
-                        x-show="!expanded"
                         @click="expanded = true"
-                        class="mt-3 w-full hidden lg:inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-light-gold bg-warm-beige/40 text-xs font-bold uppercase tracking-wider text-rich-black hover:bg-warm-beige transition-colors">
-                    View all {{ $imgCount }} photos
+                        class="mt-3 w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-light-gold bg-warm-beige/40 text-xs font-bold uppercase tracking-wider text-rich-black hover:bg-warm-beige transition-colors">
+                    <span x-text="'View all ' + visibleImages.length + ' photos'"></span>
                 </button>
-            @endif
+            </div>
 
             <!-- Mobile Dot Indicators -->
-            @if($imgCount > 1)
-                <ul aria-label="Choose a picture of {{ $product->name }}"
-                    class="mt-3 flex items-center justify-center gap-2 lg:hidden">
-                    @foreach($product->images as $position => $img)
-                        <li>
-                            <button type="button"
-                                    @click="scrollToImage({{ $position }})"
-                                    aria-label="Show picture {{ $position + 1 }} of {{ $imgCount }}"
-                                    class="grid h-11 w-6 place-items-center">
-                                <span aria-hidden
-                                      :class="activeIdx === {{ $position }} ? 'w-6 bg-maroon-800' : 'w-2 bg-stone-300'"
-                                      class="block h-2 rounded-full transition-all duration-300"></span>
-                            </button>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
+            <ul x-show="visibleImages.length > 1"
+                aria-label="Choose a picture of {{ $product->name }}"
+                class="mt-3 flex items-center justify-center gap-2 lg:hidden">
+                <template x-for="(img, position) in visibleImages" :key="'dot-' + img.id">
+                    <li>
+                        <button type="button"
+                                @click="scrollToImage(position)"
+                                :aria-label="'Show picture ' + (position + 1) + ' of ' + visibleImages.length"
+                                class="grid h-11 w-6 place-items-center">
+                            <span aria-hidden
+                                  :class="activeIdx === position ? 'w-6 bg-maroon-800' : 'w-2 bg-stone-300'"
+                                  class="block h-2 rounded-full transition-all duration-300"></span>
+                        </button>
+                    </li>
+                </template>
+            </ul>
         </div>
 
         <!-- Right: Details, Sizing, CTA -->
