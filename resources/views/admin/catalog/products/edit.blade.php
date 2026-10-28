@@ -345,6 +345,10 @@
                     $firstSku = $product->variants->firstWhere('sku')?->sku;
                     if ($firstSku) {
                         $suggestedBaseSku = preg_replace('/-(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|FREE|OS|\d+)$/i', '', $firstSku);
+                    } else {
+                        $shortSlug = strtoupper((string) \Illuminate\Support\Str::slug(\Illuminate\Support\Str::words($product->name, 3, ''), '-'));
+                        $shortSlug = rtrim(substr($shortSlug, 0, 18), '-');
+                        $suggestedBaseSku = 'DS-' . ($shortSlug ?: 'ITEM') . '-P' . $product->id;
                     }
                 @endphp
                 <div class="border-t border-slate-200/80 pt-4">

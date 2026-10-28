@@ -385,4 +385,98 @@ class VariantMatrixAndInventoryAdjustmentTest extends TestCase
         $response->assertSee('Set Exact Stock');
         $response->assertSee('Add / Deduct Stock');
     }
+
+    public function test_variant_matrix_handles_long_product_name_without_sku_truncation(): void
+    {
+        $product = Product::create([
+            'name' => "Women's Lime Green Chevron Printed Kurta Set With Matching Trousers",
+            'slug' => 'womens-lime-green-chevron-printed-kurta-set-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Long title test',
+        ]);
+
+        $optColor = ProductOption::create([
+            'product_id' => $product->id,
+            'name' => 'Color',
+            'position' => 0,
+        ]);
+        $valYlw = ProductOptionValue::create([
+            'option_id' => $optColor->id,
+            'value' => 'Yellow',
+            'position' => 0,
+        ]);
+
+        $optSize = ProductOption::create([
+            'product_id' => $product->id,
+            'name' => 'Size',
+            'position' => 1,
+        ]);
+        $valXxl = ProductOptionValue::create([
+            'option_id' => $optSize->id,
+            'value' => 'XXL',
+            'position' => 0,
+        ]);
+
+        $service = app(ProductVariantService::class);
+        $generated = $service->generateVariantMatrix(
+            $product,
+            699.00,
+            1299.00,
+            null, // User did not specify base_sku
+            null,
+            null,
+            10
+        );
+
+        $this->assertNotEmpty($generated);
+        foreach ($generated as $variant) {
+            $this->assertLessThanOrEqual(64, strlen($variant->sku));
+            $this->assertStringContainsString('YLW', $variant->sku);
+            $this->assertStringEndsWith('XXL', $variant->sku);
+            $this->assertStringStartsWith('DS-', $variant->sku);
+            $this->assertDatabaseHas('product_variants', ['id' => $variant->id, 'sku' => $variant->sku]);
+        }
+    }
+
+    public function test_admin_generate_variants_endpoint_handles_empty_base_sku_and_suggests_base_in_ui(): void
+    {
+        $product = Product::create([
+            'name' => "Women's Lime Green Chevron Printed Kurta Set With Matching Trousers",
+            'slug' => 'womens-lime-green-' . uniqid(),
+            'status' => ProductStatus::DRAFT,
+            'description' => 'Test',
+        ]);
+
+        $opt = ProductOption::create([
+            'product_id' => $product->id,
+            'name' => 'Size',
+            'position' => 0,
+        ]);
+        ProductOptionValue::create(['option_id' => $opt->id, 'value' => 'M', 'position' => 0]);
+        ProductOptionValue::create(['option_id' => $opt->id, 'value' => 'L', 'position' => 1]);
+
+        // When no variants exist, edit page should prefill suggestedBaseSku with clean DS- prefix
+        $viewRes = $this->adminGet("/admin/catalog/products/{$product->id}/edit?tab=variants");
+        $viewRes->assertStatus(200);
+        $viewRes->assertSee('name="base_sku" value="DS-', false);
+
+        // Submitting with empty base_sku should succeed without truncation error
+        $response = $this->adminPost("/admin/catalog/products/{$product->id}/generate-variants", [
+            'price_rupees' => 799,
+            'mrp_rupees' => 1499,
+            'base_sku' => '',
+            'default_stock' => 15,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $variants = ProductVariant::where('product_id', $product->id)->get();
+        $this->assertCount(2, $variants);
+        foreach ($variants as $v) {
+            $this->assertLessThanOrEqual(64, strlen($v->sku));
+            $this->assertStringStartsWith('DS-', $v->sku);
+        }
+    }
 }
+

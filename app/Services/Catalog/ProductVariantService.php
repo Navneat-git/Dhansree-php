@@ -625,7 +625,9 @@ class ProductVariantService
 
                     $base = strtoupper(trim((string) $cleaned));
                 } else {
-                    $base = strtoupper(Str::slug($product->name, ''));
+                    $shortSlug = strtoupper((string) Str::slug(Str::words($product->name, 3, ''), '-'));
+                    $shortSlug = rtrim(substr($shortSlug, 0, 18), '-');
+                    $base = 'DS-' . ($shortSlug ?: 'ITEM') . '-P' . $product->id;
                 }
             } else {
                 $base = strtoupper(trim($baseSku));
@@ -694,7 +696,12 @@ class ProductVariantService
                     $filteredTokens[] = $t;
                     $checkBase .= '-' . $t;
                 }
-                $skuCandidate = empty($filteredTokens) ? $base : ($base . '-' . implode('-', $filteredTokens));
+
+                $suffix = empty($filteredTokens) ? '' : ('-' . implode('-', $filteredTokens));
+                // Safety guard: Ensure base + suffix stays within safe limit (< 60 chars) even before collision checks
+                $maxBaseLen = max(8, 54 - strlen($suffix));
+                $effectiveBase = (strlen($base) > $maxBaseLen) ? rtrim(substr($base, 0, $maxBaseLen), '-') : $base;
+                $skuCandidate = empty($suffix) ? $effectiveBase : ($effectiveBase . $suffix);
 
                 // Check if an unassigned variant matches this combo
                 $matchedUnassigned = null;
@@ -785,12 +792,14 @@ class ProductVariantService
                     continue;
                 }
 
-                // Ensure unique SKU across catalog
+                // Ensure unique SKU across catalog (safe length clamp so collision suffix fits)
                 $finalSku = $skuCandidate;
                 $attempt = 1;
                 while (ProductVariant::where('sku', $finalSku)->exists()) {
                     $attempt++;
-                    $finalSku = $skuCandidate . '-' . $attempt;
+                    $colSuffix = '-' . $attempt;
+                    $trimmedCand = substr($skuCandidate, 0, 95 - strlen($colSuffix));
+                    $finalSku = $trimmedCand . $colSuffix;
                 }
 
                 $createdVariants[] = $this->createVariant($product, [
