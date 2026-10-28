@@ -205,4 +205,46 @@ HTML;
         $settings = StoreSettings::current();
         $this->assertSame('1783488586189258', $settings->ads_meta_pixel_id);
     }
+
+    public function test_admin_can_update_and_blank_out_social_urls_without_default_reversion(): void
+    {
+        // 1. Update with specific Instagram and Facebook, leaving YouTube, Pinterest, and X blank
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'instagram_url' => 'https://www.instagram.com/dhansreetrends',
+                'facebook_url' => 'https://www.facebook.com/share/1Psrp8MVwW/',
+                'youtube_url' => '',
+                'pinterest_url' => '',
+                'x_url' => '',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $settings = StoreSettings::current();
+        $this->assertSame('https://www.instagram.com/dhansreetrends', $settings->instagram_url);
+        $this->assertSame('https://www.facebook.com/share/1Psrp8MVwW/', $settings->facebook_url);
+        $this->assertNull($settings->youtube_url);
+        $this->assertNull($settings->pinterest_url);
+        $this->assertNull($settings->x_url);
+
+        // 2. Verify admin view shows empty values and X field exists without forcing old defaults
+        $viewRes = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->get(route('admin.settings.index'));
+        $viewRes->assertStatus(200);
+        $viewRes->assertSee('name="x_url"', false);
+        $viewRes->assertDontSee('https://youtube.com/@dhansree');
+        $viewRes->assertDontSee('https://instagram.com/dhansree_jaipur');
+        $viewRes->assertDontSee('https://facebook.com/dhansree');
+
+        // 3. Verify storefront footer only renders Instagram and Facebook, not YouTube, Pinterest or X
+        $storeRes = $this->get('/');
+        $storeRes->assertStatus(200);
+        $storeRes->assertSee('https://www.instagram.com/dhansreetrends');
+        $storeRes->assertSee('https://www.facebook.com/share/1Psrp8MVwW/');
+        $storeRes->assertDontSee('youtube.com');
+        $storeRes->assertDontSee('pinterest.com');
+        $storeRes->assertDontSee('x.com/dhansree');
+    }
 }

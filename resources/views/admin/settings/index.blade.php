@@ -242,26 +242,41 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Instagram Profile URL</label>
-                        <input type="url" name="instagram_url" value="{{ old('instagram_url', $settings->instagram_url ?? 'https://instagram.com/dhansree_jaipur') }}"
+                        <input type="url" name="instagram_url" value="{{ old('instagram_url', $settings->instagram_url) }}"
+                               placeholder="e.g. https://www.instagram.com/dhansreetrends"
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Facebook Page URL</label>
-                        <input type="url" name="facebook_url" value="{{ old('facebook_url', $settings->facebook_url ?? 'https://facebook.com/dhansree') }}"
+                        <input type="url" name="facebook_url" value="{{ old('facebook_url', $settings->facebook_url) }}"
+                               placeholder="e.g. https://www.facebook.com/yourpage"
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">YouTube Channel URL</label>
-                        <input type="url" name="youtube_url" value="{{ old('youtube_url', $settings->youtube_url ?? 'https://youtube.com/@dhansree') }}"
+                        <input type="url" name="youtube_url" value="{{ old('youtube_url', $settings->youtube_url) }}"
+                               placeholder="e.g. https://youtube.com/@yourchannel (leave blank if none)"
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pinterest Profile URL</label>
                         <input type="url" name="pinterest_url" value="{{ old('pinterest_url', $settings->pinterest_url) }}"
+                               placeholder="e.g. https://pinterest.com/yourprofile (leave blank if none)"
                                class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">X (formerly Twitter) Profile URL</label>
+                        <input type="url" name="x_url" value="{{ old('x_url', $settings->x_url) }}"
+                               placeholder="e.g. https://x.com/yourhandle (leave blank if none)"
+                               class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <p class="text-[11px] text-slate-500">Leave any social media link blank if you do not have an active account. Blank links are automatically hidden from the website footer.</p>
                     </div>
 
                     <div class="sm:col-span-2 border-t border-slate-200 pt-5 space-y-4">

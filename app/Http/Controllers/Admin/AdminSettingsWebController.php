@@ -104,11 +104,26 @@ class AdminSettingsWebController extends Controller
             }
 
             if ($section === 'social_seo' || $section === 'all') {
-                $settings->instagram_url = $request->has('instagram_url') ? $request->input('instagram_url') : $settings->instagram_url;
-                $settings->facebook_url = $request->has('facebook_url') ? $request->input('facebook_url') : $settings->facebook_url;
-                $settings->youtube_url = $request->has('youtube_url') ? $request->input('youtube_url') : $settings->youtube_url;
-                $settings->pinterest_url = $request->has('pinterest_url') ? $request->input('pinterest_url') : $settings->pinterest_url;
-                $settings->x_url = $request->has('x_url') ? $request->input('x_url') : $settings->x_url;
+                $cleanUrl = function (?string $val): ?string {
+                    $v = trim((string) $val);
+                    return $v !== '' ? $v : null;
+                };
+
+                if ($request->has('instagram_url')) {
+                    $settings->instagram_url = $cleanUrl($request->input('instagram_url'));
+                }
+                if ($request->has('facebook_url')) {
+                    $settings->facebook_url = $cleanUrl($request->input('facebook_url'));
+                }
+                if ($request->has('youtube_url')) {
+                    $settings->youtube_url = $cleanUrl($request->input('youtube_url'));
+                }
+                if ($request->has('pinterest_url')) {
+                    $settings->pinterest_url = $cleanUrl($request->input('pinterest_url'));
+                }
+                if ($request->has('x_url')) {
+                    $settings->x_url = $cleanUrl($request->input('x_url'));
+                }
                 $settings->seo_home_title = $request->has('seo_home_title') ? $request->input('seo_home_title') : $settings->seo_home_title;
                 $settings->seo_home_description = $request->has('seo_home_description') ? $request->input('seo_home_description') : $settings->seo_home_description;
 

@@ -801,36 +801,50 @@
                     </div>
 
                     <!-- Social Media Links -->
-                    <div class="pt-2">
-                        <p class="text-[0.6875rem] font-bold uppercase tracking-wider text-rich-black/60 mb-2">Follow Us</p>
-                        <ul class="flex items-center gap-2" aria-label="Dhansree social media links">
-                            <li>
-                                <a href="https://www.instagram.com/dhansree_official" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on Instagram" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
-                                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.05 1.8.25 2.2.42.56.22.96.48 1.38.9.42.42.68.82.9 1.38.17.4.37 1 .42 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.05 1.2-.25 1.8-.42 2.2a3.7 3.7 0 0 1-.9 1.38c-.42.42-.82.68-1.38.9-.4.17-1 .37-2.2.42-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.05-1.8-.25-2.2-.42a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.17-.4-.37-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.05-1.2.25-1.8.42-2.2.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.4-.17 1-.37 2.2-.42C8.4 2.2 8.8 2.2 12 2.2Zm0 1.8c-3.14 0-3.5.01-4.74.07-.9.04-1.38.19-1.7.31-.43.17-.73.37-1.05.69-.32.32-.52.62-.69 1.05-.12.32-.27.8-.31 1.7C3.45 8.86 3.44 9.2 3.44 12s.01 3.14.07 4.38c.04.9.19 1.38.31 1.7.17.43.37.73.69 1.05.32.32.62.52 1.05.69.32.12.8.27 1.7.31 1.24.06 1.6.07 4.74.07s3.5-.01 4.74-.07c.9-.04 1.38-.19 1.7-.31.43-.17.73-.37 1.05-.69.32-.32.52-.62.69-1.05.12-.32.27-.8.31-1.7.06-1.24.07-1.58.07-4.38s-.01-3.14-.07-4.38c-.04-.9-.19-1.38-.31-1.7a2.8 2.8 0 0 0-.69-1.05 2.8 2.8 0 0 0-1.05-.69c-.32-.12-.8-.27-1.7-.31C15.5 4.01 15.14 4 12 4Zm0 3.06a4.94 4.94 0 1 1 0 9.88 4.94 4.94 0 0 1 0-9.88Zm0 1.8a3.14 3.14 0 1 0 0 6.28 3.14 3.14 0 0 0 0-6.28Zm5.14-.94a1.15 1.15 0 1 1 0-2.3 1.15 1.15 0 0 1 0 2.3Z"/></svg>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://www.facebook.com/dhansree" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on Facebook" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
-                                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.9 3.77-3.9 1.1 0 2.24.19 2.24.19v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.89h2.78l-.45 2.9h-2.33V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://www.youtube.com/@dhansree" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on YouTube" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
-                                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 7.19a2.5 2.5 0 0 0-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42A2.5 2.5 0 0 0 2.42 7.2C2 8.75 2 12 2 12s0 3.25.42 4.81a2.5 2.5 0 0 0 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42a2.5 2.5 0 0 0 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81ZM10 15.02V8.98L15.2 12 10 15.02Z"/></svg>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://pinterest.com/dhansree" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on Pinterest" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
-                                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.65 19.31c-.09-.78-.17-1.98.03-2.83.19-.78 1.2-4.97 1.2-4.97s-.3-.61-.3-1.52c0-1.42.82-2.48 1.85-2.48.87 0 1.3.66 1.3 1.45 0 .88-.57 2.2-.86 3.43-.24 1.02.52 1.86 1.53 1.86 1.84 0 3.25-1.94 3.25-4.73 0-2.47-1.78-4.2-4.31-4.2-2.94 0-4.66 2.2-4.66 4.48 0 .89.34 1.84.77 2.36.08.1.1.19.07.29-.08.32-.25.98-.28 1.12-.05.19-.15.23-.35.14-1.3-.6-2.11-2.5-2.11-4.03 0-3.28 2.38-6.29 6.87-6.29 3.6 0 6.41 2.57 6.41 6 0 3.58-2.26 6.47-5.4 6.47-1.05 0-2.04-.55-2.38-1.2l-.65 2.47c-.23.9-.86 2.04-1.29 2.73A10 10 0 1 0 12 2Z"/></svg>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://x.com/dhansree" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on X" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
-                                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3h3.04l-6.64 7.59L21.75 21h-6.12l-4.79-6.27L5.26 21H2.22l7.1-8.12L2.25 3h6.27l4.33 5.73L17.53 3Zm-1.07 16.17h1.69L7.62 4.74H5.81l10.65 14.43Z"/></svg>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    @php
+                        $footerSettings = $storeSettings ?? ($store ?? \App\Models\StoreSettings::current());
+                        $socialMediaLinks = array_filter([
+                            'instagram' => [
+                                'url' => $footerSettings->instagram_url,
+                                'label' => 'Instagram',
+                                'svg' => '<path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.05 1.8.25 2.2.42.56.22.96.48 1.38.9.42.42.68.82.9 1.38.17.4.37 1 .42 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.05 1.2-.25 1.8-.42 2.2a3.7 3.7 0 0 1-.9 1.38c-.42.42-.82.68-1.38.9-.4.17-1 .37-2.2.42-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.05-1.8-.25-2.2-.42a3.7 3.7 0 0 1-1.38-.9 3.7 3.7 0 0 1-.9-1.38c-.17-.4-.37-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.05-1.2.25-1.8.42-2.2.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.4-.17 1-.37 2.2-.42C8.4 2.2 8.8 2.2 12 2.2Zm0 1.8c-3.14 0-3.5.01-4.74.07-.9.04-1.38.19-1.7.31-.43.17-.73.37-1.05.69-.32.32-.52.62-.69 1.05-.12.32-.27.8-.31 1.7C3.45 8.86 3.44 9.2 3.44 12s.01 3.14.07 4.38c.04.9.19 1.38.31 1.7.17.43.37.73.69 1.05.32.32.62.52 1.05.69.32.12.8.27 1.7.31 1.24.06 1.6.07 4.74.07s3.5-.01 4.74-.07c.9-.04 1.38-.19 1.7-.31.43-.17.73-.37 1.05-.69.32-.32.52-.62.69-1.05.12-.32.27-.8.31-1.7.06-1.24.07-1.58.07-4.38s-.01-3.14-.07-4.38c-.04-.9-.19-1.38-.31-1.7a2.8 2.8 0 0 0-.69-1.05 2.8 2.8 0 0 0-1.05-.69c-.32-.12-.8-.27-1.7-.31C15.5 4.01 15.14 4 12 4Zm0 3.06a4.94 4.94 0 1 1 0 9.88 4.94 4.94 0 0 1 0-9.88Zm0 1.8a3.14 3.14 0 1 0 0 6.28 3.14 3.14 0 0 0 0-6.28Zm5.14-.94a1.15 1.15 0 1 1 0-2.3 1.15 1.15 0 0 1 0 2.3Z"/>',
+                            ],
+                            'facebook' => [
+                                'url' => $footerSettings->facebook_url,
+                                'label' => 'Facebook',
+                                'svg' => '<path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.9h2.54V9.85c0-2.52 1.5-3.9 3.77-3.9 1.1 0 2.24.19 2.24.19v2.46h-1.26c-1.24 0-1.63.78-1.63 1.57v1.89h2.78l-.45 2.9h-2.33V22c4.78-.76 8.44-4.92 8.44-9.94Z"/>',
+                            ],
+                            'youtube' => [
+                                'url' => $footerSettings->youtube_url,
+                                'label' => 'YouTube',
+                                'svg' => '<path d="M21.58 7.19a2.5 2.5 0 0 0-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42A2.5 2.5 0 0 0 2.42 7.2C2 8.75 2 12 2 12s0 3.25.42 4.81a2.5 2.5 0 0 0 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42a2.5 2.5 0 0 0 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81ZM10 15.02V8.98L15.2 12 10 15.02Z"/>',
+                            ],
+                            'pinterest' => [
+                                'url' => $footerSettings->pinterest_url,
+                                'label' => 'Pinterest',
+                                'svg' => '<path d="M12 2a10 10 0 0 0-3.65 19.31c-.09-.78-.17-1.98.03-2.83.19-.78 1.2-4.97 1.2-4.97s-.3-.61-.3-1.52c0-1.42.82-2.48 1.85-2.48.87 0 1.3.66 1.3 1.45 0 .88-.57 2.2-.86 3.43-.24 1.02.52 1.86 1.53 1.86 1.84 0 3.25-1.94 3.25-4.73 0-2.47-1.78-4.2-4.31-4.2-2.94 0-4.66 2.2-4.66 4.48 0 .89.34 1.84.77 2.36.08.1.1.19.07.29-.08.32-.25.98-.28 1.12-.05.19-.15.23-.35.14-1.3-.6-2.11-2.5-2.11-4.03 0-3.28 2.38-6.29 6.87-6.29 3.6 0 6.41 2.57 6.41 6 0 3.58-2.26 6.47-5.4 6.47-1.05 0-2.04-.55-2.38-1.2l-.65 2.47c-.23.9-.86 2.04-1.29 2.73A10 10 0 1 0 12 2Z"/>',
+                            ],
+                            'x' => [
+                                'url' => $footerSettings->x_url,
+                                'label' => 'X (formerly Twitter)',
+                                'svg' => '<path d="M17.53 3h3.04l-6.64 7.59L21.75 21h-6.12l-4.79-6.27L5.26 21H2.22l7.1-8.12L2.25 3h6.27l4.33 5.73L17.53 3Zm-1.07 16.17h1.69L7.62 4.74H5.81l10.65 14.43Z"/>',
+                            ],
+                        ], fn($item) => !empty(trim((string)($item['url'] ?? ''))));
+                    @endphp
+                    @if(!empty($socialMediaLinks))
+                        <div class="pt-2">
+                            <p class="text-[0.6875rem] font-bold uppercase tracking-wider text-rich-black/60 mb-2">Follow Us</p>
+                            <ul class="flex items-center gap-2" aria-label="Dhansree social media links">
+                                @foreach($socialMediaLinks as $network => $social)
+                                    <li>
+                                        <a href="{{ $social['url'] }}" target="_blank" rel="noopener noreferrer" aria-label="Dhansree on {{ $social['label'] }}" class="inline-flex size-8 items-center justify-center rounded-full border border-light-gold bg-white text-rich-black/70 hover:border-maroon-800 hover:text-maroon-800 transition-colors">
+                                            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor">{!! $social['svg'] !!}</svg>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Col 2: Women Fashion Hub -->
