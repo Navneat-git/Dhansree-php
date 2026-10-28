@@ -31,7 +31,12 @@
                 </svg>
                 Manage Banners
             </a>
+            <a href="{{ route('admin.instagram.index') }}"
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white text-xs font-semibold tracking-wide uppercase transition-all shadow-sm">
+                <span>📸 Instagram Feed</span>
+            </a>
         </div>
+
     </div>
 
     <!-- Blocks List -->

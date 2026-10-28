@@ -267,6 +267,14 @@ class CatalogBrowsingService
         $store = StoreSettings::current();
         $heroBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->where('is_visible', true)->first();
 
+        $instagramFeed = \App\Models\InstagramPost::query()
+            ->visible()
+            ->with(['taggedProduct.primaryVariant'])
+            ->orderBy('position')
+            ->orderByDesc('id')
+            ->take(12)
+            ->get();
+
         return [
             'categories' => $womenCategories,
             'featuredProducts' => $featuredCards,
@@ -276,7 +284,9 @@ class CatalogBrowsingService
             'store' => $store,
             'heroBlock' => $heroBlock,
             'quickLinksData' => $this->resolveQuickLinksForHome(),
+            'instagramFeed' => $instagramFeed,
         ];
+
     }
 
     /**

@@ -38,10 +38,12 @@ class StorefrontController extends Controller
             'store' => $data['store'],
             'heroBlock' => $data['heroBlock'] ?? null,
             'quickLinksData' => $data['quickLinksData'] ?? null,
+            'instagramFeed' => $data['instagramFeed'] ?? collect(),
             'isSmartLivingHub' => false,
             'seoTitle' => 'Dhansree Trends — Ethnic Elegance. Timeless You.',
             'seoDescription' => 'Explore premium handcrafted women kurties, suit sets, and elegant ethnic co-ords. Pure fabrics, exquisite embroidery, and fast shipping across India.',
         ]);
+
     }
 
     /**

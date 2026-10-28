@@ -56,6 +56,12 @@ class Product extends Model
         return $this->hasOne(ProductVariant::class, 'product_id', 'id')->orderBy('position');
     }
 
+    public function primaryVariant(): HasOne
+    {
+        return $this->defaultVariant();
+    }
+
+
     public function options(): HasMany
     {
         return $this->hasMany(ProductOption::class, 'product_id', 'id')->orderBy('position');

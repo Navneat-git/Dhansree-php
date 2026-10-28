@@ -514,6 +514,153 @@
     </div>
 </section>
 
+<!-- Instagram Reels & Styles Single-Row Slider -->
+@php
+    $feedItems = !empty($instagramFeed) && $instagramFeed->isNotEmpty()
+        ? $instagramFeed
+        : \App\Models\InstagramPost::visible()->with('taggedProduct.primaryVariant')->orderBy('position')->orderByDesc('id')->take(12)->get();
+@endphp
+
+@if($feedItems->isNotEmpty())
+<section class="py-12 md:py-16 bg-white border-t border-b border-light-gold/60 overflow-hidden"
+         x-data="{
+             scrollLeft() {
+                 this.$refs.instaSlider.scrollBy({ left: -320, behavior: 'smooth' });
+             },
+             scrollRight() {
+                 this.$refs.instaSlider.scrollBy({ left: 320, behavior: 'smooth' });
+             }
+         }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Section Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/70 text-rose-700 text-xs font-semibold uppercase tracking-wider">
+                    <span class="inline-block size-2 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600"></span>
+                    <span>As Seen On Instagram • @dhansreetrends</span>
+                </div>
+                <h2 class="font-serif text-3xl sm:text-4xl text-maroon-800 tracking-tight">
+                    Shop Our Instagram Reels &amp; Styles
+                </h2>
+                <p class="text-xs sm:text-sm text-rich-black/70 max-w-xl">
+                    Tap any reel to explore trending Jaipur fits, festive styling &amp; shop the exact looks.
+                </p>
+            </div>
+
+            <!-- Action CTAs & Slider Controls -->
+            <div class="flex items-center gap-2.5 shrink-0">
+                <a href="{{ url('/instragram') }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-white bg-maroon-800 hover:bg-maroon-900 transition-all shadow-xs">
+                    <span>View All Reels ➔</span>
+                </a>
+
+                <a href="https://www.instagram.com/dhansreetrends" target="_blank" rel="noopener noreferrer"
+                   class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-light-gold text-rich-black hover:bg-warm-beige transition-colors">
+                    <svg class="size-3.5 fill-current text-rose-600" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                    <span>Follow</span>
+                </a>
+
+                <!-- Slider Arrows -->
+                <div class="flex items-center gap-1.5 pl-1">
+                    <button type="button" @click="scrollLeft()"
+                            class="size-9 rounded-full border border-light-gold bg-white hover:bg-warm-beige text-rich-black flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                            title="Scroll Left">
+                        ‹
+                    </button>
+                    <button type="button" @click="scrollRight()"
+                            class="size-9 rounded-full border border-light-gold bg-white hover:bg-warm-beige text-rich-black flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                            title="Scroll Right">
+                        ›
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Single Row Horizontal Slider Container -->
+        <div x-ref="instaSlider"
+             class="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
+            @foreach($feedItems as $item)
+                <a href="{{ url('/instragram') }}"
+                   class="group relative shrink-0 w-[240px] sm:w-[260px] aspect-[9/16] rounded-2xl overflow-hidden bg-warm-beige snap-start border border-light-gold/60 shadow-sm hover:shadow-xl transition-all duration-300 block">
+                    
+                    <!-- Cover Image -->
+                    <img src="{{ $item->display_media_url }}"
+                         alt="{{ $item->caption ?: 'Instagram Reel' }}"
+                         class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                         loading="lazy">
+
+                    <!-- Top Scrim with Reel Icon & Views -->
+                    <div class="absolute inset-x-0 top-0 p-3 bg-gradient-to-b from-black/60 via-black/20 to-transparent flex items-center justify-between z-10">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-xs text-white text-[11px] font-semibold">
+                            <span class="text-rose-400">🎬</span>
+                            <span>{{ $item->type === 'reel' ? 'Reel' : 'Post' }}</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-white drop-shadow-sm">
+                            <span>▶</span>
+                            <span>{{ $item->formatted_views }}</span>
+                        </span>
+                    </div>
+
+                    <!-- Center Play Button Overlay on Hover -->
+                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                        <span class="size-14 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                            <svg class="size-7 fill-white translate-x-0.5" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                        </span>
+                    </div>
+
+                    <!-- Bottom Gradient Overlay with Tagged Product, Likes & Caption -->
+                    <div class="absolute inset-x-0 bottom-0 p-3.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white space-y-2 z-10">
+                        
+                        @if($item->taggedProduct)
+                            <!-- Tagged Product Floating Pill -->
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-maroon-800 text-[11px] font-bold shadow-md max-w-full">
+                                <span class="shrink-0">🛍️</span>
+                                <span class="truncate">{{ $item->taggedProduct->name }}</span>
+                                <span class="text-slate-900 shrink-0">• {{ $item->taggedProduct->formatted_price }}</span>
+                            </div>
+                        @endif
+
+                        <div class="flex items-center justify-between text-xs text-white/90 font-medium pt-0.5">
+                            <span class="flex items-center gap-1 text-rose-300 font-bold">
+                                <span>❤️</span>
+                                <span>{{ $item->formatted_likes }}</span>
+                            </span>
+                            <span class="text-[10px] text-gold-300 font-semibold group-hover:underline">
+                                Tap to watch ➔
+                            </span>
+                        </div>
+
+                        @if(!empty($item->caption))
+                            <p class="text-[11px] text-white/80 line-clamp-1 leading-snug">
+                                {{ $item->caption }}
+                            </p>
+                        @endif
+                    </div>
+                </a>
+            @endforeach
+        </div>
+
+        <!-- Banner Strip linking to /instragram -->
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl bg-warm-beige/50 border border-light-gold text-xs text-rich-black">
+            <div class="flex items-center gap-2">
+                <span class="text-base">📸</span>
+                <span>Want to see all our looks? Explore full videos, reels &amp; tagged collections on our dedicated Instagram lookbook.</span>
+            </div>
+            <a href="{{ url('/instragram') }}"
+               class="font-bold text-maroon-800 hover:text-maroon-900 underline whitespace-nowrap">
+                Explore All Dhansree Reels &amp; Posts ➔
+            </a>
+        </div>
+
+    </div>
+</section>
+@endif
+
 <!-- Brand Craftsmanship / Heritage Narrative -->
 <section class="py-12 md:py-16 bg-warm-beige/40 border-t border-light-gold/60">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">

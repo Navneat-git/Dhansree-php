@@ -126,6 +126,12 @@ Route::get('/shipping-policy', [StorefrontController::class, 'shippingPolicy'])-
 Route::get('/terms', [StorefrontController::class, 'terms'])->name('store.terms');
 Route::get('/terms-of-service', [StorefrontController::class, 'terms'])->name('store.terms-of-service');
 
+// ─── Instagram Reels & Posts Lookbook ─────────────────────────────────────
+Route::get('/instagram', [\App\Http\Controllers\Storefront\InstagramFeedController::class, 'index'])->name('store.instagram');
+Route::get('/instragram', [\App\Http\Controllers\Storefront\InstagramFeedController::class, 'index'])->name('store.instragram');
+Route::post('/instagram/posts/{id}/like', [\App\Http\Controllers\Storefront\InstagramFeedController::class, 'like'])->name('store.instagram.like');
+
+
 // ─── Search Engine Optimization & Crawlers ────────────────────────────────
 Route::get('/sitemap.xml', [StorefrontController::class, 'sitemap'])->name('store.sitemap');
 Route::get('/robots.txt', [StorefrontController::class, 'robots'])->name('store.robots');
@@ -383,6 +389,16 @@ Route::prefix('admin')->group(function () {
             Route::put('/blocks/{id}', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'update'])->name('update');
             Route::post('/blocks/{id}/move/{direction}', [\App\Http\Controllers\Admin\AdminHomepageWebController::class, 'move'])->name('move');
         });
+
+        // Instagram Reels & Lookbook Management
+        Route::prefix('instagram')->name('admin.instagram.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'index'])->name('index');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'store'])->name('store');
+            Route::put('/{id}', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'update'])->name('update');
+            Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/toggle', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'toggle'])->name('toggle');
+        });
+
 
         // Payments & Reconciliation
         Route::prefix('payments')->name('admin.payments.')->group(function () {
