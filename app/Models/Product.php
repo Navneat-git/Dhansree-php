@@ -17,6 +17,7 @@ class Product extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'ranking' => 'integer',
         'status' => \App\Enums\ProductStatus::class,
         'gst_rate_bps' => 'integer',
         'published_at' => 'datetime',

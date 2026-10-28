@@ -86,6 +86,7 @@ class ProductService
         match ($sort) {
             'created' => $query->orderBy('created_at', 'desc')->orderBy('id', 'desc'),
             'name' => $query->orderBy('name', 'asc')->orderBy('id', 'asc'),
+            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
             default => $query->orderBy('updated_at', 'desc')->orderBy('id', 'desc'),
         };
 
@@ -216,6 +217,7 @@ class ProductService
                 'status' => ProductStatus::DRAFT,
                 'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
                 'brand' => !empty($data['brand']) ? trim($data['brand']) : null,
+                'ranking' => !empty($data['ranking']) ? (int) $data['ranking'] : null,
                 'short_description' => $data['short_description'] ?? null,
                 'description' => $data['description'] ?? null,
                 'hsn_code' => !empty($data['hsn_code']) ? trim($data['hsn_code']) : null,
@@ -308,6 +310,7 @@ class ProductService
                 'slug' => $newSlug,
                 'category_id' => array_key_exists('category_id', $data) ? ($data['category_id'] ? (int) $data['category_id'] : null) : $current->category_id,
                 'brand' => array_key_exists('brand', $data) ? ($data['brand'] ? trim($data['brand']) : null) : $current->brand,
+                'ranking' => array_key_exists('ranking', $data) ? ($data['ranking'] !== null && $data['ranking'] !== '' ? (int) $data['ranking'] : null) : $current->ranking,
                 'short_description' => array_key_exists('short_description', $data) ? $data['short_description'] : $current->short_description,
                 'description' => array_key_exists('description', $data) ? $data['description'] : $current->description,
                 'hsn_code' => array_key_exists('hsn_code', $data) ? ($data['hsn_code'] ? trim($data['hsn_code']) : null) : $current->hsn_code,

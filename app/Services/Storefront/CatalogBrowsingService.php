@@ -241,7 +241,7 @@ class CatalogBrowsingService
                        ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
                 }
             })
-            ->latest('published_at')
+            ->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC')
             ->take(max(24, (int) $cardLimit * 2))
             ->get();
 
@@ -379,7 +379,7 @@ class CatalogBrowsingService
                 $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
                    ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
             })
-            ->latest('published_at')
+            ->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC')
             ->first();
 
         $store = StoreSettings::current();
@@ -686,8 +686,9 @@ class CatalogBrowsingService
                     ->orderBy('price_paise', 'desc')
                     ->limit(1)
             ),
-            'newest' => $query->orderByDesc('published_at'),
-            default => $query->orderByDesc('id'),
+            'newest' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC'),
+            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
+            default => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
         };
 
         $products = $query->paginate(16)->withQueryString();
@@ -920,8 +921,9 @@ class CatalogBrowsingService
                     ->orderBy('price_paise', 'desc')
                     ->limit(1)
             ),
-            'newest' => $query->orderByDesc('published_at'),
-            default => $query->orderByDesc('id'),
+            'newest' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC'),
+            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
+            default => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
         };
 
         return $query->paginate(16)->withQueryString();

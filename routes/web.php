@@ -215,6 +215,7 @@ Route::prefix('admin')->group(function () {
             Route::post('/{product}/unpublish', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'unpublish'])->name('unpublish');
             Route::post('/{product}/archive', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'archive'])->name('archive');
             Route::post('/{product}/restore', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'restore'])->name('restore');
+            Route::post('/{product}/ranking', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateRanking'])->name('update-ranking');
 
             // Options & Variants
             Route::post('/{product}/options', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'syncOptions'])->name('sync-options');

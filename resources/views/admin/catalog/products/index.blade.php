@@ -67,6 +67,7 @@
         <div>
             <select name="sort" onchange="this.form.submit()"
                     class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs">
+                <option value="ranking" {{ $sort === 'ranking' ? 'selected' : '' }}>Sort: Ranking (#1, #2...)</option>
                 <option value="updated" {{ $sort === 'updated' ? 'selected' : '' }}>Sort: Recently Updated</option>
                 <option value="created" {{ $sort === 'created' ? 'selected' : '' }}>Sort: Recently Created</option>
                 <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Sort: Title (A-Z)</option>
@@ -80,6 +81,7 @@
             <thead class="bg-slate-50 border-b border-slate-200/80 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                 <tr>
                     <th class="px-6 py-3.5">Product</th>
+                    <th class="px-6 py-3.5">Rank</th>
                     <th class="px-6 py-3.5">Category</th>
                     <th class="px-6 py-3.5">Price / MRP</th>
                     <th class="px-6 py-3.5">Status</th>
@@ -116,6 +118,20 @@
                                     </div>
                                 </div>
                             </div>
+                        </td>
+
+                        <!-- Rank -->
+                        <td class="px-6 py-4">
+                            <form method="POST" action="{{ route('admin.products.update-ranking', $product) }}" class="inline-flex items-center gap-1.5 quick-rank-form" onsubmit="handleQuickRankSubmit(event, this)">
+                                @csrf
+                                <div class="relative flex items-center">
+                                    <input type="number" name="ranking" value="{{ $product->ranking }}" min="1" max="999999" placeholder="—"
+                                           class="w-16 px-2 py-1 text-xs font-semibold text-center rounded border border-slate-200 bg-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-2xs {{ $product->ranking ? 'text-amber-800 font-bold bg-amber-50/50 border-amber-300' : 'text-slate-500' }}">
+                                </div>
+                                <button type="submit" title="Save Rank" class="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100 transition-colors">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </button>
+                            </form>
                         </td>
 
                         <!-- Category -->
@@ -179,7 +195,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                             <svg class="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                             <p class="text-sm font-semibold text-slate-700">No products found matching criteria.</p>
                             <a href="{{ route('admin.products.create') }}" class="text-amber-600 hover:underline text-xs mt-1 inline-block font-semibold">Create a new product &rarr;</a>
@@ -196,4 +212,43 @@
         @endif
     </div>
 </div>
+
+<script>
+function handleQuickRankSubmit(e, form) {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    const input = form.querySelector('input[name="ranking"]');
+    const origSvg = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="text-[10px] text-amber-600 animate-spin">⟳</span>';
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(form)).toString(),
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.innerHTML = '<svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+        if (data.ranking) {
+            input.classList.add('text-amber-800', 'font-bold', 'bg-amber-50/50', 'border-amber-300');
+            input.classList.remove('text-slate-500');
+        } else {
+            input.classList.remove('text-amber-800', 'font-bold', 'bg-amber-50/50', 'border-amber-300');
+            input.classList.add('text-slate-500');
+        }
+        setTimeout(() => {
+            btn.innerHTML = origSvg;
+            btn.disabled = false;
+        }, 1500);
+    })
+    .catch(() => {
+        form.submit();
+    });
+}
+</script>
 @endsection

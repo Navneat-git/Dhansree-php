@@ -100,6 +100,7 @@ class AdminProductWebController extends Controller
             'hsn_code' => 'nullable|string|max:8',
             'gst_rate_bps' => 'nullable|integer',
             'brand' => 'nullable|string|max:80',
+            'ranking' => 'nullable|integer|min:1|max:999999',
             'short_description' => 'nullable|string|max:300',
             'description' => 'nullable|string',
         ]);
@@ -153,6 +154,7 @@ class AdminProductWebController extends Controller
             'slug' => 'nullable|string|max:100',
             'category_id' => 'nullable|integer|exists:categories,id',
             'brand' => 'nullable|string|max:80',
+            'ranking' => 'nullable|integer|min:1|max:999999',
             'short_description' => 'nullable|string|max:300',
             'description' => 'nullable|string',
             'hsn_code' => 'nullable|string|max:8',
@@ -177,6 +179,29 @@ class AdminProductWebController extends Controller
         } catch (Throwable $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Quick update product ranking.
+     */
+    public function updateRanking(Request $request, Product $product): JsonResponse|RedirectResponse
+    {
+        $validated = $request->validate([
+            'ranking' => 'nullable|integer|min:1|max:999999',
+        ]);
+
+        $ranking = !empty($validated['ranking']) ? (int) $validated['ranking'] : null;
+        $product->update(['ranking' => $ranking]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'ranking' => $ranking,
+                'message' => 'Ranking updated successfully.',
+            ]);
+        }
+
+        return back()->with('success', "Ranking updated for '{$product->name}'.");
     }
 
     /**
