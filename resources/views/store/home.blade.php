@@ -570,13 +570,40 @@
 @endphp
 
 @if(($instagramBlock?->is_visible ?? true) && $feedItems->isNotEmpty())
+<style>
+.insta-slider-card {
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+    height: 300px !important;
+    flex: 0 0 170px !important;
+}
+@media (min-width: 640px) {
+    .insta-slider-card {
+        width: 205px !important;
+        min-width: 205px !important;
+        max-width: 205px !important;
+        height: 360px !important;
+        flex: 0 0 205px !important;
+    }
+}
+@media (min-width: 1024px) {
+    .insta-slider-card {
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        height: 380px !important;
+        flex: 0 0 220px !important;
+    }
+}
+</style>
 <section class="py-12 md:py-16 bg-white border-t border-b border-light-gold/60 overflow-hidden"
          x-data="{
              scrollLeft() {
-                 this.$refs.instaSlider.scrollBy({ left: -320, behavior: 'smooth' });
+                 this.$refs.instaSlider.scrollBy({ left: -240, behavior: 'smooth' });
              },
              scrollRight() {
-                 this.$refs.instaSlider.scrollBy({ left: 320, behavior: 'smooth' });
+                 this.$refs.instaSlider.scrollBy({ left: 240, behavior: 'smooth' });
              }
          }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -631,8 +658,8 @@
         <div x-ref="instaSlider"
              class="flex gap-4 sm:gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory py-2 scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0">
             @foreach($feedItems as $item)
-                <a href="{{ url('/instragram') }}"
-                   class="group relative shrink-0 w-[240px] sm:w-[260px] aspect-[9/16] rounded-2xl overflow-hidden bg-warm-beige snap-start border border-light-gold/60 shadow-sm hover:shadow-xl transition-all duration-300 block">
+                <a href="{{ url($instagramBlock?->primary_path ?: '/instragram') }}"
+                   class="insta-slider-card group relative rounded-2xl overflow-hidden bg-warm-beige snap-start border border-light-gold/60 shadow-sm hover:shadow-xl transition-all duration-300 block">
                     
                     <!-- Cover Image -->
                     <img src="{{ $item->display_media_url }}"
@@ -641,12 +668,12 @@
                          loading="lazy">
 
                     <!-- Top Scrim with Reel Icon & Views -->
-                    <div class="absolute inset-x-0 top-0 p-3 bg-gradient-to-b from-black/60 via-black/20 to-transparent flex items-center justify-between z-10">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-xs text-white text-[11px] font-semibold">
+                    <div class="absolute inset-x-0 top-0 p-2.5 sm:p-3 bg-gradient-to-b from-black/60 via-black/20 to-transparent flex items-center justify-between z-10">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/50 backdrop-blur-xs text-white text-[10px] sm:text-[11px] font-semibold">
                             <span class="text-rose-400">🎬</span>
                             <span>{{ $item->type === 'reel' ? 'Reel' : 'Post' }}</span>
                         </span>
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-white drop-shadow-sm">
+                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-white drop-shadow-sm">
                             <span>▶</span>
                             <span>{{ $item->formatted_views }}</span>
                         </span>
@@ -654,37 +681,37 @@
 
                     <!-- Center Play Button Overlay on Hover -->
                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                        <span class="size-14 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                            <svg class="size-7 fill-white translate-x-0.5" viewBox="0 0 24 24">
+                        <span class="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                            <svg class="size-5 sm:size-6 fill-white translate-x-0.5" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
                         </span>
                     </div>
 
                     <!-- Bottom Gradient Overlay with Tagged Product, Likes & Caption -->
-                    <div class="absolute inset-x-0 bottom-0 p-3.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white space-y-2 z-10">
+                    <div class="absolute inset-x-0 bottom-0 p-2.5 sm:p-3 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white space-y-1.5 z-10">
                         
                         @if($item->taggedProduct)
                             <!-- Tagged Product Floating Pill -->
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-maroon-800 text-[11px] font-bold shadow-md max-w-full">
+                            <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-maroon-800 text-[10px] font-bold shadow-md max-w-full">
                                 <span class="shrink-0">🛍️</span>
                                 <span class="truncate">{{ $item->taggedProduct->name }}</span>
                                 <span class="text-slate-900 shrink-0">• {{ $item->taggedProduct->formatted_price }}</span>
                             </div>
                         @endif
 
-                        <div class="flex items-center justify-between text-xs text-white/90 font-medium pt-0.5">
+                        <div class="flex items-center justify-between text-[11px] text-white/90 font-medium pt-0.5">
                             <span class="flex items-center gap-1 text-rose-300 font-bold">
                                 <span>❤️</span>
                                 <span>{{ $item->formatted_likes }}</span>
                             </span>
                             <span class="text-[10px] text-gold-300 font-semibold group-hover:underline">
-                                Tap to watch ➔
+                                Watch ➔
                             </span>
                         </div>
 
                         @if(!empty($item->caption))
-                            <p class="text-[11px] text-white/80 line-clamp-1 leading-snug">
+                            <p class="text-[10px] sm:text-[11px] text-white/80 line-clamp-1 leading-snug">
                                 {{ $item->caption }}
                             </p>
                         @endif
