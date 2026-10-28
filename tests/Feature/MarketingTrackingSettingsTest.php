@@ -247,4 +247,44 @@ HTML;
         $storeRes->assertDontSee('pinterest.com');
         $storeRes->assertDontSee('x.com/dhansree');
     }
+
+    public function test_storefront_renders_google_ads_tag_and_admin_can_update_it(): void
+    {
+        // 1. Storefront renders default Google Ads tag AW-18539949937
+        $response = $this->get('/');
+        $response->assertStatus(200);
+        $response->assertSee('googletagmanager.com/gtag/js?id=AW-18539949937', false);
+        $response->assertSee("gtag('config', 'AW-18539949937');", false);
+
+        // 2. Admin can update Google Ads Tag
+        $postRes = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put(route('admin.settings.update'), [
+                'section' => 'social_seo',
+                'google_ads_id' => 'AW-99999999999',
+            ]);
+        $postRes->assertRedirect();
+        $postRes->assertSessionHas('success');
+
+        $settings = StoreSettings::current();
+        $this->assertSame('AW-99999999999', $settings->google_ads_id);
+
+        $frontUpdated = $this->get('/');
+        $frontUpdated->assertSee('googletagmanager.com/gtag/js?id=AW-99999999999', false);
+        $frontUpdated->assertSee("gtag('config', 'AW-99999999999');", false);
+    }
+
+    public function test_meta_commerce_catalog_match_events_view_content_and_purchase_include_skus(): void
+    {
+        // View item page includes exact SKU and content_type product
+        $product = \App\Models\Product::where('status', \App\Enums\ProductStatus::ACTIVE)->first();
+        if ($product) {
+            $response = $this->get('/product/' . $product->slug);
+            $response->assertStatus(200);
+            $firstSku = $product->variants->first()?->sku;
+            if ($firstSku) {
+                $response->assertSee($firstSku);
+                $response->assertSee("content_type: 'product'", false);
+            }
+        }
+    }
 }

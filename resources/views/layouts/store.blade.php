@@ -44,6 +44,7 @@
         $facebookDomainVerification = $storeSettings->facebook_domain_verification ?: (config('services.meta.domain_verification') ?: 'jaur6cwxsewazavl4qh5goy7ylgewz');
         $analyticsId = config('services.google.analytics_id') ?: ($storeSettings->analytics_google_measurement_id ?? null);
         $gtmId = config('services.google.gtm_id') ?: ($storeSettings->gtm_container_id ?? null);
+        $googleAdsId = $storeSettings->google_ads_id ?: (config('services.google.ads_id') ?: 'AW-18539949937');
         $metaPixelId = $storeSettings->ads_meta_pixel_id ?: (config('services.meta.pixel_id') ?: '1783488586189258');
         $topBarCouponCode = $storeSettings->featured_coupon_code ?? 'FESTIVE10';
         $topBarCoupon = \App\Models\Coupon::where('code', $topBarCouponCode)->where('is_active', true)->first();
@@ -78,8 +79,19 @@
         <!-- End Google Tag Manager -->
     @endif
 
-    @if($analyticsId)
-        <!-- Google tag (gtag.js) -->
+    @if($googleAdsId)
+        <!-- Google tag (gtag.js) for Google Ads -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $googleAdsId }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ $googleAdsId }}');
+        </script>
+    @endif
+
+    @if($analyticsId && $analyticsId !== $googleAdsId)
+        <!-- Google tag (gtag.js) for GA4 -->
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ $analyticsId }}"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
@@ -118,7 +130,16 @@
             window.dataLayer.push(Object.assign({ event: eventName }, payload));
 
             if (typeof window.gtag === 'function') {
-                window.gtag('event', eventName, payload);
+                const gtagPayload = Object.assign({}, payload);
+                if (payload.contents && !payload.items) {
+                    gtagPayload.items = payload.contents.map(c => ({
+                        item_id: c.id,
+                        item_name: payload.content_name || c.name || c.id,
+                        price: c.item_price,
+                        quantity: c.quantity
+                    }));
+                }
+                window.gtag('event', eventName, gtagPayload);
             }
 
             if (typeof window.fbq === 'function') {
@@ -1001,10 +1022,21 @@
                             this.cart = data.cart;
                             this.cartDrawerOpen = true;
                             if (typeof window.dhansreeTrack === 'function') {
+                                const addedItem = (this.cart && this.cart.items ? this.cart.items : []).find(i => i.variant_id === variantId);
+                                const sku = addedItem ? (addedItem.sku || ('DS-PROD-' + addedItem.product_id)) : ('VAR-' + variantId);
+                                const price = addedItem ? (addedItem.price_rupees || (addedItem.price_paise / 100)) : 0;
+                                const title = addedItem ? (addedItem.product_name + (addedItem.variant_title ? ' - ' + addedItem.variant_title : '')) : 'Product';
                                 window.dhansreeTrack('add_to_cart', {
-                                    variant_id: variantId,
-                                    quantity: quantity,
-                                    currency: 'INR'
+                                    content_name: title,
+                                    content_ids: [sku],
+                                    content_type: 'product',
+                                    value: +(price * quantity).toFixed(2),
+                                    currency: 'INR',
+                                    contents: [{
+                                        id: sku,
+                                        quantity: quantity,
+                                        item_price: price
+                                    }]
                                 });
                             }
                         } else {

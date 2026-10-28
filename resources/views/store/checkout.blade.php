@@ -365,9 +365,19 @@
 
             init() {
                 if (typeof window.dhansreeTrack === 'function') {
+                    const items = (this.quote && this.quote.items) ? this.quote.items.map(i => ({
+                        id: i.sku || ('DS-PROD-' + i.product_id),
+                        name: i.product_name,
+                        quantity: i.quantity,
+                        item_price: i.price_rupees || (i.price_paise / 100)
+                    })) : [];
                     window.dhansreeTrack('begin_checkout', {
                         value: this.quote ? (this.quote.total_paise / 100) : 0,
-                        currency: 'INR'
+                        currency: 'INR',
+                        content_type: 'product',
+                        content_ids: items.map(i => i.id),
+                        contents: items,
+                        num_items: this.quote ? this.quote.item_count : 0
                     });
                 }
             },

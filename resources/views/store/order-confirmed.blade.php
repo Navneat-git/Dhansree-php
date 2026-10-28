@@ -132,6 +132,18 @@
 
 </div>
 
+@php
+    $purchaseItems = $order->items->map(function ($item) {
+        return [
+            'id' => $item->sku ?: ('DS-PROD-' . $item->product_id),
+            'name' => $item->product_name,
+            'quantity' => (int) $item->quantity,
+            'item_price' => round($item->unit_price_paise / 100, 2),
+        ];
+    })->values()->all();
+    $purchaseContentIds = array_column($purchaseItems, 'id');
+@endphp
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.dhansreeTrack === 'function') {
@@ -139,7 +151,11 @@
                 transaction_id: '{{ $order->order_number }}',
                 order_id: '{{ $order->order_number }}',
                 value: {{ round($order->total_paise / 100, 2) }},
-                currency: 'INR'
+                currency: 'INR',
+                content_type: 'product',
+                content_ids: @js($purchaseContentIds),
+                contents: @js($purchaseItems),
+                num_items: {{ $order->items->sum('quantity') }}
             });
         }
     });

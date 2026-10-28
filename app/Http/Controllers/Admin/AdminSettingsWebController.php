@@ -137,6 +137,19 @@ class AdminSettingsWebController extends Controller
                     $settings->analytics_google_measurement_id = $val !== '' ? $val : null;
                 }
 
+                if ($request->has('google_ads_id') && Schema::hasColumn('store_settings', 'google_ads_id')) {
+                    $raw = trim((string) $request->input('google_ads_id'));
+                    if ($raw !== '') {
+                        if (preg_match('/(AW-\d+)/i', $raw, $m)) {
+                            $settings->google_ads_id = strtoupper(trim($m[1]));
+                        } else {
+                            $settings->google_ads_id = strtoupper(trim(strip_tags($raw)));
+                        }
+                    } else {
+                        $settings->google_ads_id = null;
+                    }
+                }
+
                 if ($request->has('gtm_container_id') && Schema::hasColumn('store_settings', 'gtm_container_id')) {
                     $val = strtoupper(trim((string) $request->input('gtm_container_id')));
                     $settings->gtm_container_id = $val !== '' ? $val : null;
@@ -204,6 +217,7 @@ class AdminSettingsWebController extends Controller
             $columns = [
                 'seo_google_verification' => fn(Blueprint $t) => $t->string('seo_google_verification', 100)->nullable(),
                 'analytics_google_measurement_id' => fn(Blueprint $t) => $t->string('analytics_google_measurement_id', 40)->nullable(),
+                'google_ads_id' => fn(Blueprint $t) => $t->string('google_ads_id', 64)->nullable()->default('AW-18539949937'),
                 'gtm_container_id' => fn(Blueprint $t) => $t->string('gtm_container_id', 64)->nullable(),
                 'ads_meta_pixel_id' => fn(Blueprint $t) => $t->string('ads_meta_pixel_id', 64)->nullable(),
                 'facebook_domain_verification' => fn(Blueprint $t) => $t->string('facebook_domain_verification', 100)->nullable()->default('jaur6cwxsewazavl4qh5goy7ylgewz'),

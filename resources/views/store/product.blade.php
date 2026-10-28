@@ -1165,15 +1165,30 @@
 
 </div>
 
+@php
+    $initialSku = $defaultVariant?->sku ?: ($product->primaryVariant?->sku ?: ('DS-PROD-' . $product->id));
+    $variantSkus = $product->variants->pluck('sku')->filter()->values()->all();
+    if (empty($variantSkus)) {
+        $variantSkus = [$initialSku];
+    }
+    $catalogMatchIds = array_values(array_unique(array_merge([$initialSku], $variantSkus)));
+    $initialPrice = (float) ($defaultVariant?->price_rupees ?? ($product->primaryVariant?->price_rupees ?? 0));
+@endphp
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.dhansreeTrack === 'function') {
             window.dhansreeTrack('view_item', {
                 content_name: '{{ addslashes($product->name) }}',
-                content_ids: ['{{ $product->id }}'],
+                content_ids: @js($catalogMatchIds),
                 content_type: 'product',
-                value: {{ (float) ($product->primaryVariant?->price_rupees ?? 0) }},
-                currency: 'INR'
+                value: {{ $initialPrice }},
+                currency: 'INR',
+                contents: [{
+                    id: '{{ $initialSku }}',
+                    quantity: 1,
+                    item_price: {{ $initialPrice }}
+                }]
             });
         }
     });

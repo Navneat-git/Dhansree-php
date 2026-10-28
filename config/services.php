@@ -38,6 +38,7 @@ return [
     'google' => [
         'site_verification' => env('GOOGLE_SITE_VERIFICATION', env('GOOGLE_SEARCH_CONSOLE')),
         'analytics_id' => env('GOOGLE_ANALYTICS_ID', env('GA_MEASUREMENT_ID')),
+        'ads_id' => env('GOOGLE_ADS_ID', 'AW-18539949937'),
     ],
 
     'meta' => [
