@@ -38,6 +38,7 @@ class StorefrontController extends Controller
             'store' => $data['store'],
             'heroBlock' => $data['heroBlock'] ?? null,
             'quickLinksData' => $data['quickLinksData'] ?? null,
+            'instagramBlock' => $data['instagramBlock'] ?? null,
             'instagramFeed' => $data['instagramFeed'] ?? collect(),
             'isSmartLivingHub' => false,
             'seoTitle' => 'Dhansree Trends — Ethnic Elegance. Timeless You.',

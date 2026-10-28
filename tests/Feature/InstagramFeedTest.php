@@ -201,4 +201,56 @@ class InstagramFeedTest extends TestCase
         $delRes->assertRedirect(route('admin.instagram.index'));
         $this->assertDatabaseMissing('instagram_posts', ['id' => $post->id]);
     }
+
+    public function test_admin_can_view_instagram_section_in_homepage_sections_dashboard(): void
+    {
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->get(route('admin.homepage.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('INSTAGRAM (REELS &amp; FEED)', false);
+        $response->assertSee('Shop Our Instagram Reels &amp; Styles', false);
+        $response->assertSee('Manage Reels &amp; Posts', false);
+    }
+
+    public function test_admin_can_toggle_and_update_instagram_homepage_block(): void
+    {
+        $block = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::INSTAGRAM)->first();
+        $this->assertNotNull($block);
+
+        // 1. Update heading and eyebrow
+        $updateRes = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->put("/admin/homepage/blocks/{$block->id}", [
+                'heading' => 'Custom Jaipur Vibes on Instagram',
+                'eyebrow' => '@dhansreetrends Official',
+                'primary_label' => 'Explore Lookbook',
+                'primary_path' => '/instragram',
+            ]);
+
+        $updateRes->assertSessionHas('success');
+        $this->assertEquals('Custom Jaipur Vibes on Instagram', $block->fresh()->heading);
+
+        // 2. Toggle visibility to false
+        $toggleRes = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->post("/admin/homepage/blocks/{$block->id}/toggle");
+
+        $toggleRes->assertSessionHas('success');
+        $this->assertFalse($block->fresh()->is_visible);
+
+        // Storefront should hide section when is_visible is false
+        $homeRes = $this->get('/');
+        $homeRes->assertStatus(200);
+        $homeRes->assertDontSee('Custom Jaipur Vibes on Instagram');
+
+        // Toggle back to true
+        $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->post("/admin/homepage/blocks/{$block->id}/toggle");
+        $this->assertTrue($block->fresh()->is_visible);
+
+        // Storefront should now display custom heading
+        $homeRes2 = $this->get('/');
+        $homeRes2->assertStatus(200);
+        $homeRes2->assertSee('Custom Jaipur Vibes on Instagram');
+        $homeRes2->assertSee('Explore Lookbook');
+    }
 }

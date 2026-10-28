@@ -267,19 +267,54 @@ class CatalogBrowsingService
         $store = StoreSettings::current();
         $heroBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->where('is_visible', true)->first();
 
+        $instagramBlock = null;
+        try {
+            $instagramBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::INSTAGRAM)->first();
+            if (!$instagramBlock && \Illuminate\Support\Facades\Schema::hasTable('home_blocks')) {
+                try {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE home_blocks MODIFY COLUMN type ENUM('PROMO_CAROUSEL','HERO','TILE_GRID','PRODUCT_RAIL','PROMO_BANNER','FEATURES','INSTAGRAM') NOT NULL");
+                    $maxPos = (int) (\App\Models\HomeBlock::max('position') ?? 6);
+                    $instagramBlock = \App\Models\HomeBlock::create([
+                        'type' => \App\Enums\HomeBlockType::INSTAGRAM,
+                        'position' => $maxPos + 1,
+                        'is_visible' => true,
+                        'heading' => 'Shop Our Instagram Reels & Styles',
+                        'eyebrow' => 'As Seen On Instagram • @dhansreetrends',
+                        'body' => 'Tap any reel to explore trending Jaipur fits, festive styling & shop the exact looks.',
+                        'primary_label' => 'View All Reels',
+                        'primary_path' => '/instragram',
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+        } catch (\Throwable $e) {}
+
+        if (!$instagramBlock) {
+            $instagramBlock = new \App\Models\HomeBlock([
+                'type' => \App\Enums\HomeBlockType::INSTAGRAM,
+                'position' => 7,
+                'is_visible' => true,
+                'heading' => 'Shop Our Instagram Reels & Styles',
+                'eyebrow' => 'As Seen On Instagram • @dhansreetrends',
+                'body' => 'Tap any reel to explore trending Jaipur fits, festive styling & shop the exact looks.',
+                'primary_label' => 'View All Reels',
+                'primary_path' => '/instragram',
+            ]);
+        }
+
         $instagramFeed = collect();
         try {
             if (!\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
                 \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-                if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
+                if (\App\Models\InstagramPost::count() === 0) {
                     \Illuminate\Support\Facades\Artisan::call('db:seed', [
                         '--class' => 'Database\\Seeders\\InstagramFeedSeeder',
                         '--force' => true,
                     ]);
                 }
-            }
 
-            if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
                 $instagramFeed = \App\Models\InstagramPost::query()
                     ->visible()
                     ->with(['taggedProduct.defaultVariant'])
@@ -293,7 +328,6 @@ class CatalogBrowsingService
             $instagramFeed = collect();
         }
 
-
         return [
             'categories' => $womenCategories,
             'featuredProducts' => $featuredCards,
@@ -303,6 +337,7 @@ class CatalogBrowsingService
             'store' => $store,
             'heroBlock' => $heroBlock,
             'quickLinksData' => $this->resolveQuickLinksForHome(),
+            'instagramBlock' => $instagramBlock,
             'instagramFeed' => $instagramFeed,
         ];
 

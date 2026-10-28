@@ -10,6 +10,7 @@ enum HomeBlockType: string
     case PRODUCT_RAIL = 'PRODUCT_RAIL';
     case PROMO_BANNER = 'PROMO_BANNER';
     case FEATURES = 'FEATURES';
+    case INSTAGRAM = 'INSTAGRAM';
 
     public static function values(): array
     {

@@ -64,9 +64,18 @@
                                     @elseif($block->type->value === 'TILE_GRID') bg-blue-100 text-blue-800 border border-blue-200
                                     @elseif($block->type->value === 'PRODUCT_RAIL') bg-emerald-100 text-emerald-800 border border-emerald-200
                                     @elseif($block->type->value === 'PROMO_BANNER') bg-rose-100 text-rose-800 border border-rose-200
+                                    @elseif($block->type->value === 'INSTAGRAM') bg-gradient-to-r from-rose-600 to-amber-600 text-white border-0 shadow-2xs
                                     @else bg-slate-100 text-slate-800 border border-slate-200 @endif">
-                                    {{ $block->type->value === 'HERO' ? 'HERO (FESTIVE SHOWCASE)' : ($block->type->value === 'PRODUCT_RAIL' ? 'PRODUCT RAIL (FEATURED ETHNIC STYLES)' : str_replace('_', ' ', $block->type->value)) }}
+                                    {{ $block->type->value === 'HERO' ? 'HERO (FESTIVE SHOWCASE)' : ($block->type->value === 'PRODUCT_RAIL' ? 'PRODUCT RAIL (FEATURED ETHNIC STYLES)' : ($block->type->value === 'INSTAGRAM' ? 'INSTAGRAM (REELS & FEED)' : str_replace('_', ' ', $block->type->value))) }}
                                 </span>
+
+                                @if($block->type->value === 'INSTAGRAM')
+                                    <a href="{{ route('admin.instagram.index') }}"
+                                       class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 transition shadow-2xs">
+                                        <svg class="size-3 text-rose-600 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                                        <span>Manage Reels &amp; Posts ➔</span>
+                                    </a>
+                                @endif
 
                                 @if($block->type->value === 'PRODUCT_RAIL')
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
@@ -176,9 +185,9 @@
                         <div class="flex items-center justify-between border-b border-slate-200 pb-3">
                             <div>
                                 <h3 class="text-base font-bold text-slate-900">
-                                    Edit Section: <span class="text-amber-600" x-text="editingBlock ? (editingBlock.type === 'HERO' ? 'Festive Signature Showcase (HERO)' : (editingBlock.type === 'PRODUCT_RAIL' ? 'Featured Ethnic Styles (PRODUCT RAIL)' : editingBlock.type)) : ''"></span>
+                                    Edit Section: <span class="text-amber-600" x-text="editingBlock ? (editingBlock.type === 'HERO' ? 'Festive Signature Showcase (HERO)' : (editingBlock.type === 'PRODUCT_RAIL' ? 'Featured Ethnic Styles (PRODUCT RAIL)' : (editingBlock.type === 'INSTAGRAM' ? 'Instagram Reels & Styles (INSTAGRAM)' : editingBlock.type))) : ''"></span>
                                 </h3>
-                                <p class="text-xs text-slate-500 mt-0.5" x-text="editingBlock && editingBlock.type === 'HERO' ? 'Manages the Festive Collection hero showcase card on the homepage.' : (editingBlock && editingBlock.type === 'PRODUCT_RAIL' ? 'Manage title, subtitle, and number of product cards displayed on the storefront home page.' : 'Manage section content, texts, and imagery.')"></p>
+                                <p class="text-xs text-slate-500 mt-0.5" x-text="editingBlock && editingBlock.type === 'HERO' ? 'Manages the Festive Collection hero showcase card on the homepage.' : (editingBlock && editingBlock.type === 'PRODUCT_RAIL' ? 'Manage title, subtitle, and number of product cards displayed on the storefront home page.' : (editingBlock && editingBlock.type === 'INSTAGRAM' ? 'Manage Instagram section heading, subtitle, and direct CTA link to /instragram lookbook.' : 'Manage section content, texts, and imagery.'))"></p>
                             </div>
                             <button type="button" @click="editingBlock = null" class="text-slate-400 hover:text-slate-700 p-1">
                                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -230,8 +239,26 @@
                                         <button type="button" @click="editingBlock.rail_size = 20" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">20</button>
                                         <button type="button" @click="editingBlock.rail_size = 24" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">24</button>
                                         <button type="button" @click="editingBlock.rail_size = 32" class="text-[11px] px-2.5 py-1 bg-white border border-slate-300 hover:border-amber-500 hover:bg-amber-50 rounded-lg text-slate-700 font-bold transition shadow-2xs">32</button>
-                                    </div>
                                 </div>
+                            </div>
+                        </template>
+
+                        <!-- Instagram Feed Manager shortcut for INSTAGRAM block -->
+                        <template x-if="editingBlock && editingBlock.type === 'INSTAGRAM'">
+                            <div class="p-4 bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border border-rose-200/90 rounded-xl space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base">📸</span>
+                                        <span class="text-xs font-bold text-rose-950">Instagram Video Reels &amp; Tagged Products</span>
+                                    </div>
+                                    <a href="{{ route('admin.instagram.index') }}" target="_blank"
+                                       class="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
+                                        <span>Open Feed Manager ➔</span>
+                                    </a>
+                                </div>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">
+                                    You can edit the section title, subtitle, and CTA button below. To upload new reels, change like/view counters, or tag products to reels, use the <strong>Instagram Feed Manager</strong>.
+                                </p>
                             </div>
                         </template>
 

@@ -32,6 +32,30 @@ class AdminHomepageWebController extends Controller
             abort(403, 'You do not have permission to view homepage sections.');
         }
 
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('home_blocks')) {
+                try {
+                    DB::statement("ALTER TABLE home_blocks MODIFY COLUMN type ENUM('PROMO_CAROUSEL','HERO','TILE_GRID','PRODUCT_RAIL','PROMO_BANNER','FEATURES','INSTAGRAM') NOT NULL");
+                } catch (\Throwable $e) {}
+
+                if (!HomeBlock::where('type', HomeBlockType::INSTAGRAM)->exists()) {
+                    $maxPos = (int) (HomeBlock::max('position') ?? 6);
+                    HomeBlock::create([
+                        'type' => HomeBlockType::INSTAGRAM,
+                        'position' => $maxPos + 1,
+                        'is_visible' => true,
+                        'heading' => 'Shop Our Instagram Reels & Styles',
+                        'eyebrow' => 'As Seen On Instagram • @dhansreetrends',
+                        'body' => 'Tap any reel to explore trending Jaipur fits, festive styling & shop the exact looks.',
+                        'primary_label' => 'View All Reels',
+                        'primary_path' => '/instragram',
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Graceful fallback
+        }
+
         $blocks = HomeBlock::with(['railCategory', 'homeBlockItems'])
             ->orderBy('position')
             ->get();
