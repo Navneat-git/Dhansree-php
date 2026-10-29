@@ -157,6 +157,64 @@ class FfmpegService
     }
 
     /**
+     * Post-process an AI-generated fashion video with Dhansree branding, logo, price tag, music, and closing CTA.
+     *
+     * @return array{video_file: string, thumbnail_file: string, file_size: int}
+     */
+    public function brandAiVideo(
+        ProductVideo $video,
+        string $rawMasterVideoFile,
+        string $tempDir
+    ): array {
+        $width = $video->width ?: 1080;
+        $height = $video->height ?: 1920;
+        $duration = $video->duration_seconds ?: 5;
+        $settings = $video->render_settings ?? [];
+        $templateKey = $video->template ?? 'fashion_showcase';
+        $templateConfig = config("video_studio.templates.{$templateKey}", [
+            'name' => "Women's Fashion Showcase",
+            'tag' => 'ELEGANT COLLECTION',
+            'badge_color' => '#B08858',
+            'bg_tone' => '#140808',
+        ]);
+
+        // 1. Generate graphic overlay elements (watermark, title/price card, closing CTA)
+        $overlayFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_overlay_card.png';
+        $this->createOverlayGraphic($video, $overlayFile, $width, $height, $templateConfig, $settings);
+
+        // 2. Burn overlay graphic and final call-to-action onto the AI master video
+        $finalVideoFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_branded_render.mp4';
+        $this->applyOverlaysAndAudio($rawMasterVideoFile, $overlayFile, $finalVideoFile, $video, $duration, $settings);
+
+        if (!file_exists($finalVideoFile) || filesize($finalVideoFile) === 0) {
+            throw new \RuntimeException("AI video branding failed: output file is empty or was not created.");
+        }
+
+        // 3. Generate high-quality thumbnail
+        $thumbnailFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_poster_thumbnail.jpg';
+        $this->generateThumbnail($finalVideoFile, $thumbnailFile);
+
+        return [
+            'video_file' => $finalVideoFile,
+            'thumbnail_file' => $thumbnailFile,
+            'file_size' => filesize($finalVideoFile),
+        ];
+    }
+
+    /**
+     * Public helper to generate poster thumbnail image from any video.
+     */
+    public function extractThumbnail(string $videoPath, string $thumbPath): void
+    {
+        $this->generateThumbnail($videoPath, $thumbPath);
+    }
+
+    public function getFfmpegPath(): string
+    {
+        return $this->ffmpegPath;
+    }
+
+    /**
      * Create a framed slide image fitting the canvas with no distortion.
      * Uses subtle blur background padding of the original image + crisp centered foreground.
      */

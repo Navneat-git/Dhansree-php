@@ -15,23 +15,46 @@
             <span>Back to Video Studio</span>
         </a>
 
-        <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-500 font-medium">Engine:</span>
-            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full {{ $ffmpegAvailable ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
-                FFmpeg {{ $ffmpegAvailable ? 'Ready' : 'Not Detected' }}
-            </span>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 text-xs">
+                <span class="text-slate-500 font-medium">FFmpeg:</span>
+                <span class="font-semibold px-2 py-0.5 rounded-full {{ $ffmpegAvailable ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
+                    {{ $ffmpegAvailable ? 'Ready' : 'Not Detected' }}
+                </span>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs">
+                <span class="text-slate-500 font-medium">Google Veo AI:</span>
+                <span class="font-semibold px-2 py-0.5 rounded-full {{ $googleVideoConfigured ? 'bg-purple-50 text-purple-800 border border-purple-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                    {{ $googleVideoConfigured ? 'Connected' : 'Setup Required' }}
+                </span>
+            </div>
         </div>
     </div>
 
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-xl font-bold text-slate-900">Create Promotional Video</h1>
-            <p class="text-xs text-slate-500 mt-1">Select an existing catalog product, pick images, and render a high-quality video for Reels, Feed Ads, and Product Pages.</p>
+            <h1 class="text-xl font-bold text-slate-900">Create Video Studio Production</h1>
+            <p class="text-xs text-slate-500 mt-1">Select an existing catalog product to generate slideshows or realistic Google Veo AI fashion shoot videos.</p>
         </div>
     </div>
 
-    <!-- Main Form Form Grid -->
+    <!-- AI Configuration Advisory if unconfigured -->
+    @if(!$googleVideoConfigured)
+    <div x-show="isAiMode" x-cloak class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 text-xs shadow-xs space-y-1">
+        <div class="flex items-center gap-2 font-black text-amber-900">
+            <svg class="size-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" />
+            </svg>
+            <span>Google Veo Video API Notice</span>
+        </div>
+        <p class="text-amber-900 text-[11px] leading-relaxed">
+            Google AI Video generation is currently in mock/disabled state. To enable live generation of moving models wearing your suits, add <code class="bg-amber-100 font-mono px-1 py-0.5 rounded font-bold">GOOGLE_VIDEO_API_KEY</code> and <code class="bg-amber-100 font-mono px-1 py-0.5 rounded font-bold">GOOGLE_VIDEO_ENABLED=true</code> to your <code class="font-mono">.env</code> file. Slideshow generation remains 100% free and functional.
+        </p>
+    </div>
+    @endif
+
+    <!-- Main Form Grid -->
     <form action="{{ route('admin.video-studio.store') }}"
           method="POST"
           id="create-video-form"
@@ -41,45 +64,63 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <!-- Left 2 Cols: Product & Image Selection + Templates + Settings -->
+            <!-- Left 2 Cols: Mode Selection + Product Search + Images + Prompts / Templates -->
             <div class="lg:col-span-2 space-y-6">
 
-                <!-- 1. Video Style Selector (Slideshow vs AI Motion) -->
+                <!-- 1. Video Generation Mode Selector (3 Distinct Modes) -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
-                        1. Select Video Style
+                        1. Select Video Production Mode
                     </label>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <!-- FFmpeg Slideshow (Default & Fully Functional) -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- Mode 1: FFmpeg Slideshow (Default & Free) -->
                         <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
                                :class="videoType === 'slideshow' ? 'border-amber-500 bg-amber-50/70 ring-1 ring-amber-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
                             <input type="radio" name="video_type" value="slideshow" x-model="videoType" class="sr-only">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <svg class="size-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                                     </svg>
-                                    Product Slideshow
+                                    FFmpeg Slideshow
                                 </span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Free &amp; Built-in</span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">100% Free</span>
                             </div>
-                            <p class="text-xs text-slate-600 mt-2 leading-relaxed">Smooth transitions, luxury ambient backdrop, Ken Burns framing, music, and Dhansree branding.</p>
+                            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">Smooth crossfades, zoom effects, audio, and branding directly from catalog photos.</p>
                         </label>
 
-                        <!-- AI Fashion Motion (Extensible future provider placeholder) -->
-                        <div class="relative flex flex-col p-4 rounded-xl border border-slate-200 bg-slate-50/70 opacity-80">
+                        <!-- Mode 2: AI Fashion Shoot (Raw Google Veo Footage) -->
+                        <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
+                               :class="videoType === 'ai_fashion' ? 'border-purple-500 bg-purple-50/70 ring-1 ring-purple-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="video_type" value="ai_fashion" x-model="videoType" class="sr-only">
                             <div class="flex items-center justify-between">
-                                <span class="text-sm font-semibold text-slate-600 flex items-center gap-2">
-                                    <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <svg class="size-4 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
                                     </svg>
-                                    AI Fashion Motion
+                                    AI Fashion Shoot
                                 </span>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600">Coming Soon</span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">Veo AI (~$0.15)</span>
                             </div>
-                            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Extensible image-to-video AI motion generator. Requires an active API provider key in settings.</p>
-                        </div>
+                            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">Photorealistic model wearing and moving in your catalog suit. Pure raw AI footage.</p>
+                        </label>
+
+                        <!-- Mode 3: AI Fashion Shoot + Branded Export (Veo + FFmpeg Post-Processing) -->
+                        <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
+                               :class="videoType === 'ai_fashion_branded' ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="video_type" value="ai_fashion_branded" x-model="videoType" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <svg class="size-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                    </svg>
+                                    AI Shoot + Branded
+                                </span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">AI + Branding</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">AI model footage finished with Dhansree logo, verified price, music, and closing CTA.</p>
+                        </label>
                     </div>
                 </div>
 
@@ -88,7 +129,7 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                         2. Search &amp; Select Product
                     </label>
-                    <p class="text-xs text-slate-500 mb-4">Choose an active product from your catalog. Its existing genuine images will load automatically below.</p>
+                    <p class="text-xs text-slate-500 mb-4">Choose an active product from your catalog. Its uploaded catalog photos will load automatically below.</p>
 
                     <!-- Search Input with AJAX Auto-complete & Search Button -->
                     <div class="relative">
@@ -140,74 +181,124 @@
                                     </div>
                                     <button type="button"
                                             @click="selectProduct(prod)"
-                                            style="background-color: #d97706 !important; color: #ffffff !important;"
-                                            class="px-3 py-1.5 text-xs font-bold rounded-lg shadow-xs hover:opacity-90 transition-opacity shrink-0 flex items-center gap-1">
-                                        <span>Select Product</span>
-                                        <svg style="width: 14px; height: 14px;" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                                        </svg>
+                                            style="background-color: #0f172a !important; color: #ffffff !important;"
+                                            class="shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg shadow-2xs hover:opacity-90 transition-opacity">
+                                        Choose Product
                                     </button>
                                 </div>
                             </template>
                         </div>
                     </div>
 
-                    <!-- Hidden Product ID Field -->
-                    <input type="hidden" name="product_id" :value="selectedProductId">
-
-                    <!-- Selected Product Card Display -->
-                    <div x-show="selectedProduct" class="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50/70 flex items-center justify-between gap-4">
+                    <!-- Selected Product Banner -->
+                    <div x-show="selectedProduct" class="mt-4 p-4 rounded-xl border border-amber-300 bg-amber-50/60 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5 min-w-0">
                             <div style="width: 56px; height: 56px; min-width: 56px; max-width: 56px;"
-                                 class="w-14 h-14 rounded-lg bg-white border border-amber-300 shrink-0 overflow-hidden shadow-xs flex items-center justify-center">
-                                <img :src="selectedProduct?.primary_image"
-                                     style="width: 56px; height: 56px; min-width: 56px; max-width: 56px; object-fit: cover;"
-                                     class="w-14 h-14 object-cover block">
+                                 class="w-14 h-14 rounded-lg bg-white border border-amber-200 shrink-0 overflow-hidden flex items-center justify-center shadow-xs">
+                                <template x-if="selectedProduct && selectedProduct.primary_image">
+                                    <img :src="selectedProduct.primary_image" style="width: 56px; height: 56px; min-width: 56px; max-width: 56px; object-fit: cover;" class="w-14 h-14 object-cover">
+                                </template>
                             </div>
                             <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-600 text-white">Active Product</span>
-                                    <span class="text-[11px] font-mono text-slate-500" x-text="'SKU: ' + (selectedProduct?.sku || 'N/A')"></span>
-                                </div>
-                                <h3 class="text-sm font-bold text-slate-900 truncate mt-1" x-text="selectedProduct?.name"></h3>
-                                <p class="text-xs text-amber-800 font-bold mt-0.5" x-text="selectedProduct?.price"></p>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800">Selected Product</span>
+                                <h3 class="text-xs font-black text-slate-900 truncate" x-text="selectedProduct ? selectedProduct.name : ''"></h3>
+                                <p class="text-[11px] text-slate-600 mt-0.5 font-medium">
+                                    SKU: <span class="font-mono font-semibold" x-text="selectedProduct ? (selectedProduct.sku || 'N/A') : ''"></span> •
+                                    Price: <span class="font-bold text-amber-800" x-text="selectedProduct ? selectedProduct.price : ''"></span>
+                                </p>
                             </div>
                         </div>
 
-                        <button type="button" @click="clearProduct()" class="text-xs text-rose-600 hover:text-rose-800 font-bold underline shrink-0">
-                            Change Product
+                        <button type="button" @click="clearProduct()" class="text-xs text-slate-400 hover:text-rose-600 font-bold p-1">
+                            ✕ Change
                         </button>
                     </div>
 
-                    <!-- Quick Pick From Recent Active Products -->
-                    <div x-show="!selectedProduct" class="mt-4">
-                        <span class="text-[11px] font-semibold text-slate-500 block mb-2">Or select from recent catalog items:</span>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($recentProducts as $rp)
-                            <button type="button"
-                                    @click="loadProductById({{ $rp->id }})"
-                                    class="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 hover:border-amber-400 hover:bg-amber-50/40 rounded-lg text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-2 shadow-2xs">
-                                <span style="width: 24px; height: 24px; min-width: 24px; max-width: 24px;"
-                                      class="w-6 h-6 rounded-full bg-slate-200 shrink-0 overflow-hidden inline-flex items-center justify-center">
-                                    <img src="{{ $rp->primary_image_url }}"
-                                         style="width: 24px; height: 24px; object-fit: cover;"
-                                         class="w-6 h-6 object-cover block">
+                    <input type="hidden" name="product_id" :value="selectedProductId">
+                </div>
+
+                <!-- 3. AI Fashion Shoot Styles & Direct Prompt Controls (Active for AI modes) -->
+                <div class="rounded-xl border border-purple-200 bg-white p-5 shadow-xs" x-show="isAiMode" x-cloak>
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-purple-900">
+                                3. Fashion Shoot Style &amp; Creative Direction
+                            </label>
+                            <p class="text-xs text-slate-500 mt-0.5">Select a camera motion style optimized for Indian ethnic suits and edit the prompt if desired.</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                            {{ $googleVideoModel }}
+                        </span>
+                    </div>
+
+                    <!-- Predefined Style Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        @foreach($fashionStyles as $sKey => $s)
+                        <label class="relative flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all"
+                               :class="selectedFashionStyle === '{{ $sKey }}' ? 'border-purple-600 bg-purple-50/70 ring-1 ring-purple-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="prompt_template" value="{{ $sKey }}" x-model="selectedFashionStyle" @change="fetchPrompt()" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900">{{ $s['name'] }}</span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                                    {{ $s['badge'] }}
                                 </span>
-                                <span class="truncate max-w-[140px] font-medium">{{ $rp->name }}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">{{ $s['description'] }}</p>
+                        </label>
+                        @endforeach
+                    </div>
+
+                    <!-- Editable AI Prompt Textarea -->
+                    <div class="mt-4 pt-4 border-t border-purple-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span>Google Veo Scene &amp; Garment Prompt</span>
+                                    <span class="text-[10px] font-normal text-slate-500">(Auto-generated with strict garment fidelity rules)</span>
+                                </label>
+                            </div>
+                            <button type="button"
+                                    @click="fetchPrompt(true)"
+                                    class="text-xs text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1 hover:underline">
+                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                </svg>
+                                <span>Reset / Rebuild Prompt</span>
                             </button>
-                            @endforeach
+                        </div>
+
+                        <textarea name="prompt"
+                                  rows="4"
+                                  x-model="aiPrompt"
+                                  placeholder="Scene prompt will automatically populate when you select a product..."
+                                  class="w-full p-3 text-xs font-mono bg-slate-900 text-slate-100 border border-slate-700 rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500 leading-relaxed"></textarea>
+
+                        <!-- Negative Prompt Collapsible -->
+                        <div x-data="{ showNeg: false }">
+                            <button type="button" @click="showNeg = !showNeg" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                                <span x-text="showNeg ? '▼ Hide Negative Prompt' : '▶ Advanced: View / Edit Negative Prompt'"></span>
+                            </button>
+                            <div x-show="showNeg" x-cloak class="mt-2">
+                                <textarea name="negative_prompt"
+                                          rows="2"
+                                          x-model="aiNegativePrompt"
+                                          class="w-full p-2.5 text-[11px] font-mono bg-slate-50 border border-slate-300 rounded-lg text-slate-700"></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. Image Selection & Reordering -->
+                <!-- 4. Image Selection & Reference Picker -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs" x-show="availableImages.length > 0">
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
-                                3. Select &amp; Order Images for Video (<span x-text="selectedImageIds.length"></span> of <span x-text="availableImages.length"></span> selected)
+                                4. Select Images &amp; Primary Reference (<span x-text="selectedImageIds.length"></span> selected)
                             </label>
-                            <p class="text-xs text-slate-500 mt-0.5">Click an image to toggle inclusion. Use arrows to change playback sequence.</p>
+                            <p class="text-xs text-slate-500 mt-0.5" x-show="!isAiMode">Click an image to toggle inclusion. Use arrows to change playback sequence.</p>
+                            <p class="text-xs text-purple-700 mt-0.5 font-medium" x-show="isAiMode">
+                                ★ In AI Fashion mode, select the <strong>Primary Reference</strong> (full front view) the AI model will wear.
+                            </p>
                         </div>
                         <div class="flex items-center gap-2 text-xs">
                             <button type="button" @click="selectAllImages()" class="text-amber-700 hover:underline font-semibold">Select All</button>
@@ -220,7 +311,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                         <template x-for="(img, idx) in availableImages" :key="img.id">
                             <div class="relative group rounded-xl border overflow-hidden transition-all bg-slate-100 aspect-[3/4] flex flex-col"
-                                 :class="isSelected(img.id) ? 'border-amber-500 ring-2 ring-amber-500/40 shadow-xs' : 'border-slate-200 opacity-60 hover:opacity-100'">
+                                 :class="isSelected(img.id) ? (primaryImageId === img.id ? 'border-amber-500 ring-3 ring-amber-400 shadow-md' : 'border-amber-500 ring-1 ring-amber-500/40 shadow-xs') : 'border-slate-200 opacity-60 hover:opacity-100'">
 
                                 <!-- Image Thumbnail -->
                                 <img :src="img.url" class="w-full h-full object-cover cursor-pointer" @click="toggleImage(img.id)">
@@ -238,16 +329,22 @@
                                     </template>
                                 </div>
 
+                                <!-- Set as Primary Reference Button for AI Mode -->
+                                <template x-if="isAiMode && isSelected(img.id)">
+                                    <button type="button"
+                                            @click.stop="setPrimaryImage(img.id)"
+                                            class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-black shadow-md transition-all cursor-pointer"
+                                            :class="primaryImageId === img.id ? 'bg-amber-400 text-slate-950 ring-2 ring-white' : 'bg-black/75 text-amber-300 hover:bg-black'">
+                                        <span x-text="primaryImageId === img.id ? '★ PRIMARY' : 'SET PRIMARY'"></span>
+                                    </button>
+                                </template>
+
                                 <!-- Move Left / Right Controls for Order -->
-                                <template x-if="isSelected(img.id)">
+                                <template x-if="isSelected(img.id) && !isAiMode">
                                     <div class="absolute bottom-1.5 inset-x-1.5 flex items-center justify-between gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/80 rounded-md px-1 py-0.5 backdrop-blur-xs">
-                                        <button type="button" @click.stop="moveImageLeft(img.id)" class="p-1 text-slate-300 hover:text-white" title="Move earlier">
-                                            ‹
-                                        </button>
+                                        <button type="button" @click.stop="moveImageLeft(img.id)" class="p-1 text-slate-300 hover:text-white" title="Move earlier">‹</button>
                                         <span class="text-[9px] text-amber-300 font-mono" x-text="'#' + getOrderIndex(img.id)"></span>
-                                        <button type="button" @click.stop="moveImageRight(img.id)" class="p-1 text-slate-300 hover:text-white" title="Move later">
-                                            ›
-                                        </button>
+                                        <button type="button" @click.stop="moveImageRight(img.id)" class="p-1 text-slate-300 hover:text-white" title="Move later">›</button>
                                     </div>
                                 </template>
 
@@ -259,17 +356,19 @@
                         </template>
                     </div>
 
+                    <input type="hidden" name="primary_image_id" :value="primaryImageId">
+
                     <!-- Minimum 1 Image Warning -->
                     <div x-show="selectedImageIds.length === 0" class="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
                         <svg class="size-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
-                        <span>Please select at least one image to include in the slideshow video.</span>
+                        <span>Please select at least one catalog image to generate the video.</span>
                     </div>
                 </div>
 
-                <!-- 4. Video Template Selector -->
-                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+                <!-- 5. Video Template Selector (for Slideshow and AI Branded) -->
+                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs" x-show="videoType !== 'ai_fashion'">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
-                        4. Choose Video Template
+                        5. Choose Visual Template &amp; Styling
                     </label>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -289,10 +388,10 @@
                     </div>
                 </div>
 
-                <!-- 5. Aspect Ratio & Placement Presets -->
+                <!-- 6. Aspect Ratio Presets -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
-                        5. Choose Export Aspect Ratio &amp; Channel
+                        6. Choose Export Aspect Ratio &amp; Channel
                     </label>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -315,10 +414,10 @@
 
             </div>
 
-            <!-- Right Col: Video Customization & Live Summary Settings -->
+            <!-- Right Col: Duration, Audio, Overlays & Launch -->
             <div class="space-y-6">
 
-                <!-- 6. Video Duration & Music -->
+                <!-- Duration & Music -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-5 shadow-xs">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
@@ -335,12 +434,12 @@
                         </div>
                     </div>
 
-                    <!-- Background Music Toggle & Selector -->
-                    <div class="pt-4 border-t border-slate-100">
+                    <!-- Background Music (for Slideshow and AI Branded) -->
+                    <div class="pt-4 border-t border-slate-100" x-show="videoType !== 'ai_fashion'">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Background Music</label>
-                                <p class="text-[11px] text-slate-500">Add elegant royalty-free audio</p>
+                                <p class="text-[11px] text-slate-500">Royalty-free ethnic &amp; runway tracks</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="enable_music" value="1" x-model="enableMusic" class="sr-only peer">
@@ -364,8 +463,8 @@
                     </div>
                 </div>
 
-                <!-- 7. Text Overlays & CTA Toggles -->
-                <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
+                <!-- Text Overlays & CTA (for Slideshow and AI Branded) -->
+                <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs" x-show="videoType !== 'ai_fashion'">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
                         Brand &amp; Text Overlays
                     </label>
@@ -374,7 +473,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-xs font-semibold text-slate-900">Product Title Overlay</span>
-                            <p class="text-[11px] text-slate-500">Glassmorphic title bar at bottom</p>
+                            <p class="text-[11px] text-slate-500">Gold/maroon title card at bottom</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="text_overlay" value="1" x-model="textOverlay" class="sr-only peer">
@@ -386,7 +485,7 @@
                     <div class="flex items-center justify-between" x-show="textOverlay">
                         <div>
                             <span class="text-xs font-semibold text-slate-900">Verified Price Tag</span>
-                            <p class="text-[11px] text-slate-500">Display current selling price</p>
+                            <p class="text-[11px] text-slate-500">Display verified selling price</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="show_price" value="1" x-model="showPrice" class="sr-only peer">
@@ -398,7 +497,7 @@
                     <div class="flex items-center justify-between pt-2 border-t border-slate-100">
                         <div>
                             <span class="text-xs font-semibold text-slate-900">Final Call to Action</span>
-                            <p class="text-[11px] text-slate-500">"Shop Now at dhansree.com" closing</p>
+                            <p class="text-[11px] text-slate-500">"Shop Now at dhansree.com" closing card</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="call_to_action" value="1" x-model="callToAction" class="sr-only peer">
@@ -417,48 +516,47 @@
                     </div>
                 </div>
 
-                <!-- 8. Generation Summary & Launch Button -->
-                <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-5 space-y-4 shadow-xs">
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900">Settings Summary</h4>
+                <!-- Launch & Summary Panel -->
+                <div class="rounded-xl border p-5 space-y-4 shadow-xs"
+                     :class="isAiMode ? 'border-purple-200 bg-purple-50/50' : 'border-amber-200 bg-amber-50/50'">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-900">Production Summary</h4>
 
-                    <div class="space-y-2 text-xs divide-y divide-amber-100">
+                    <div class="space-y-2 text-xs divide-y divide-slate-200/60">
+                        <div class="flex justify-between pt-1">
+                            <span class="text-slate-500">Mode:</span>
+                            <span class="font-bold" :class="isAiMode ? 'text-purple-700' : 'text-amber-800'"
+                                  x-text="videoType === 'slideshow' ? 'FFmpeg Slideshow' : (videoType === 'ai_fashion' ? 'AI Fashion Shoot' : 'AI Shoot + Branded')"></span>
+                        </div>
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-500">Target Product:</span>
                             <span class="font-bold text-slate-900 truncate max-w-[150px]" x-text="selectedProduct ? selectedProduct.name : 'None selected'"></span>
                         </div>
-                        <div class="flex justify-between pt-1">
-                            <span class="text-slate-500">Images:</span>
-                            <span class="font-bold text-slate-900" x-text="selectedImageIds.length + ' frames'"></span>
+                        <div class="flex justify-between pt-1" x-show="isAiMode">
+                            <span class="text-slate-500">Est. API Cost:</span>
+                            <span class="font-mono font-bold text-purple-700">~${{ number_format($estimatedCostPerClip, 2) }} USD</span>
                         </div>
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-500">Aspect Ratio:</span>
-                            <span class="font-mono font-bold text-amber-800" x-text="selectedAspectRatio"></span>
+                            <span class="font-mono font-bold text-slate-900" x-text="selectedAspectRatio"></span>
                         </div>
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-500">Duration:</span>
                             <span class="font-bold text-slate-900" x-text="duration + 's'"></span>
                         </div>
-                        <div class="flex justify-between pt-1">
-                            <span class="text-slate-500">Audio:</span>
-                            <span class="font-bold" :class="enableMusic ? 'text-emerald-700' : 'text-slate-500'" x-text="enableMusic ? 'Enabled' : 'Muted'"></span>
-                        </div>
-                        <div class="flex justify-between pt-1">
-                            <span class="text-slate-500">Closing CTA:</span>
-                            <span class="font-bold" :class="callToAction ? 'text-emerald-700' : 'text-slate-500'" x-text="callToAction ? 'Shop Now' : 'Disabled'"></span>
-                        </div>
                     </div>
 
+                    <!-- Main Submit Button -->
                     <button type="button"
                             @click="handleFormSubmit($event)"
                             :disabled="!canSubmit() || isSubmitting"
-                            style="background-color: #d97706 !important; color: #ffffff !important;"
+                            :style="isAiMode ? 'background-color: #7e22ce !important; color: #ffffff !important;' : 'background-color: #d97706 !important; color: #ffffff !important;'"
                             class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <template x-if="!isSubmitting">
                             <span class="flex items-center gap-2">
                                 <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                                 </svg>
-                                <span style="color: #ffffff !important;">Render Video Now</span>
+                                <span style="color: #ffffff !important;" x-text="isAiMode ? 'Generate AI Fashion Video' : 'Render Video Now'"></span>
                             </span>
                         </template>
                         <template x-if="isSubmitting">
@@ -467,11 +565,13 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>Rendering Video with FFmpeg...</span>
+                                <span x-text="isAiMode ? 'Directing Google Veo AI...' : 'Rendering with FFmpeg...'"></span>
                             </span>
                         </template>
                     </button>
-                    <p class="text-[10px] text-center text-slate-500 font-medium">Processing runs safely in the background. Original product images are never altered.</p>
+                    <p class="text-[10px] text-center text-slate-500 font-medium">
+                        Runs safely in the background. Original product photos are strictly preserved.
+                    </p>
                 </div>
 
             </div>
@@ -485,20 +585,20 @@
              style="display: none;"
              :style="showProcessingModal ? 'display: flex !important;' : 'display: none !important;'">
             <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-amber-300 p-6 text-center overflow-hidden">
-                <!-- Subtle Gold Accent Header Bar -->
-                <div class="absolute top-0 inset-x-0 h-1.5" style="background: linear-gradient(90deg, #b45309, #f59e0b, #b45309);"></div>
+                <div class="absolute top-0 inset-x-0 h-1.5"
+                     :style="isAiMode ? 'background: linear-gradient(90deg, #7e22ce, #a855f7, #7e22ce);' : 'background: linear-gradient(90deg, #b45309, #f59e0b, #b45309);'"></div>
 
-                <!-- Spinning Video Reel Icon -->
-                <div style="width: 64px; height: 64px; min-width: 64px; max-width: 64px; background: linear-gradient(135deg, #d97706 0%, #92400e 100%) !important;"
-                     class="w-16 h-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-lg mb-4">
+                <div style="width: 64px; height: 64px; min-width: 64px; max-width: 64px;"
+                     class="w-16 h-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-lg mb-4"
+                     :style="isAiMode ? 'background: linear-gradient(135deg, #7e22ce 0%, #581c87 100%) !important;' : 'background: linear-gradient(135deg, #d97706 0%, #92400e 100%) !important;'">
                     <svg style="width: 32px; height: 32px;" class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                     </svg>
                 </div>
 
-                <h3 class="text-base font-bold text-slate-900">Rendering Video Studio Reel</h3>
-                <p class="text-xs text-slate-600 mt-1 max-w-xs mx-auto">
-                    FFmpeg is composing high-definition slides, Ken Burns motion, luxury branding, and audio.
+                <h3 class="text-base font-bold text-slate-900" x-text="isAiMode ? 'Generating AI Fashion Shoot Video' : 'Rendering Video Studio Reel'"></h3>
+                <p class="text-xs text-slate-600 mt-1 max-w-xs mx-auto"
+                   x-text="isAiMode ? 'Google Veo AI is directing a moving model wearing the exact catalog garment.' : 'FFmpeg is composing high-definition slides, Ken Burns motion, luxury branding, and audio.'">
                 </p>
 
                 <!-- Dynamic Animated Progress Bar -->
@@ -509,7 +609,7 @@
                     </div>
                     <div class="w-full h-3 rounded-full bg-slate-100 border border-slate-200 overflow-hidden relative">
                         <div class="h-full rounded-full transition-all duration-300 ease-out"
-                             :style="'width: ' + progressPercent + '%; background: linear-gradient(90deg, #d97706, #f59e0b, #d97706);'">
+                             :style="'width: ' + progressPercent + '%; background: ' + (isAiMode ? 'linear-gradient(90deg, #7e22ce, #a855f7, #7e22ce)' : 'linear-gradient(90deg, #d97706, #f59e0b, #d97706)') + ';'">
                         </div>
                     </div>
                 </div>
@@ -518,25 +618,24 @@
                 <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
                     <div class="flex items-center gap-2" :class="progressPercent >= 20 ? 'text-emerald-700 font-semibold' : 'text-slate-400'">
                         <span class="w-4 text-center font-bold" x-text="progressPercent >= 20 ? '✓' : '○'"></span>
-                        <span>Loading authentic product images</span>
+                        <span x-text="isAiMode ? 'Uploading reference image to Google Veo' : 'Loading authentic product images'"></span>
                     </div>
                     <div class="flex items-center gap-2" :class="progressPercent >= 50 ? 'text-emerald-700 font-semibold' : (progressPercent >= 20 ? 'text-amber-700 font-medium' : 'text-slate-400')">
                         <span class="w-4 text-center font-bold" x-text="progressPercent >= 50 ? '✓' : (progressPercent >= 20 ? '➜' : '○')"></span>
-                        <span>Applying cinematic transitions &amp; motion</span>
+                        <span x-text="isAiMode ? 'Synthesizing 4K model motion & garment physics' : 'Applying cinematic transitions & motion'"></span>
                     </div>
                     <div class="flex items-center gap-2" :class="progressPercent >= 75 ? 'text-emerald-700 font-semibold' : (progressPercent >= 50 ? 'text-amber-700 font-medium' : 'text-slate-400')">
                         <span class="w-4 text-center font-bold" x-text="progressPercent >= 75 ? '✓' : (progressPercent >= 50 ? '➜' : '○')"></span>
-                        <span>Overlaying Dhansree logo &amp; price badge</span>
+                        <span x-text="isAiMode ? 'Post-processing & preparing QC review card' : 'Overlaying Dhansree logo & price badge'"></span>
                     </div>
                     <div class="flex items-center gap-2" :class="progressPercent >= 100 ? 'text-emerald-700 font-semibold' : (progressPercent >= 75 ? 'text-amber-700 font-medium' : 'text-slate-400')">
                         <span class="w-4 text-center font-bold" x-text="progressPercent >= 100 ? '✓' : (progressPercent >= 75 ? '➜' : '○')"></span>
-                        <span>Synthesizing audio &amp; saving H.264 MP4</span>
+                        <span>Saving final MP4 output</span>
                     </div>
                 </div>
 
-                <!-- Warning note -->
                 <p class="text-[11px] text-amber-800 font-medium bg-amber-50 rounded-lg p-2.5 mt-5 border border-amber-200">
-                    ⏳ Processing takes just a few seconds. Please keep this window open while your video is rendered.
+                    ⏳ Processing runs in the background. You can keep this open or view progress on the dashboard.
                 </p>
             </div>
         </div>
@@ -560,8 +659,10 @@ function videoStudioCreator() {
         selectedProduct: @json($selectedProductData),
         availableImages: @json($availableImagesData ?? []),
         selectedImageIds: @json(array_column($availableImagesData ?? [], 'id')),
+        primaryImageId: @json($availableImagesData[0]['id'] ?? null),
 
         selectedTemplate: 'fashion_showcase',
+        selectedFashionStyle: 'runway_walk',
         selectedAspectRatio: '9:16',
         duration: 10,
         enableMusic: true,
@@ -571,9 +672,20 @@ function videoStudioCreator() {
         callToAction: true,
         customTitle: '',
 
+        aiPrompt: '',
+        aiNegativePrompt: @json($defaultNegativePrompt ?? ''),
+
+        get isAiMode() {
+            return this.videoType === 'ai_fashion' || this.videoType === 'ai_fashion_branded';
+        },
+
         init() {
             if (this.selectedProduct && this.availableImages.length && !this.selectedImageIds.length) {
                 this.selectedImageIds = this.availableImages.map(img => img.id);
+                this.primaryImageId = this.availableImages[0]?.id || null;
+            }
+            if (this.selectedProductId) {
+                this.fetchPrompt();
             }
         },
 
@@ -602,26 +714,43 @@ function videoStudioCreator() {
             this.searchQuery = '';
             this.availableImages = prod.images || [];
             this.selectedImageIds = this.availableImages.map(img => img.id);
+            this.primaryImageId = this.availableImages[0]?.id || null;
             if (!this.customTitle) {
                 this.customTitle = prod.name;
             }
+            this.fetchPrompt();
         },
 
-        loadProductById(productId) {
-            fetch(`/admin/video-studio/products/${productId}/images`, {
-                headers: { 'Accept': 'application/json' }
+        setPrimaryImage(id) {
+            this.primaryImageId = id;
+            if (!this.isSelected(id)) {
+                this.selectedImageIds.unshift(id);
+            }
+        },
+
+        fetchPrompt(forceReset = false) {
+            if (!this.selectedProductId) return;
+            if (!forceReset && this.aiPrompt && this.aiPrompt.length > 20) return;
+
+            fetch('/admin/video-studio/preview-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || ''
+                },
+                body: JSON.stringify({
+                    product_id: this.selectedProductId,
+                    style: this.selectedFashionStyle
+                })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.product) {
-                    this.selectProduct({
-                        id: data.product.id,
-                        name: data.product.name,
-                        sku: data.product.sku,
-                        price: data.product.price,
-                        primary_image: data.images[0]?.url || '',
-                        images: data.images || []
-                    });
+                if (data.success && data.prompt) {
+                    this.aiPrompt = data.prompt;
+                    if (data.negative_prompt && !this.aiNegativePrompt) {
+                        this.aiNegativePrompt = data.negative_prompt;
+                    }
                 }
             })
             .catch(() => {});
@@ -632,6 +761,8 @@ function videoStudioCreator() {
             this.selectedProductId = null;
             this.availableImages = [];
             this.selectedImageIds = [];
+            this.primaryImageId = null;
+            this.aiPrompt = '';
         },
 
         isSelected(imgId) {
@@ -641,8 +772,14 @@ function videoStudioCreator() {
         toggleImage(imgId) {
             if (this.isSelected(imgId)) {
                 this.selectedImageIds = this.selectedImageIds.filter(id => id !== imgId);
+                if (this.primaryImageId === imgId) {
+                    this.primaryImageId = this.selectedImageIds[0] || null;
+                }
             } else {
                 this.selectedImageIds.push(imgId);
+                if (!this.primaryImageId) {
+                    this.primaryImageId = imgId;
+                }
             }
         },
 
@@ -673,10 +810,14 @@ function videoStudioCreator() {
 
         selectAllImages() {
             this.selectedImageIds = this.availableImages.map(i => i.id);
+            if (!this.primaryImageId && this.availableImages.length) {
+                this.primaryImageId = this.availableImages[0].id;
+            }
         },
 
         clearAllImages() {
             this.selectedImageIds = [];
+            this.primaryImageId = null;
         },
 
         handleFormSubmit(e) {
@@ -695,7 +836,7 @@ function videoStudioCreator() {
             this.isSubmitting = true;
             this.showProcessingModal = true;
             this.progressPercent = 15;
-            this.currentStepText = 'Preparing authentic product photos...';
+            this.currentStepText = this.isAiMode ? 'Connecting to Google Veo API...' : 'Preparing authentic product photos...';
 
             const form = document.getElementById('create-video-form');
             const formData = new FormData(form);
@@ -704,15 +845,25 @@ function videoStudioCreator() {
             this.progressTimer = setInterval(() => {
                 if (this.progressPercent < 85) {
                     this.progressPercent += 5;
-                    if (this.progressPercent >= 25 && this.progressPercent < 50) {
-                        this.currentStepText = 'Composing video slides & transitions...';
-                    } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
-                        this.currentStepText = 'Overlaying Dhansree logo & price badge...';
-                    } else if (this.progressPercent >= 75) {
-                        this.currentStepText = 'Encoding H.264 video with FFmpeg...';
+                    if (this.isAiMode) {
+                        if (this.progressPercent >= 25 && this.progressPercent < 50) {
+                            this.currentStepText = 'Synthesizing model motion & fabric physics...';
+                        } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
+                            this.currentStepText = 'Rendering 4K photorealistic frames...';
+                        } else if (this.progressPercent >= 75) {
+                            this.currentStepText = 'Finalizing video & generating QC card...';
+                        }
+                    } else {
+                        if (this.progressPercent >= 25 && this.progressPercent < 50) {
+                            this.currentStepText = 'Composing video slides & transitions...';
+                        } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
+                            this.currentStepText = 'Overlaying Dhansree logo & price badge...';
+                        } else if (this.progressPercent >= 75) {
+                            this.currentStepText = 'Encoding H.264 video with FFmpeg...';
+                        }
                     }
                 }
-            }, 550);
+            }, 600);
 
             fetch(form.action, {
                 method: 'POST',
@@ -726,7 +877,7 @@ function videoStudioCreator() {
             .then(async res => {
                 const data = await res.json().catch(() => null);
                 if (!res.ok) {
-                    throw new Error(data?.message || 'Server error occurred during video rendering.');
+                    throw new Error(data?.message || 'Server error occurred during video generation.');
                 }
                 return data;
             })
@@ -756,7 +907,7 @@ function videoStudioCreator() {
             clearInterval(this.progressTimer);
             if (this.statusPollTimer) clearInterval(this.statusPollTimer);
             this.progressPercent = 100;
-            this.currentStepText = '✓ Video generated successfully! Redirecting...';
+            this.currentStepText = '✓ Video generation ready! Redirecting...';
             setTimeout(() => {
                 window.location.href = redirectUrl;
             }, 600);
@@ -779,11 +930,11 @@ function videoStudioCreator() {
                         clearInterval(this.progressTimer);
                         this.isSubmitting = false;
                         this.showProcessingModal = false;
-                        alert('Video rendering failed: ' + (data.error_message || 'FFmpeg failed to encode video.'));
+                        alert('Video generation failed: ' + (data.error_message || 'Video failed to render.'));
                     }
                 })
                 .catch(() => {});
-            }, 1200);
+            }, 1500);
         },
 
         canSubmit() {

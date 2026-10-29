@@ -141,7 +141,7 @@
             <p class="text-[11px] text-slate-500 font-medium mt-1">Generated promo assets</p>
         </div>
 
-        <!-- Completed -->
+        <!-- Completed & Ready for Review -->
         <div class="rounded-xl border-t-4 border-t-emerald-500 border border-slate-200 bg-white p-4 shadow-xs">
             <div class="flex items-center justify-between text-xs font-bold text-emerald-700 uppercase tracking-wider">
                 <span>Completed</span>
@@ -149,6 +149,16 @@
             </div>
             <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['completed']) }}</p>
             <p class="text-[11px] text-emerald-700 font-semibold mt-1">Ready to download &amp; publish</p>
+        </div>
+
+        <!-- Ready for QC Review -->
+        <div class="rounded-xl border-t-4 border-t-amber-500 border border-slate-200 bg-white p-4 shadow-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-amber-800 uppercase tracking-wider">
+                <span>QC Review</span>
+                <span class="rounded bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 text-[10px] font-black">AI Footage</span>
+            </div>
+            <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['pending_review'] ?? 0) }}</p>
+            <p class="text-[11px] text-amber-800 font-semibold mt-1">Pending admin sign-off</p>
         </div>
 
         <!-- In Progress -->
@@ -160,31 +170,44 @@
             <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['processing']) }}</p>
             <p class="text-[11px] text-slate-500 font-medium mt-1">Queued or rendering</p>
         </div>
-
-        <!-- Templates -->
-        <div class="rounded-xl border-t-4 border-t-amber-500 border border-slate-200 bg-white p-4 shadow-xs">
-            <div class="flex items-center justify-between text-xs font-bold text-amber-800 uppercase tracking-wider">
-                <span>Templates</span>
-                <span class="rounded bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 text-[10px] font-black">5 Active</span>
-            </div>
-            <p class="text-3xl font-black text-slate-900 mt-2">{{ count($templates) }}</p>
-            <p class="text-[11px] text-slate-500 font-medium mt-1">Festive, Showcase, Offers</p>
-        </div>
     </div>
 
     <!-- Filters & Search Bar with Clear Slate Contrast -->
     <div class="rounded-xl border border-slate-300 bg-slate-50 p-4 shadow-xs">
-        <form method="GET" action="{{ route('admin.video-studio.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <form method="GET" action="{{ route('admin.video-studio.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <!-- Search -->
             <div class="lg:col-span-2 relative">
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="Search by title, product name or SKU..."
+                       placeholder="Search by title, product or SKU..."
                        class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 shadow-2xs">
                 <svg class="size-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
+            </div>
+
+            <!-- Video Type Filter -->
+            <div>
+                <select name="video_type" onchange="this.form.submit()"
+                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-amber-600 shadow-2xs">
+                    <option value="all">All Modes</option>
+                    <option value="slideshow" {{ request('video_type') === 'slideshow' ? 'selected' : '' }}>FFmpeg Slideshow</option>
+                    <option value="ai_fashion" {{ request('video_type') === 'ai_fashion' ? 'selected' : '' }}>AI Fashion Shoot</option>
+                    <option value="ai_fashion_branded" {{ request('video_type') === 'ai_fashion_branded' ? 'selected' : '' }}>AI Shoot + Branded</option>
+                </select>
+            </div>
+
+            <!-- Approval Status Filter -->
+            <div>
+                <select name="approval_status" onchange="this.form.submit()"
+                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-amber-600 shadow-2xs">
+                    <option value="all">All Approvals</option>
+                    <option value="pending_review" {{ request('approval_status') === 'pending_review' ? 'selected' : '' }}>Ready for Review</option>
+                    <option value="approved" {{ request('approval_status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ request('approval_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="not_required" {{ request('approval_status') === 'not_required' ? 'selected' : '' }}>Not Required</option>
+                </select>
             </div>
 
             <!-- Status Filter -->
@@ -199,19 +222,6 @@
                 </select>
             </div>
 
-            <!-- Aspect Ratio Filter -->
-            <div>
-                <select name="aspect_ratio" onchange="this.form.submit()"
-                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-amber-600 shadow-2xs">
-                    <option value="all">All Formats</option>
-                    @foreach($aspectRatios as $key => $preset)
-                        <option value="{{ $key }}" {{ request('aspect_ratio') === $key ? 'selected' : '' }}>
-                            {{ $preset['badge'] }} ({{ $preset['label'] }})
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             <!-- Actions / Reset -->
             <div class="flex items-center gap-2">
                 <button type="submit"
@@ -219,7 +229,7 @@
                         class="flex-1 px-4 py-2 text-xs font-bold rounded-lg shadow-xs hover:opacity-90 transition-opacity">
                     Filter
                 </button>
-                @if(request()->hasAny(['search', 'status', 'aspect_ratio', 'template', 'video_type']))
+                @if(request()->hasAny(['search', 'status', 'approval_status', 'aspect_ratio', 'template', 'video_type']))
                 <a href="{{ route('admin.video-studio.index') }}"
                    class="px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors">
                     Reset
@@ -281,9 +291,9 @@
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/40"></div>
 
                 <!-- Top Badges -->
-                <div class="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-10">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-black/70 text-amber-300 border border-amber-500/30 backdrop-blur-sm">
-                        {{ $video->aspect_ratio_label }}
+                <div class="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-10 flex-wrap">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm {{ $video->video_type_badge['class'] }}">
+                        {{ $video->video_type_badge['text'] }}
                     </span>
 
                     <span class="video-status-badge text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-sm flex items-center gap-1.5 {{ $video->status_badge['class'] }}">
@@ -307,7 +317,7 @@
                 <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/70 backdrop-blur-xs">
                     <div class="size-10 rounded-full border-2 border-amber-500/30 border-t-amber-500 animate-spin"></div>
                     <span class="text-xs text-amber-300 font-semibold mt-3">Rendering Video...</span>
-                    <span class="text-[10px] text-slate-400 mt-0.5">FFmpeg Engine</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">{{ $video->isAi() ? 'Google Veo AI Engine' : 'FFmpeg Engine' }}</span>
                 </div>
                 @elseif($video->isFailed())
                 <div class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 p-4 text-center">
@@ -322,13 +332,20 @@
                 @endif
 
                 <!-- Duration Bottom Badge -->
-                <div class="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1.5 text-[11px] text-slate-200">
-                    <span class="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-300 font-mono text-[10px]">
-                        {{ $video->formatted_duration }}
+                <div class="absolute bottom-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between text-[11px] text-slate-200">
+                    <div class="flex items-center gap-1.5">
+                        <span class="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-300 font-mono text-[10px]">
+                            {{ $video->formatted_duration }}
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-400 text-[10px]">
+                            {{ $video->formatted_file_size }}
+                        </span>
+                    </div>
+                    @if($video->isAi())
+                    <span class="px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/30 text-[10px] font-mono">
+                        ~${{ number_format($video->actual_cost ?: $video->estimated_cost ?: 0.15, 2) }}
                     </span>
-                    <span class="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-400 text-[10px]">
-                        {{ $video->formatted_file_size }}
-                    </span>
+                    @endif
                 </div>
             </div>
 
@@ -349,10 +366,15 @@
                     <div class="text-[11px] text-slate-500 mt-1">Standalone Promotional Video</div>
                     @endif
 
-                    <div class="flex items-center gap-2 mt-2">
+                    <div class="flex items-center gap-1.5 mt-2 flex-wrap">
                         <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-700 border border-slate-200">
                             {{ $video->template_label }}
                         </span>
+                        @if($video->isAi())
+                        <span class="text-[10px] px-2 py-0.5 rounded font-bold {{ $video->approval_badge['class'] }}">
+                            {{ $video->approval_badge['text'] }}
+                        </span>
+                        @endif
                         <span class="text-[10px] text-slate-500 font-medium">
                             {{ $video->created_at->diffForHumans() }}
                         </span>
@@ -362,11 +384,22 @@
                 <!-- Action Toolbar -->
                 <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div class="flex items-center gap-1.5">
+                        @if($video->isCompleted() && $video->isAi())
+                        <a href="{{ route('admin.video-studio.review', $video) }}"
+                           style="background-color: #580000 !important; color: #ffffff !important;"
+                           class="px-2.5 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1">
+                            <svg class="size-3.5 text-amber-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                            </svg>
+                            <span>QC Review</span>
+                        </a>
+                        @endif
+
                         @if($video->isCompleted() && $video->video_url)
                         <button type="button"
                                 @click="openPreview('{{ $video->video_url }}', '{{ addslashes($video->title) }}', '{{ $video->aspect_ratio }}')"
                                 style="background-color: #0f172a !important; color: #ffffff !important;"
-                                class="px-3 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1">
+                                class="px-2.5 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1">
                             <svg class="size-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>

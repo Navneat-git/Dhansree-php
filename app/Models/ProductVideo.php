@@ -22,15 +22,23 @@ class ProductVideo extends Model
         'progress' => 'integer',
         'selected_image_ids' => 'array',
         'render_settings' => 'array',
+        'quality_checklist' => 'array',
         'file_size_bytes' => 'integer',
+        'estimated_cost' => 'float',
+        'actual_cost' => 'float',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     protected $appends = [
         'video_url',
         'thumbnail_url',
+        'master_video_url',
         'status_badge',
+        'approval_badge',
+        'video_type_badge',
         'aspect_ratio_label',
         'template_label',
         'formatted_duration',
@@ -47,6 +55,16 @@ class ProductVideo extends Model
         return $this->belongsTo(AdminUser::class, 'created_by', 'id');
     }
 
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(AdminUser::class, 'reviewed_by', 'id');
+    }
+
+    public function primaryImage(): BelongsTo
+    {
+        return $this->belongsTo(ProductImage::class, 'primary_image_id', 'id');
+    }
+
     public function scopeCompleted(Builder $query): Builder
     {
         return $query->where('status', 'completed');
@@ -60,6 +78,41 @@ class ProductVideo extends Model
     public function scopeFailed(Builder $query): Builder
     {
         return $query->where('status', 'failed');
+    }
+
+    public function scopePendingApproval(Builder $query): Builder
+    {
+        return $query->where('approval_status', 'pending_review');
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
+    public function scopeAiVideos(Builder $query): Builder
+    {
+        return $query->whereIn('video_type', ['ai_fashion', 'ai_fashion_branded', 'ai_motion']);
+    }
+
+    public function isAi(): bool
+    {
+        return in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion'], true);
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->approval_status === 'pending_review';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->approval_status === 'rejected';
     }
 
     public function isCompleted(): bool
@@ -92,6 +145,20 @@ class ProductVideo extends Model
         return url('/storage/' . ltrim($this->video_path, '/'));
     }
 
+    public function getMasterVideoUrlAttribute(): ?string
+    {
+        if (!$this->ai_master_video_path) {
+            return null;
+        }
+
+        $disk = config('video_studio.disk', 'public');
+        if (Storage::disk($disk)->exists($this->ai_master_video_path)) {
+            return Storage::disk($disk)->url($this->ai_master_video_path);
+        }
+
+        return url('/storage/' . ltrim($this->ai_master_video_path, '/'));
+    }
+
     public function getThumbnailUrlAttribute(): ?string
     {
         if (!$this->thumbnail_path) {
@@ -104,6 +171,53 @@ class ProductVideo extends Model
         }
 
         return url('/storage/' . ltrim($this->thumbnail_path, '/'));
+    }
+
+    public function getApprovalBadgeAttribute(): array
+    {
+        return match ($this->approval_status) {
+            'approved' => [
+                'text' => 'Approved',
+                'class' => 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                'dot' => 'bg-emerald-400',
+            ],
+            'pending_review' => [
+                'text' => 'Ready for Review',
+                'class' => 'bg-amber-500/10 text-amber-300 border border-amber-500/30 font-medium',
+                'dot' => 'bg-amber-400',
+            ],
+            'rejected' => [
+                'text' => 'Rejected',
+                'class' => 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+                'dot' => 'bg-rose-400',
+            ],
+            default => [
+                'text' => 'Not Required',
+                'class' => 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
+                'dot' => 'bg-slate-400',
+            ],
+        };
+    }
+
+    public function getVideoTypeBadgeAttribute(): array
+    {
+        return match ($this->video_type) {
+            'ai_fashion' => [
+                'text' => 'AI Fashion Shoot',
+                'class' => 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
+                'icon' => 'sparkles',
+            ],
+            'ai_fashion_branded' => [
+                'text' => 'AI Shoot + Branded',
+                'class' => 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30',
+                'icon' => 'sparkles-badge',
+            ],
+            default => [
+                'text' => 'FFmpeg Slideshow',
+                'class' => 'bg-slate-500/15 text-slate-300 border border-slate-500/30',
+                'icon' => 'film',
+            ],
+        };
     }
 
     public function getStatusBadgeAttribute(): array

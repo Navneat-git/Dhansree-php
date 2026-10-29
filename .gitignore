@@ -27,4 +27,5 @@ Thumbs.db
 # rather than committed.
 /bin/tailwindcss
 /public/media/products
+/public/media/test-studio
 /public/feeds/*.csv

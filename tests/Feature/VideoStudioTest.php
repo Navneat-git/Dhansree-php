@@ -86,6 +86,8 @@ class VideoStudioTest extends TestCase
             imagedestroy($im2);
         }
 
+        ProductImage::whereIn('storage_key', ['test-studio/slide_a.png', 'test-studio/slide_b.png'])->delete();
+
         $this->image1 = ProductImage::create([
             'product_id' => $this->product->id,
             'storage_key' => 'test-studio/slide_a.png',

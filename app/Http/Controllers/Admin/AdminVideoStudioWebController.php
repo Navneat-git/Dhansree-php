@@ -10,7 +10,9 @@ use App\Models\AdminUser;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVideo;
+use App\Services\VideoStudio\FashionVideoPromptService;
 use App\Services\VideoStudio\FfmpegService;
+use App\Services\VideoStudio\GoogleVideoGenerationService;
 use App\Services\VideoStudio\VideoStudioService;
 use App\Support\Rbac\Permissions;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +32,9 @@ class AdminVideoStudioWebController extends Controller
 {
     public function __construct(
         protected VideoStudioService $videoStudioService,
-        protected FfmpegService $ffmpegService
+        protected FfmpegService $ffmpegService,
+        protected GoogleVideoGenerationService $googleVideoService,
+        protected FashionVideoPromptService $promptService
     ) {}
 
     /**
@@ -44,7 +48,7 @@ class AdminVideoStudioWebController extends Controller
 
         try {
             if ($tableExists) {
-                $query = ProductVideo::with(['product', 'creator'])->latest();
+                $query = ProductVideo::with(['product', 'creator', 'reviewer'])->latest();
 
                 // Search filter (Product name, SKU, or Video title)
                 if ($search = trim((string) $request->input('search'))) {
@@ -62,6 +66,13 @@ class AdminVideoStudioWebController extends Controller
                 if ($status = $request->input('status')) {
                     if ($status !== 'all') {
                         $query->where('status', $status);
+                    }
+                }
+
+                // Approval Status filter (Ready for Review, Approved, Rejected)
+                if ($approval = $request->input('approval_status')) {
+                    if ($approval !== 'all') {
+                        $query->where('approval_status', $approval);
                     }
                 }
 
@@ -93,6 +104,8 @@ class AdminVideoStudioWebController extends Controller
                     'completed' => ProductVideo::where('status', 'completed')->count(),
                     'processing' => ProductVideo::whereIn('status', ['queued', 'processing'])->count(),
                     'failed' => ProductVideo::where('status', 'failed')->count(),
+                    'pending_review' => ProductVideo::where('approval_status', 'pending_review')->count(),
+                    'approved' => ProductVideo::where('approval_status', 'approved')->count(),
                 ];
             } else {
                 $videos = new LengthAwarePaginator([], 0, 12);
@@ -101,6 +114,8 @@ class AdminVideoStudioWebController extends Controller
                     'completed' => 0,
                     'processing' => 0,
                     'failed' => 0,
+                    'pending_review' => 0,
+                    'approved' => 0,
                 ];
             }
         } catch (\Throwable $e) {
@@ -111,6 +126,8 @@ class AdminVideoStudioWebController extends Controller
                 'completed' => 0,
                 'processing' => 0,
                 'failed' => 0,
+                'pending_review' => 0,
+                'approved' => 0,
             ];
             $tableExists = false;
         }
@@ -132,6 +149,7 @@ class AdminVideoStudioWebController extends Controller
             'videos' => $videos,
             'stats' => $stats,
             'ffmpegStatus' => $ffmpegStatus,
+            'googleVideoConfigured' => $this->googleVideoService->isConfigured(),
             'templates' => config('video_studio.templates', []),
             'aspectRatios' => config('video_studio.aspect_ratios', []),
             'tableMissing' => !$tableExists,
@@ -192,6 +210,38 @@ class AdminVideoStudioWebController extends Controller
             'audioTracks' => config('video_studio.audio_tracks', []),
             'aiMotionEnabled' => config('video_studio.ai_motion.enabled', false),
             'ffmpegAvailable' => $this->ffmpegService->isAvailable(),
+            'fashionStyles' => $this->promptService->getFashionStyles(),
+            'googleVideoConfigured' => $this->googleVideoService->isConfigured(),
+            'googleVideoModel' => config('video_studio.google_video.model', 'veo-2.0-generate-001'),
+            'estimatedCostPerClip' => (float) config('video_studio.google_video.estimated_cost_per_clip', 0.15),
+            'defaultNegativePrompt' => $this->promptService->getNegativePrompt(),
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to preview generated prompt based on product and fashion style.
+     */
+    public function previewPrompt(Request $request): JsonResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        $productId = $request->input('product_id');
+        $product = $productId ? Product::with('category')->find($productId) : null;
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Please select a valid product first.'], 404);
+        }
+
+        $style = (string) $request->input('style', 'runway_walk');
+        $customNotes = $request->input('custom_notes');
+
+        $prompt = $this->promptService->buildPrompt($product, $style, $customNotes);
+        $negativePrompt = $this->promptService->getNegativePrompt();
+
+        return response()->json([
+            'success' => true,
+            'prompt' => $prompt,
+            'negative_prompt' => $negativePrompt,
+            'style' => $style,
         ]);
     }
 
@@ -276,12 +326,16 @@ class AdminVideoStudioWebController extends Controller
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'title' => 'nullable|string|max:150',
-                'video_type' => 'required|in:slideshow,ai_motion',
+                'video_type' => 'required|in:slideshow,ai_fashion,ai_fashion_branded,ai_motion',
                 'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
                 'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
                 'duration_seconds' => 'required|integer|min:5|max:30',
                 'image_ids' => 'required|array|min:1',
                 'image_ids.*' => 'integer|exists:product_images,id',
+                'primary_image_id' => 'nullable|integer|exists:product_images,id',
+                'prompt_template' => 'nullable|string',
+                'prompt' => 'nullable|string|max:2000',
+                'negative_prompt' => 'nullable|string|max:1000',
                 'enable_music' => 'nullable|boolean',
                 'audio_track' => 'nullable|string',
                 'text_overlay' => 'nullable|boolean',
@@ -304,7 +358,7 @@ class AdminVideoStudioWebController extends Controller
             throw $e;
         }
 
-        // Guard AI fashion motion if disabled
+        // Guard legacy/placeholder AI motion when disabled
         if ($validated['video_type'] === 'ai_motion' && !config('video_studio.ai_motion.enabled', false)) {
             $msg = 'AI Fashion Motion is disabled. Please select the FFmpeg Product Slideshow option or configure an AI video provider in settings.';
             if ($request->wantsJson() || $request->ajax()) {
@@ -313,13 +367,26 @@ class AdminVideoStudioWebController extends Controller
             return back()->withInput()->with('error', $msg);
         }
 
+        // Guard Google AI fashion video modes if disabled or quota reached
+        if (in_array($validated['video_type'], ['ai_fashion', 'ai_fashion_branded'], true)) {
+            $limits = $this->googleVideoService->checkLimits();
+            if (!$limits['allowed']) {
+                $msg = $limits['reason'] ?? 'AI Fashion Video generation is currently disabled or quota exceeded.';
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->with('error', $msg);
+            }
+        }
+
         /** @var AdminUser|null $admin */
         $admin = Auth::guard('admin')->user();
 
         try {
             $video = $this->videoStudioService->createVideo($validated, $admin);
 
-            session()->flash('success', "Video generation queued for '{$video->title}'. Processing has started in background.");
+            $label = $video->isAi() ? 'AI Fashion Shoot' : 'Slideshow';
+            session()->flash('success', "Video generation queued for '{$video->title}' ({$label}). Processing has started in background.");
 
             if ($request->wantsJson() || $request->ajax()) {
                 $video->refresh();
@@ -400,6 +467,76 @@ class AdminVideoStudioWebController extends Controller
         return response()->download($absolutePath, $downloadName, [
             'Content-Type' => 'video/mp4',
         ]);
+    }
+
+    /**
+     * Quality Control Review screen for AI-generated fashion videos.
+     */
+    public function review(ProductVideo $video): View
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        $video->load(['product.images', 'creator', 'reviewer', 'primaryImage']);
+
+        return view('admin.video-studio.review', [
+            'video' => $video,
+            'product' => $video->product,
+            'images' => $video->product?->images ?? collect(),
+            'fashionStyles' => $this->promptService->getFashionStyles(),
+        ]);
+    }
+
+    /**
+     * Approve AI-generated fashion video for public store and advertising use.
+     */
+    public function approve(ProductVideo $video, Request $request): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_UPDATE, Permissions::PRODUCT_UPDATE);
+
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+
+        $checklist = $request->input('checklist', []);
+        $this->videoStudioService->approve($video, $admin, is_array($checklist) ? $checklist : []);
+
+        return redirect()->route('admin.video-studio.index')
+            ->with('success', "AI Fashion Video #{$video->id} ({$video->title}) approved successfully and approved for store & marketing use.");
+    }
+
+    /**
+     * Reject AI video with specific feedback.
+     */
+    public function reject(ProductVideo $video, Request $request): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_UPDATE, Permissions::PRODUCT_UPDATE);
+
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+
+        $reason = trim((string) $request->input('reason', 'Quality does not meet brand guidelines.'));
+        $checklist = $request->input('checklist', []);
+
+        $this->videoStudioService->reject($video, $admin, $reason, is_array($checklist) ? $checklist : []);
+
+        return redirect()->route('admin.video-studio.index')
+            ->with('warning', "AI Fashion Video #{$video->id} rejected. Reason: {$reason}");
+    }
+
+    /**
+     * Re-generate AI fashion video with updated prompt.
+     */
+    public function regenerate(ProductVideo $video, Request $request): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
+
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+
+        $prompt = $request->input('prompt');
+        $this->videoStudioService->regenerate($video, $admin, $prompt);
+
+        return redirect()->route('admin.video-studio.index')
+            ->with('success', "AI Fashion Video #{$video->id} has been re-queued for generation with updated prompt.");
     }
 
     /**

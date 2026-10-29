@@ -2,6 +2,7 @@
 
 namespace App\Services\VideoStudio;
 
+use App\Jobs\AiFashionVideoJob;
 use App\Jobs\RenderProductVideoJob;
 use App\Models\AdminUser;
 use App\Models\Product;
@@ -16,7 +17,9 @@ use Illuminate\Support\Str;
 class VideoStudioService
 {
     public function __construct(
-        protected FfmpegService $ffmpegService
+        protected FfmpegService $ffmpegService,
+        protected GoogleVideoGenerationService $googleVideoService,
+        protected FashionVideoPromptService $promptService
     ) {}
 
     /**
@@ -26,6 +29,17 @@ class VideoStudioService
     {
         $productId = $data['product_id'] ?? null;
         $product = $productId ? Product::find($productId) : null;
+
+        $videoType = $data['video_type'] ?? 'slideshow';
+        $isAiMode = in_array($videoType, ['ai_fashion', 'ai_fashion_branded', 'ai_motion'], true);
+
+        // Guard AI fashion video generation if limits reached or not configured
+        if ($isAiMode) {
+            $limits = $this->googleVideoService->checkLimits();
+            if (!$limits['allowed']) {
+                throw new \RuntimeException($limits['reason'] ?? 'AI Fashion Video generation is currently unavailable.');
+            }
+        }
 
         $aspectRatio = $data['aspect_ratio'] ?? '9:16';
         $aspectConfig = config("video_studio.aspect_ratios.{$aspectRatio}", [
@@ -45,6 +59,10 @@ class VideoStudioService
             $selectedImageIds = $product->images()->pluck('id')->all();
         }
 
+        $primaryImageId = !empty($data['primary_image_id'])
+            ? (int) $data['primary_image_id']
+            : ($selectedImageIds[0] ?? null);
+
         $renderSettings = [
             'enable_music' => (bool) ($data['enable_music'] ?? true),
             'audio_track' => $data['audio_track'] ?? 'festive_royal',
@@ -54,10 +72,22 @@ class VideoStudioService
             'custom_headline' => $data['custom_headline'] ?? null,
         ];
 
+        $promptTemplate = $data['prompt_template'] ?? 'runway_walk';
+        $prompt = !empty($data['prompt']) ? trim($data['prompt']) : null;
+        if ($isAiMode && empty($prompt) && $product) {
+            $prompt = $this->promptService->buildPrompt($product, $promptTemplate);
+        }
+
+        $negativePrompt = !empty($data['negative_prompt'])
+            ? trim($data['negative_prompt'])
+            : ($isAiMode ? $this->promptService->getNegativePrompt() : null);
+
+        $estimatedCost = $isAiMode ? (float) config('video_studio.google_video.estimated_cost_per_clip', 0.15) : null;
+
         $video = ProductVideo::create([
             'product_id' => $product?->id,
             'title' => $title,
-            'video_type' => $data['video_type'] ?? 'slideshow',
+            'video_type' => $videoType,
             'template' => $template,
             'aspect_ratio' => $aspectRatio,
             'width' => $aspectConfig['width'] ?? 1080,
@@ -66,12 +96,22 @@ class VideoStudioService
             'status' => 'queued',
             'progress' => 0,
             'selected_image_ids' => array_values($selectedImageIds),
+            'primary_image_id' => $primaryImageId,
             'render_settings' => $renderSettings,
+            'prompt' => $prompt,
+            'negative_prompt' => $negativePrompt,
+            'prompt_template' => $promptTemplate,
+            'estimated_cost' => $estimatedCost,
+            'approval_status' => $isAiMode ? 'pending_review' : 'not_required',
             'created_by' => $admin?->id,
         ]);
 
-        // Dispatch background rendering job
-        RenderProductVideoJob::dispatch($video->id);
+        // Dispatch appropriate background job
+        if ($isAiMode) {
+            AiFashionVideoJob::dispatch($video->id);
+        } else {
+            RenderProductVideoJob::dispatch($video->id);
+        }
 
         return $video;
     }
@@ -165,7 +205,60 @@ class VideoStudioService
             'error_message' => null,
         ]);
 
-        RenderProductVideoJob::dispatch($video->id);
+        if ($video->isAi()) {
+            AiFashionVideoJob::dispatch($video->id);
+        } else {
+            RenderProductVideoJob::dispatch($video->id);
+        }
+
+        return true;
+    }
+
+    /**
+     * Approve AI video following manual quality control review.
+     */
+    public function approve(ProductVideo $video, AdminUser $admin, ?array $checklist = null): bool
+    {
+        return $video->update([
+            'approval_status' => 'approved',
+            'reviewed_at' => now(),
+            'reviewed_by' => $admin->id,
+            'quality_checklist' => $checklist,
+            'rejection_reason' => null,
+        ]);
+    }
+
+    /**
+     * Reject AI video with specific feedback.
+     */
+    public function reject(ProductVideo $video, AdminUser $admin, string $reason, ?array $checklist = null): bool
+    {
+        return $video->update([
+            'approval_status' => 'rejected',
+            'reviewed_at' => now(),
+            'reviewed_by' => $admin->id,
+            'rejection_reason' => $reason,
+            'quality_checklist' => $checklist,
+        ]);
+    }
+
+    /**
+     * Re-generate an AI fashion video with updated prompt or settings.
+     */
+    public function regenerate(ProductVideo $video, AdminUser $admin, ?string $updatedPrompt = null): bool
+    {
+        $video->update([
+            'status' => 'queued',
+            'progress' => 0,
+            'approval_status' => 'pending_review',
+            'prompt' => $updatedPrompt ?: $video->prompt,
+            'error_message' => null,
+            'rejection_reason' => null,
+            'reviewed_at' => null,
+            'reviewed_by' => null,
+        ]);
+
+        AiFashionVideoJob::dispatch($video->id);
         return true;
     }
 
@@ -179,6 +272,11 @@ class VideoStudioService
         // Delete rendered video file from storage
         if ($video->video_path && Storage::disk($disk)->exists($video->video_path)) {
             Storage::disk($disk)->delete($video->video_path);
+        }
+
+        // Delete raw AI master video if exists
+        if ($video->ai_master_video_path && Storage::disk($disk)->exists($video->ai_master_video_path)) {
+            Storage::disk($disk)->delete($video->ai_master_video_path);
         }
 
         // Delete rendered thumbnail file from storage

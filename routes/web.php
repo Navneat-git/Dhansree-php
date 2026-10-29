@@ -406,9 +406,14 @@ Route::prefix('admin')->group(function () {
             Route::get('/create', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'create'])->name('create');
             Route::get('/products/search', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'searchProducts'])->name('products.search');
             Route::get('/products/{product}/images', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'productImages'])->name('products.images');
+            Route::post('/preview-prompt', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'previewPrompt'])->name('preview-prompt');
             Route::post('/', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'store'])->name('store');
             Route::get('/{video}/status', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'status'])->name('status');
             Route::get('/{video}/download', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'download'])->name('download');
+            Route::get('/{video}/review', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'review'])->name('review');
+            Route::post('/{video}/approve', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'approve'])->name('approve');
+            Route::post('/{video}/reject', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'reject'])->name('reject');
+            Route::post('/{video}/regenerate', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'regenerate'])->name('regenerate');
             Route::post('/{video}/retry', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'retry'])->name('retry');
             Route::delete('/{video}', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'destroy'])->name('destroy');
             Route::post('/migrate-db', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'migrateDb'])->name('migrate-db');

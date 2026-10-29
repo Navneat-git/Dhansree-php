@@ -168,9 +168,79 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Extensible AI Fashion Motion Provider
+    | Google AI Fashion Video Generation (Veo / Gemini API)
     |--------------------------------------------------------------------------
-    | Disabled by default until a provider (Runway, Kling, Luma, etc.) is configured.
+    | Realistic AI fashion model video generation where a model wears and showcases
+    | the exact catalog suit from product reference images.
+    */
+    'google_video' => [
+        'enabled' => (bool) env('GOOGLE_VIDEO_ENABLED', false),
+        'api_key' => env('GOOGLE_VIDEO_API_KEY', ''),
+        'model' => env('GOOGLE_VIDEO_MODEL', 'veo-2.0-generate-001'),
+        'base_url' => env('GOOGLE_VIDEO_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+        'mock' => (bool) env('GOOGLE_VIDEO_MOCK', false),
+        'estimated_cost_per_clip' => 0.15,
+        'daily_limit' => (int) env('GOOGLE_VIDEO_DAILY_LIMIT', 10),
+        'max_concurrent' => (int) env('GOOGLE_VIDEO_MAX_CONCURRENT', 2),
+        'poll_interval_seconds' => (int) env('GOOGLE_VIDEO_POLL_INTERVAL', 8),
+        'max_poll_seconds' => (int) env('GOOGLE_VIDEO_MAX_POLL', 400),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Fashion Shoot Predefined Styles
+    |--------------------------------------------------------------------------
+    | Tailored prompts for Indian ethnic wear (Anarkali, suits, dupattas, co-ords).
+    */
+    'fashion_styles' => [
+        'runway_walk' => [
+            'name' => 'Runway Walk',
+            'badge' => 'Cinematic Walk',
+            'description' => 'A model gracefully walking down a minimalist runway, highlighting fabric flow and drape.',
+            'camera' => 'Smooth frontal tracking shot, eye-level, gliding backwards as the model walks forward.',
+            'lighting' => 'Soft diffused runway lighting with gentle rim lights highlighting fabric textures.',
+        ],
+        'slow_motion_turn' => [
+            'name' => 'Slow-Motion 360 Turn',
+            'badge' => '360° Silhouette',
+            'description' => 'Cinematic 360-degree slow motion rotation capturing the complete silhouette, front, back, and fall of the dupatta.',
+            'camera' => 'Slow smooth orbital camera revolving 360 degrees around the model at waist level in 60fps slow motion.',
+            'lighting' => 'Sophisticated 3-point fashion studio lighting with warm fill and golden rim lights.',
+        ],
+        'fabric_flow' => [
+            'name' => 'Breeze & Fabric Flow',
+            'badge' => 'Flow & Movement',
+            'description' => 'Soft breeze catching the hem and dupatta of the suit, showing drape and movement of chiffon/georgette/silk.',
+            'camera' => 'Low-angle medium shot drifting gently upward, capturing the graceful cascade of the fabric.',
+            'lighting' => 'Airy daylight studio setting with warm sunbeams accentuating fabric translucency.',
+        ],
+        'editorial_studio' => [
+            'name' => 'Editorial Fashion Studio',
+            'badge' => 'Studio Editorial',
+            'description' => 'High-fashion studio shoot with professional warm lighting, soft shadows, magazine aesthetic.',
+            'camera' => 'Cinematic steadycam gliding around the model as she strikes poised, elegant fashion poses.',
+            'lighting' => 'Warm luxury editorial lighting, subtle gradient background, soft sculptural shadows.',
+        ],
+        'festive_celebration' => [
+            'name' => 'Festive Golden Hour',
+            'badge' => 'Festive Regal',
+            'description' => 'Warm golden lighting, festive courtyard setting with subtle bokeh, royal celebratory ambiance.',
+            'camera' => 'Fluid cinematic dolly shot capturing model in regal motion with soft golden bokeh in background.',
+            'lighting' => 'Golden hour natural sunlight with warm ambient fairy lights and regal palace architectural tones.',
+        ],
+        'close_up_motion' => [
+            'name' => 'Artisan Detail in Motion',
+            'badge' => 'Craft & Details',
+            'description' => 'Medium to close-up glide focusing on intricate neck embroidery, border lace, and dupatta texture.',
+            'camera' => 'Slow macro to medium camera glide starting from neckline embroidery, panning down to hem lace.',
+            'lighting' => 'High-CRI precision spotlighting bringing out threadwork, zari, sequins, and fabric weave in vivid detail.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Extensible AI Fashion Motion Provider (Legacy / Fallback alias)
+    |--------------------------------------------------------------------------
     */
     'ai_motion' => [
         'enabled' => (bool) env('VIDEO_STUDIO_AI_ENABLED', false),
