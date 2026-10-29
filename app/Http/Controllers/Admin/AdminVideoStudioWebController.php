@@ -266,36 +266,51 @@ class AdminVideoStudioWebController extends Controller
     /**
      * Store new video generation request.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
 
         $this->ensureTableExists();
 
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'title' => 'nullable|string|max:150',
-            'video_type' => 'required|in:slideshow,ai_motion',
-            'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
-            'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
-            'duration_seconds' => 'required|integer|min:5|max:30',
-            'image_ids' => 'required|array|min:1',
-            'image_ids.*' => 'integer|exists:product_images,id',
-            'enable_music' => 'nullable|boolean',
-            'audio_track' => 'nullable|string',
-            'text_overlay' => 'nullable|boolean',
-            'show_price' => 'nullable|boolean',
-            'call_to_action' => 'nullable|boolean',
-            'custom_headline' => 'nullable|string|max:60',
-        ], [
-            'product_id.required' => 'Please select a product.',
-            'image_ids.required' => 'Please select at least one product image for the video.',
-            'image_ids.min' => 'Please select at least one product image for the video.',
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'title' => 'nullable|string|max:150',
+                'video_type' => 'required|in:slideshow,ai_motion',
+                'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
+                'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
+                'duration_seconds' => 'required|integer|min:5|max:30',
+                'image_ids' => 'required|array|min:1',
+                'image_ids.*' => 'integer|exists:product_images,id',
+                'enable_music' => 'nullable|boolean',
+                'audio_track' => 'nullable|string',
+                'text_overlay' => 'nullable|boolean',
+                'show_price' => 'nullable|boolean',
+                'call_to_action' => 'nullable|boolean',
+                'custom_headline' => 'nullable|string|max:60',
+            ], [
+                'product_id.required' => 'Please select a product.',
+                'image_ids.required' => 'Please select at least one product image for the video.',
+                'image_ids.min' => 'Please select at least one product image for the video.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?: 'Validation failed.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        }
 
         // Guard AI fashion motion if disabled
         if ($validated['video_type'] === 'ai_motion' && !config('video_studio.ai_motion.enabled', false)) {
-            return back()->withInput()->with('error', 'AI Fashion Motion is disabled. Please select the FFmpeg Product Slideshow option or configure an AI video provider in settings.');
+            $msg = 'AI Fashion Motion is disabled. Please select the FFmpeg Product Slideshow option or configure an AI video provider in settings.';
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withInput()->with('error', $msg);
         }
 
         /** @var AdminUser|null $admin */
@@ -304,9 +319,37 @@ class AdminVideoStudioWebController extends Controller
         try {
             $video = $this->videoStudioService->createVideo($validated, $admin);
 
+            session()->flash('success', "Video generation queued for '{$video->title}'. Processing has started in background.");
+
+            if ($request->wantsJson() || $request->ajax()) {
+                $video->refresh();
+
+                return response()->json([
+                    'success' => true,
+                    'video' => [
+                        'id' => $video->id,
+                        'title' => $video->title,
+                        'status' => $video->status,
+                        'progress' => $video->progress,
+                        'is_completed' => $video->isCompleted(),
+                        'video_url' => $video->video_url,
+                    ],
+                    'redirect' => route('admin.video-studio.index'),
+                    'status_url' => route('admin.video-studio.status', $video->id),
+                    'message' => "Video generation queued for '{$video->title}'.",
+                ]);
+            }
+
             return redirect()->route('admin.video-studio.index')
                 ->with('success', "Video generation queued for '{$video->title}'. Processing has started in background.");
         } catch (\Throwable $e) {
+            Log::error('Video creation error: ' . $e->getMessage(), ['exception' => $e]);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create video request: ' . $e->getMessage(),
+                ], 500);
+            }
             return back()->withInput()->with('error', 'Failed to create video request: ' . $e->getMessage());
         }
     }

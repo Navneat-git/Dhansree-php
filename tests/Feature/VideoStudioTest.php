@@ -218,6 +218,35 @@ class VideoStudioTest extends TestCase
         ]);
     }
 
+    public function test_store_via_ajax_returns_json_with_redirect_and_status_url(): void
+    {
+        $data = [
+            'product_id' => $this->product->id,
+            'title' => 'Ajax Reel',
+            'video_type' => 'slideshow',
+            'template' => 'fashion_showcase',
+            'aspect_ratio' => '9:16',
+            'duration_seconds' => 10,
+            'image_ids' => [$this->image1->id],
+            'enable_music' => '1',
+            'audio_track' => 'festive_royal',
+            'text_overlay' => '1',
+            'show_price' => '1',
+            'call_to_action' => '1',
+        ];
+
+        $response = $this->adminRequest()
+            ->postJson(route('admin.video-studio.store'), $data);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'redirect' => route('admin.video-studio.index'),
+        ]);
+        $this->assertNotNull($response->json('status_url'));
+        $this->assertNotNull($response->json('video.id'));
+    }
+
     public function test_ai_motion_option_is_guarded_when_disabled(): void
     {
         $data = [

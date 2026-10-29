@@ -448,10 +448,11 @@
                         </div>
                     </div>
 
-                    <button type="submit"
+                    <button type="button"
+                            @click="handleFormSubmit($event)"
                             :disabled="!canSubmit() || isSubmitting"
                             style="background-color: #d97706 !important; color: #ffffff !important;"
-                            class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                            class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <template x-if="!isSubmitting">
                             <span class="flex items-center gap-2">
                                 <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
@@ -466,7 +467,7 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>Starting Video Rendering...</span>
+                                <span>Rendering Video with FFmpeg...</span>
                             </span>
                         </template>
                     </button>
@@ -476,13 +477,81 @@
             </div>
 
         </div>
+
+        <!-- Fullscreen Processing & Progress Modal -->
+        <div x-show="showProcessingModal"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm"
+             style="display: none;"
+             :style="showProcessingModal ? 'display: flex !important;' : 'display: none !important;'">
+            <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-amber-300 p-6 text-center overflow-hidden">
+                <!-- Subtle Gold Accent Header Bar -->
+                <div class="absolute top-0 inset-x-0 h-1.5" style="background: linear-gradient(90deg, #b45309, #f59e0b, #b45309);"></div>
+
+                <!-- Spinning Video Reel Icon -->
+                <div style="width: 64px; height: 64px; min-width: 64px; max-width: 64px; background: linear-gradient(135deg, #d97706 0%, #92400e 100%) !important;"
+                     class="w-16 h-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-lg mb-4">
+                    <svg style="width: 32px; height: 32px;" class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+
+                <h3 class="text-base font-bold text-slate-900">Rendering Video Studio Reel</h3>
+                <p class="text-xs text-slate-600 mt-1 max-w-xs mx-auto">
+                    FFmpeg is composing high-definition slides, Ken Burns motion, luxury branding, and audio.
+                </p>
+
+                <!-- Dynamic Animated Progress Bar -->
+                <div class="mt-5 space-y-1.5 text-left">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-slate-700" x-text="currentStepText">Processing...</span>
+                        <span class="font-mono font-bold text-amber-700" x-text="progressPercent + '%'"></span>
+                    </div>
+                    <div class="w-full h-3 rounded-full bg-slate-100 border border-slate-200 overflow-hidden relative">
+                        <div class="h-full rounded-full transition-all duration-300 ease-out"
+                             :style="'width: ' + progressPercent + '%; background: linear-gradient(90deg, #d97706, #f59e0b, #d97706);'">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
+                    <div class="flex items-center gap-2" :class="progressPercent >= 20 ? 'text-emerald-700 font-semibold' : 'text-slate-400'">
+                        <span class="w-4 text-center font-bold" x-text="progressPercent >= 20 ? '✓' : '○'"></span>
+                        <span>Loading authentic product images</span>
+                    </div>
+                    <div class="flex items-center gap-2" :class="progressPercent >= 50 ? 'text-emerald-700 font-semibold' : (progressPercent >= 20 ? 'text-amber-700 font-medium' : 'text-slate-400')">
+                        <span class="w-4 text-center font-bold" x-text="progressPercent >= 50 ? '✓' : (progressPercent >= 20 ? '➜' : '○')"></span>
+                        <span>Applying cinematic transitions &amp; motion</span>
+                    </div>
+                    <div class="flex items-center gap-2" :class="progressPercent >= 75 ? 'text-emerald-700 font-semibold' : (progressPercent >= 50 ? 'text-amber-700 font-medium' : 'text-slate-400')">
+                        <span class="w-4 text-center font-bold" x-text="progressPercent >= 75 ? '✓' : (progressPercent >= 50 ? '➜' : '○')"></span>
+                        <span>Overlaying Dhansree logo &amp; price badge</span>
+                    </div>
+                    <div class="flex items-center gap-2" :class="progressPercent >= 100 ? 'text-emerald-700 font-semibold' : (progressPercent >= 75 ? 'text-amber-700 font-medium' : 'text-slate-400')">
+                        <span class="w-4 text-center font-bold" x-text="progressPercent >= 100 ? '✓' : (progressPercent >= 75 ? '➜' : '○')"></span>
+                        <span>Synthesizing audio &amp; saving H.264 MP4</span>
+                    </div>
+                </div>
+
+                <!-- Warning note -->
+                <p class="text-[11px] text-amber-800 font-medium bg-amber-50 rounded-lg p-2.5 mt-5 border border-amber-200">
+                    ⏳ Processing takes just a few seconds. Please keep this window open while your video is rendered.
+                </p>
+            </div>
+        </div>
     </form>
 </div>
 
 <script>
 function videoStudioCreator() {
     return {
+        showProcessingModal: false,
         isSubmitting: false,
+        progressPercent: 0,
+        currentStepText: 'Initializing video generator...',
+        progressTimer: null,
+        statusPollTimer: null,
         videoType: 'slideshow',
         searchQuery: '',
         searchDropdownOpen: false,
@@ -611,13 +680,110 @@ function videoStudioCreator() {
         },
 
         handleFormSubmit(e) {
-            if (!this.canSubmit()) {
-                e.preventDefault();
-                alert('Please select a product and at least one image before generating.');
-                return false;
+            if (e) e.preventDefault();
+            if (this.isSubmitting) return;
+
+            if (!this.selectedProductId) {
+                alert('Please search and select a catalog product first.');
+                return;
             }
+            if (this.selectedImageIds.length === 0) {
+                alert('Please select at least one genuine product image for the video.');
+                return;
+            }
+
             this.isSubmitting = true;
-            return true;
+            this.showProcessingModal = true;
+            this.progressPercent = 15;
+            this.currentStepText = 'Preparing authentic product photos...';
+
+            const form = document.getElementById('create-video-form');
+            const formData = new FormData(form);
+
+            // Animate progress smoothly while server renders
+            this.progressTimer = setInterval(() => {
+                if (this.progressPercent < 85) {
+                    this.progressPercent += 5;
+                    if (this.progressPercent >= 25 && this.progressPercent < 50) {
+                        this.currentStepText = 'Composing video slides & transitions...';
+                    } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
+                        this.currentStepText = 'Overlaying Dhansree logo & price badge...';
+                    } else if (this.progressPercent >= 75) {
+                        this.currentStepText = 'Encoding H.264 video with FFmpeg...';
+                    }
+                }
+            }, 550);
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || ''
+                },
+                body: formData
+            })
+            .then(async res => {
+                const data = await res.json().catch(() => null);
+                if (!res.ok) {
+                    throw new Error(data?.message || 'Server error occurred during video rendering.');
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    if (data.video && data.video.is_completed) {
+                        this.finishRendering(data.redirect);
+                    } else if (data.status_url) {
+                        this.pollStatus(data.status_url, data.redirect);
+                    } else {
+                        this.finishRendering(data.redirect);
+                    }
+                } else {
+                    throw new Error(data.message || 'Video generation failed.');
+                }
+            })
+            .catch(err => {
+                clearInterval(this.progressTimer);
+                if (this.statusPollTimer) clearInterval(this.statusPollTimer);
+                this.isSubmitting = false;
+                this.showProcessingModal = false;
+                alert('Failed to generate video: ' + (err.message || 'Unknown error occurred.'));
+            });
+        },
+
+        finishRendering(redirectUrl) {
+            clearInterval(this.progressTimer);
+            if (this.statusPollTimer) clearInterval(this.statusPollTimer);
+            this.progressPercent = 100;
+            this.currentStepText = '✓ Video generated successfully! Redirecting...';
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 600);
+        },
+
+        pollStatus(statusUrl, redirectUrl) {
+            this.statusPollTimer = setInterval(() => {
+                fetch(statusUrl, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.progress) {
+                        this.progressPercent = Math.max(this.progressPercent, data.progress);
+                    }
+                    if (data.is_completed) {
+                        this.finishRendering(redirectUrl);
+                    } else if (data.is_failed) {
+                        clearInterval(this.statusPollTimer);
+                        clearInterval(this.progressTimer);
+                        this.isSubmitting = false;
+                        this.showProcessingModal = false;
+                        alert('Video rendering failed: ' + (data.error_message || 'FFmpeg failed to encode video.'));
+                    }
+                })
+                .catch(() => {});
+            }, 1200);
         },
 
         canSubmit() {
