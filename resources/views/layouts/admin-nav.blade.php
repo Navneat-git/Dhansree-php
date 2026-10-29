@@ -144,10 +144,10 @@
     </div>
     @endif
 
-    <!-- Growth Section -->
-    @if($isSuperAdmin || ($admin && ($admin->hasPermission('COUPON_VIEW') || $admin->hasPermission('BANNER_VIEW') || $admin->hasPermission('REVIEW_VIEW') || $admin->hasPermission('SEO_VIEW'))))
+    <!-- Growth & Marketing Section -->
+    @if($isSuperAdmin || ($admin && ($admin->hasPermission('COUPON_VIEW') || $admin->hasPermission('BANNER_VIEW') || $admin->hasPermission('PRODUCT_VIEW') || $admin->hasPermission('REVIEW_VIEW') || $admin->hasPermission('SEO_VIEW'))))
     <div>
-        <p class="px-3 text-[0.6875rem] font-semibold tracking-wider text-slate-400 uppercase mb-2">Growth</p>
+        <p class="px-3 text-[0.6875rem] font-semibold tracking-wider text-slate-400 uppercase mb-2">Growth &amp; Marketing</p>
         <div class="space-y-1">
             @if($isSuperAdmin || $admin->hasPermission('COUPON_VIEW'))
             <a href="{{ url('/admin/coupons') }}"
@@ -156,6 +156,17 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
                 </svg>
                 Coupons
+            </a>
+            @endif
+
+            @if($isSuperAdmin || $admin->hasPermission('BANNER_VIEW') || $admin->hasPermission('PRODUCT_VIEW'))
+            <a href="{{ url('/admin/video-studio') }}"
+               class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/video-studio*') ? 'bg-slate-800 text-white font-semibold border-l-2 border-amber-500' : 'text-slate-300 hover:bg-slate-900 hover:text-white' }}">
+                <svg class="size-4.5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <span>Video Studio</span>
+                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Reels &amp; Ads</span>
             </a>
             @endif
 

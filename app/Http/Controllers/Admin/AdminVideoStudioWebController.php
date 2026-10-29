@@ -1,0 +1,366 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Admin;
+
+use App\Enums\ProductStatus;
+use App\Http\Controllers\Controller;
+use App\Models\AdminUser;
+use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductVideo;
+use App\Services\VideoStudio\FfmpegService;
+use App\Services\VideoStudio\VideoStudioService;
+use App\Support\Rbac\Permissions;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+class AdminVideoStudioWebController extends Controller
+{
+    public function __construct(
+        protected VideoStudioService $videoStudioService,
+        protected FfmpegService $ffmpegService
+    ) {}
+
+    /**
+     * Video Studio Dashboard.
+     */
+    public function index(Request $request): View
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        $query = ProductVideo::with(['product', 'creator'])->latest();
+
+        // Search filter (Product name, SKU, or Video title)
+        if ($search = trim((string) $request->input('search'))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('product', function ($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%")
+                         ->orWhere('slug', 'like', "%{$search}%")
+                         ->orWhereHas('variants', fn($vq) => $vq->where('sku', 'like', "%{$search}%"));
+                  });
+            });
+        }
+
+        // Status filter
+        if ($status = $request->input('status')) {
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+        }
+
+        // Aspect ratio filter
+        if ($aspect = $request->input('aspect_ratio')) {
+            if ($aspect !== 'all') {
+                $query->where('aspect_ratio', $aspect);
+            }
+        }
+
+        // Template filter
+        if ($template = $request->input('template')) {
+            if ($template !== 'all') {
+                $query->where('template', $template);
+            }
+        }
+
+        // Video type filter
+        if ($type = $request->input('video_type')) {
+            if ($type !== 'all') {
+                $query->where('video_type', $type);
+            }
+        }
+
+        $videos = $query->paginate(12)->withQueryString();
+
+        // Dashboard Stats
+        $stats = [
+            'total' => ProductVideo::count(),
+            'completed' => ProductVideo::where('status', 'completed')->count(),
+            'processing' => ProductVideo::whereIn('status', ['queued', 'processing'])->count(),
+            'failed' => ProductVideo::where('status', 'failed')->count(),
+        ];
+
+        $ffmpegStatus = [
+            'available' => $this->ffmpegService->isAvailable(),
+            'version' => $this->ffmpegService->getVersion(),
+        ];
+
+        return view('admin.video-studio.index', [
+            'videos' => $videos,
+            'stats' => $stats,
+            'ffmpegStatus' => $ffmpegStatus,
+            'templates' => config('video_studio.templates', []),
+            'aspectRatios' => config('video_studio.aspect_ratios', []),
+        ]);
+    }
+
+    /**
+     * Create Video Screen.
+     */
+    public function create(Request $request): View
+    {
+        $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
+
+        $selectedProduct = null;
+        $selectedProductData = null;
+        $availableImagesData = [];
+
+        if ($productId = $request->input('product_id')) {
+            $selectedProduct = Product::with(['images', 'category', 'variants'])->find($productId);
+            if ($selectedProduct) {
+                $imagesData = $selectedProduct->images->map(fn($i) => [
+                    'id' => $i->id,
+                    'url' => $i->url,
+                    'position' => $i->position,
+                ])->values()->all();
+
+                $selectedProductData = [
+                    'id' => $selectedProduct->id,
+                    'name' => $selectedProduct->name,
+                    'sku' => $selectedProduct->sku,
+                    'price' => $selectedProduct->formatted_price,
+                    'primary_image' => $selectedProduct->primary_image_url,
+                    'images' => $imagesData,
+                ];
+
+                $availableImagesData = $imagesData;
+            }
+        }
+
+        // Recent products with images for quick selection
+        $recentProducts = Product::where('status', ProductStatus::ACTIVE)
+            ->has('images')
+            ->with(['images' => fn($q) => $q->orderBy('position')->limit(6)])
+            ->latest('id')
+            ->limit(20)
+            ->get();
+
+        return view('admin.video-studio.create', [
+            'selectedProduct' => $selectedProduct,
+            'selectedProductData' => $selectedProductData,
+            'availableImagesData' => $availableImagesData,
+            'recentProducts' => $recentProducts,
+            'templates' => config('video_studio.templates', []),
+            'aspectRatios' => config('video_studio.aspect_ratios', []),
+            'durations' => config('video_studio.durations', [5, 10, 15, 20]),
+            'audioTracks' => config('video_studio.audio_tracks', []),
+            'aiMotionEnabled' => config('video_studio.ai_motion.enabled', false),
+            'ffmpegAvailable' => $this->ffmpegService->isAvailable(),
+        ]);
+    }
+
+    /**
+     * AJAX endpoint to search active products with usable images.
+     */
+    public function searchProducts(Request $request): JsonResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        $query = trim((string) $request->input('q', ''));
+        if (strlen($query) < 2) {
+            return response()->json(['products' => []]);
+        }
+
+        $products = Product::where('status', ProductStatus::ACTIVE)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('slug', 'like', "%{$query}%")
+                  ->orWhereHas('variants', fn($vq) => $vq->where('sku', 'like', "%{$query}%"));
+            })
+            ->with(['images' => fn($q) => $q->orderBy('position')])
+            ->limit(15)
+            ->get()
+            ->map(function (Product $product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'price' => $product->formatted_price,
+                    'primary_image' => $product->primary_image_url,
+                    'image_count' => $product->images->count(),
+                    'images' => $product->images->map(fn($img) => [
+                        'id' => $img->id,
+                        'url' => $img->url,
+                        'position' => $img->position,
+                    ]),
+                ];
+            });
+
+        return response()->json(['products' => $products]);
+    }
+
+    /**
+     * AJAX endpoint to fetch genuine images of a product.
+     */
+    public function productImages(Product $product): JsonResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        $images = $product->images()
+            ->orderBy('position')
+            ->get()
+            ->map(fn($img) => [
+                'id' => $img->id,
+                'url' => $img->url,
+                'position' => $img->position,
+                'is_primary' => (int) $img->position === 0,
+            ]);
+
+        return response()->json([
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'price' => $product->formatted_price,
+            ],
+            'images' => $images,
+        ]);
+    }
+
+    /**
+     * Store new video generation request.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
+
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'title' => 'nullable|string|max:150',
+            'video_type' => 'required|in:slideshow,ai_motion',
+            'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
+            'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
+            'duration_seconds' => 'required|integer|min:5|max:30',
+            'image_ids' => 'required|array|min:1',
+            'image_ids.*' => 'integer|exists:product_images,id',
+            'enable_music' => 'nullable|boolean',
+            'audio_track' => 'nullable|string',
+            'text_overlay' => 'nullable|boolean',
+            'show_price' => 'nullable|boolean',
+            'call_to_action' => 'nullable|boolean',
+            'custom_headline' => 'nullable|string|max:60',
+        ], [
+            'product_id.required' => 'Please select a product.',
+            'image_ids.required' => 'Please select at least one product image for the video.',
+            'image_ids.min' => 'Please select at least one product image for the video.',
+        ]);
+
+        // Guard AI fashion motion if disabled
+        if ($validated['video_type'] === 'ai_motion' && !config('video_studio.ai_motion.enabled', false)) {
+            return back()->withInput()->with('error', 'AI Fashion Motion is disabled. Please select the FFmpeg Product Slideshow option or configure an AI video provider in settings.');
+        }
+
+        /** @var AdminUser|null $admin */
+        $admin = Auth::guard('admin')->user();
+
+        try {
+            $video = $this->videoStudioService->createVideo($validated, $admin);
+
+            return redirect()->route('admin.video-studio.index')
+                ->with('success', "Video generation queued for '{$video->title}'. Processing has started in background.");
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', 'Failed to create video request: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * AJAX endpoint to poll live status of a video rendering job.
+     */
+    public function status(ProductVideo $video): JsonResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        return response()->json([
+            'id' => $video->id,
+            'status' => $video->status,
+            'progress' => $video->progress,
+            'is_completed' => $video->isCompleted(),
+            'is_failed' => $video->isFailed(),
+            'is_processing' => $video->isProcessing(),
+            'video_url' => $video->video_url,
+            'thumbnail_url' => $video->thumbnail_url,
+            'file_size' => $video->formatted_file_size,
+            'error_message' => $video->error_message,
+            'badge' => $video->status_badge,
+        ]);
+    }
+
+    /**
+     * Download rendered MP4 video.
+     */
+    public function download(ProductVideo $video): BinaryFileResponse|RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
+
+        if (!$video->video_path) {
+            return back()->with('error', 'Video file is not available for download.');
+        }
+
+        $disk = config('video_studio.disk', 'public');
+        if (!Storage::disk($disk)->exists($video->video_path)) {
+            return back()->with('error', 'Video file not found on storage disk.');
+        }
+
+        $absolutePath = Storage::disk($disk)->path($video->video_path);
+        $cleanTitle = Str::slug($video->title ?: 'dhansree-product-video');
+        $aspect = str_replace(':', 'x', $video->aspect_ratio);
+        $downloadName = "Dhansree-{$cleanTitle}-{$aspect}.mp4";
+
+        return response()->download($absolutePath, $downloadName, [
+            'Content-Type' => 'video/mp4',
+        ]);
+    }
+
+    /**
+     * Retry failed video render.
+     */
+    public function retry(ProductVideo $video): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_UPDATE, Permissions::PRODUCT_UPDATE);
+
+        $this->videoStudioService->retry($video);
+
+        return back()->with('success', "Video #{$video->id} has been re-queued for rendering.");
+    }
+
+    /**
+     * Delete video record and rendered files without touching source product images.
+     */
+    public function destroy(ProductVideo $video): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_DELETE, Permissions::PRODUCT_DELETE);
+
+        $this->videoStudioService->delete($video);
+
+        return redirect()->route('admin.video-studio.index')
+            ->with('success', 'Video deleted successfully. Source product images remain intact.');
+    }
+
+    /**
+     * Helper to enforce RBAC permissions.
+     */
+    protected function authorizeAccess(string ...$permissions): void
+    {
+        /** @var AdminUser|null $admin */
+        $admin = Auth::guard('admin')->user();
+        if (!$admin) {
+            abort(401);
+        }
+
+        foreach ($permissions as $permission) {
+            if ($admin->hasPermission($permission)) {
+                return;
+            }
+        }
+
+        abort(403, 'You do not have permission to access Dhansree Video Studio.');
+    }
+}

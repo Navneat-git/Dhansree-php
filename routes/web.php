@@ -400,6 +400,19 @@ Route::prefix('admin')->group(function () {
             Route::post('/{id}/toggle', [\App\Http\Controllers\Admin\AdminInstagramWebController::class, 'toggle'])->name('toggle');
         });
 
+        // Dhansree Video Studio
+        Route::prefix('video-studio')->name('admin.video-studio.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'create'])->name('create');
+            Route::get('/products/search', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'searchProducts'])->name('products.search');
+            Route::get('/products/{product}/images', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'productImages'])->name('products.images');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'store'])->name('store');
+            Route::get('/{video}/status', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'status'])->name('status');
+            Route::get('/{video}/download', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'download'])->name('download');
+            Route::post('/{video}/retry', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'retry'])->name('retry');
+            Route::delete('/{video}', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'destroy'])->name('destroy');
+        });
+
 
         // Payments & Reconciliation
         Route::prefix('payments')->name('admin.payments.')->group(function () {

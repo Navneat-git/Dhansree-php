@@ -89,6 +89,11 @@ class Product extends Model
         return $this->hasOne(ProductImage::class, 'product_id', 'id')->where('position', 0);
     }
 
+    public function videos(): HasMany
+    {
+        return $this->hasMany(ProductVideo::class, 'product_id', 'id')->latest();
+    }
+
     public function bestSellerPins(): HasMany
     {
         return $this->hasMany(BestSellerPin::class, 'product_id', 'id');
@@ -147,6 +152,11 @@ class Product extends Model
     public function wishlistItems(): HasMany
     {
         return $this->hasMany(WishlistItem::class, 'product_id', 'id');
+    }
+
+    public function getSkuAttribute(): ?string
+    {
+        return $this->defaultVariant?->sku ?? $this->variants->first()?->sku;
     }
 
     public function getPrimaryImageUrlAttribute(): ?string
