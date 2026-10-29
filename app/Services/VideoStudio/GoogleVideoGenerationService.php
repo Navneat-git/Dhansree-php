@@ -281,6 +281,7 @@ class GoogleVideoGenerationService
             'model' => $model,
             'input' => $input,
             'response_format' => [
+                'type' => 'video',
                 'aspect_ratio' => $aspectRatio,
             ],
         ];
