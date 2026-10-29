@@ -517,24 +517,11 @@
 <!-- Instagram Reels & Styles Single-Row Slider -->
 @php
     $instagramBlock = $instagramBlock ?? null;
-    if ($instagramBlock === null) {
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('home_blocks')) {
-                $instagramBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::INSTAGRAM)->first();
-            }
-        } catch (\Throwable $e) {}
-    }
-
     $feedItems = $instagramFeed ?? collect();
+
     if ($feedItems->isEmpty()) {
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('instagram_posts')) {
-                if (\App\Models\InstagramPost::count() === 0) {
-                    \Illuminate\Support\Facades\Artisan::call('db:seed', [
-                        '--class' => 'Database\\Seeders\\InstagramFeedSeeder',
-                        '--force' => true,
-                    ]);
-                }
                 $feedItems = \App\Models\InstagramPost::visible()
                     ->with(['taggedProduct.defaultVariant'])
                     ->orderBy('position')
@@ -565,7 +552,9 @@
                 $item->setRelation('taggedProduct', $p);
                 return $item;
             });
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+            $feedItems = collect();
+        }
     }
 @endphp
 

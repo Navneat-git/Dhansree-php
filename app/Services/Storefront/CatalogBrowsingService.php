@@ -223,7 +223,7 @@ class CatalogBrowsingService
         $featuredBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::PRODUCT_RAIL)->first();
         $cardLimit = $featuredBlock?->rail_size ?: 16;
 
-        $featuredProducts = Product::with([
+        $featuredQuery = Product::with([
             'category',
             'variants.inventoryLevels',
             'variants.optionValues.option',
@@ -240,8 +240,9 @@ class CatalogBrowsingService
                     $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
                        ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
                 }
-            })
-            ->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC')
+            });
+
+        $featuredProducts = $this->applyRankingOrder($featuredQuery, true)
             ->take(max(24, (int) $cardLimit * 2))
             ->get();
 
@@ -373,14 +374,14 @@ class CatalogBrowsingService
             ->orderBy('position')
             ->get();
 
-        $featuredWomenProduct = Product::with(['primaryImage', 'images'])
+        $heroQuery = Product::with(['primaryImage', 'images'])
             ->where('status', ProductStatus::ACTIVE)
             ->whereHas('category', function (Builder $cq) {
                 $cq->whereIn('slug', self::WOMEN_FASHION_SLUGS)
                    ->orWhereHas('parent', fn(Builder $pq) => $pq->whereIn('slug', self::WOMEN_FASHION_SLUGS));
-            })
-            ->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC')
-            ->first();
+            });
+
+        $featuredWomenProduct = $this->applyRankingOrder($heroQuery, true)->first();
 
         $store = StoreSettings::current();
 
@@ -686,9 +687,9 @@ class CatalogBrowsingService
                     ->orderBy('price_paise', 'desc')
                     ->limit(1)
             ),
-            'newest' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC'),
-            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
-            default => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
+            'newest' => $this->applyRankingOrder($query, true),
+            'ranking' => $this->applyRankingOrder($query, false),
+            default => $this->applyRankingOrder($query, false),
         };
 
         $products = $query->paginate(16)->withQueryString();
@@ -921,9 +922,9 @@ class CatalogBrowsingService
                     ->orderBy('price_paise', 'desc')
                     ->limit(1)
             ),
-            'newest' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC'),
-            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
-            default => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
+            'newest' => $this->applyRankingOrder($query, true),
+            'ranking' => $this->applyRankingOrder($query, false),
+            default => $this->applyRankingOrder($query, false),
         };
 
         return $query->paginate(16)->withQueryString();
@@ -1138,5 +1139,34 @@ class CatalogBrowsingService
             ->where('is_visible', true)
             ->orderBy('position')
             ->get();
+    }
+
+    /**
+     * Apply ranking order safely with fallback and auto-migration check.
+     */
+    public function applyRankingOrder(Builder $query, bool $includePublishedAt = true): Builder
+    {
+        static $hasRanking = null;
+        if ($hasRanking === null) {
+            try {
+                $hasRanking = \Illuminate\Support\Facades\Schema::hasColumn('products', 'ranking');
+                if (!$hasRanking) {
+                    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                    $hasRanking = \Illuminate\Support\Facades\Schema::hasColumn('products', 'ranking');
+                }
+            } catch (\Throwable $e) {
+                $hasRanking = false;
+            }
+        }
+
+        if ($hasRanking) {
+            return $includePublishedAt
+                ? $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, published_at DESC, id DESC')
+                : $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC');
+        }
+
+        return $includePublishedAt
+            ? $query->orderByDesc('published_at')->orderByDesc('id')
+            : $query->orderByDesc('id');
     }
 }

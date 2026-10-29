@@ -86,7 +86,9 @@ class ProductService
         match ($sort) {
             'created' => $query->orderBy('created_at', 'desc')->orderBy('id', 'desc'),
             'name' => $query->orderBy('name', 'asc')->orderBy('id', 'asc'),
-            'ranking' => $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC'),
+            'ranking' => \Illuminate\Support\Facades\Schema::hasColumn('products', 'ranking')
+                ? $query->orderByRaw('CASE WHEN ranking IS NULL OR ranking = 0 THEN 1 ELSE 0 END, ranking ASC, id DESC')
+                : $query->orderBy('updated_at', 'desc')->orderBy('id', 'desc'),
             default => $query->orderBy('updated_at', 'desc')->orderBy('id', 'desc'),
         };
 
@@ -211,13 +213,12 @@ class ProductService
                 throw new InvalidArgumentException('MRP cannot be less than the selling price.');
             }
 
-            $product = Product::create([
+            $productData = [
                 'name' => $name,
                 'slug' => $slug,
                 'status' => ProductStatus::DRAFT,
                 'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
                 'brand' => !empty($data['brand']) ? trim($data['brand']) : null,
-                'ranking' => !empty($data['ranking']) ? (int) $data['ranking'] : null,
                 'short_description' => $data['short_description'] ?? null,
                 'description' => $data['description'] ?? null,
                 'hsn_code' => !empty($data['hsn_code']) ? trim($data['hsn_code']) : null,
@@ -225,7 +226,12 @@ class ProductService
                 'seo_title' => $data['seo_title'] ?? null,
                 'seo_description' => $data['seo_description'] ?? null,
                 'version' => 0,
-            ]);
+            ];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'ranking')) {
+                $productData['ranking'] = !empty($data['ranking']) ? (int) $data['ranking'] : null;
+            }
+
+            $product = Product::create($productData);
 
             // Release any redirects from this new path
             $this->redirectService->releaseRedirectSource('/product/' . $slug);
@@ -305,12 +311,11 @@ class ProductService
                 );
             }
 
-            $current->update([
+            $updateData = [
                 'name' => trim($data['name'] ?? $current->name),
                 'slug' => $newSlug,
                 'category_id' => array_key_exists('category_id', $data) ? ($data['category_id'] ? (int) $data['category_id'] : null) : $current->category_id,
                 'brand' => array_key_exists('brand', $data) ? ($data['brand'] ? trim($data['brand']) : null) : $current->brand,
-                'ranking' => array_key_exists('ranking', $data) ? ($data['ranking'] !== null && $data['ranking'] !== '' ? (int) $data['ranking'] : null) : $current->ranking,
                 'short_description' => array_key_exists('short_description', $data) ? $data['short_description'] : $current->short_description,
                 'description' => array_key_exists('description', $data) ? $data['description'] : $current->description,
                 'hsn_code' => array_key_exists('hsn_code', $data) ? ($data['hsn_code'] ? trim($data['hsn_code']) : null) : $current->hsn_code,
@@ -318,7 +323,12 @@ class ProductService
                 'seo_title' => array_key_exists('seo_title', $data) ? $data['seo_title'] : $current->seo_title,
                 'seo_description' => array_key_exists('seo_description', $data) ? $data['seo_description'] : $current->seo_description,
                 'version' => $current->version + 1,
-            ]);
+            ];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'ranking')) {
+                $updateData['ranking'] = array_key_exists('ranking', $data) ? ($data['ranking'] !== null && $data['ranking'] !== '' ? (int) $data['ranking'] : null) : $current->ranking;
+            }
+
+            $current->update($updateData);
 
             if ($adminUserId) {
                 AuditLogger::log(

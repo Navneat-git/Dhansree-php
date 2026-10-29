@@ -27,7 +27,29 @@ class StorefrontController extends Controller
      */
     public function home(): View
     {
-        $data = $this->catalogService->getWomenFashionHomeData();
+        try {
+            $data = $this->catalogService->getWomenFashionHomeData();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Storefront home page error: ' . $e->getMessage(), ['exception' => $e]);
+            try {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                $data = $this->catalogService->getWomenFashionHomeData();
+            } catch (\Throwable $e2) {
+                $store = \App\Models\StoreSettings::current();
+                $data = [
+                    'categories' => \App\Models\Category::whereNull('archived_at')->where('is_visible', true)->orderBy('position')->get(),
+                    'featuredProducts' => \App\Models\Product::with(['primaryImage', 'defaultVariant'])->where('status', \App\Enums\ProductStatus::ACTIVE)->take(16)->get(),
+                    'featuredBlock' => null,
+                    'smartLivingCategories' => collect(),
+                    'banners' => collect(),
+                    'store' => $store,
+                    'heroBlock' => null,
+                    'quickLinksData' => null,
+                    'instagramBlock' => null,
+                    'instagramFeed' => collect(),
+                ];
+            }
+        }
 
         return view('store.home', [
             'categories' => $data['categories'],
@@ -44,7 +66,6 @@ class StorefrontController extends Controller
             'seoTitle' => 'Dhansree Trends — Ethnic Elegance. Timeless You.',
             'seoDescription' => 'Explore premium handcrafted women kurties, suit sets, and elegant ethnic co-ords. Pure fabrics, exquisite embroidery, and fast shipping across India.',
         ]);
-
     }
 
     /**
