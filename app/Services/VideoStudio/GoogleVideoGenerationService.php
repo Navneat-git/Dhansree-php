@@ -133,24 +133,32 @@ class GoogleVideoGenerationService
             default => '9:16',
         };
 
-        $payload = [
-            'inputPrompt' => [
-                'prompt' => $prompt,
-                'image' => [
-                    'bytesBase64Encoded' => $imageBase64,
-                    'mimeType' => $imageMime,
-                ],
-            ],
-            'parameters' => [
-                'aspectRatio' => $apiAspectRatio,
-                'personGeneration' => 'ALLOW_ADULT',
-                'durationSeconds' => min(max($durationSeconds, 5), 10),
-            ],
+        $instance = [
+            'prompt' => $prompt,
+        ];
+
+        if (!empty($imageBase64)) {
+            $instance['image'] = [
+                'bytesBase64Encoded' => $imageBase64,
+                'mimeType' => $imageMime,
+            ];
+        }
+
+        $parameters = [
+            'aspectRatio' => $apiAspectRatio,
+            'sampleCount' => 1,
+            'durationSeconds' => (int) min(max($durationSeconds, 4), 8),
+            'personGeneration' => 'allow_adult',
         ];
 
         if (!empty($negativePrompt)) {
-            $payload['parameters']['negativePrompt'] = $negativePrompt;
+            $parameters['negativePrompt'] = $negativePrompt;
         }
+
+        $payload = [
+            'instances' => [$instance],
+            'parameters' => $parameters,
+        ];
 
         Log::info("Submitting AI Fashion video request to Google Veo [{$model}]...", [
             'aspect_ratio' => $apiAspectRatio,
@@ -247,12 +255,13 @@ class GoogleVideoGenerationService
                     ];
                 }
 
-                // Extract generated video
-                $videoData = $body['response']['generateVideoResponse']['generatedVideos'][0]['video'] ?? null;
-                if (!$videoData) {
-                    // Alternative structure check
-                    $videoData = $body['response']['videos'][0] ?? null;
-                }
+                // Extract generated video across all Google Veo response formats
+                $videoData = $body['response']['generateVideoResponse']['generatedVideos'][0]['video']
+                    ?? $body['response']['generatedVideos'][0]['video']
+                    ?? $body['response']['generatedVideos'][0]
+                    ?? $body['response']['videos'][0]
+                    ?? $body['response']['video']
+                    ?? null;
 
                 if (!$videoData) {
                     return [
@@ -266,10 +275,16 @@ class GoogleVideoGenerationService
                 $bytes = null;
                 $url = null;
 
-                if (!empty($videoData['bytesBase64Encoded'])) {
-                    $bytes = base64_decode($videoData['bytesBase64Encoded']);
-                } elseif (!empty($videoData['uri'])) {
-                    $url = $videoData['uri'];
+                if (is_string($videoData)) {
+                    $url = $videoData;
+                } elseif (is_array($videoData)) {
+                    if (!empty($videoData['bytesBase64Encoded'])) {
+                        $bytes = base64_decode($videoData['bytesBase64Encoded']);
+                    } elseif (!empty($videoData['uri'])) {
+                        $url = $videoData['uri'];
+                    } elseif (!empty($videoData['videoUri'])) {
+                        $url = $videoData['videoUri'];
+                    }
                 }
 
                 if ($onProgress) {
