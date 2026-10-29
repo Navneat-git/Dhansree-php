@@ -78,6 +78,103 @@ class GoogleVideoGenerationService
     }
 
     /**
+     * List all models and their supported generation methods from Google AI API.
+     *
+     * @return array<int, array{name: string, methods: array<string>, display_name: string}>
+     */
+    public function listAvailableModels(): array
+    {
+        $apiKey = config('video_studio.google_video.api_key');
+        if (empty($apiKey)) {
+            return [];
+        }
+
+        $baseUrl = rtrim((string) config('video_studio.google_video.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+
+        try {
+            $response = Http::withHeaders([
+                'x-goog-api-key' => $apiKey,
+            ])->timeout(12)->get("{$baseUrl}/models");
+
+            if (!$response->successful()) {
+                Log::warning('Failed to list Google models: ' . $response->body());
+                return [];
+            }
+
+            $models = $response->json('models') ?? [];
+            $result = [];
+
+            foreach ($models as $m) {
+                $rawName = $m['name'] ?? '';
+                $cleanName = preg_replace('#^models/#', '', $rawName);
+                $result[] = [
+                    'name' => $cleanName,
+                    'full_name' => $rawName,
+                    'display_name' => $m['displayName'] ?? $cleanName,
+                    'methods' => $m['supportedGenerationMethods'] ?? [],
+                    'description' => $m['description'] ?? '',
+                ];
+            }
+
+            return $result;
+        } catch (\Throwable $e) {
+            Log::warning('Error listing Google models: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Auto-resolve the best active video generation model available for the current API key.
+     *
+     * @return array{model: ?string, is_verified: bool, available_models: array}
+     */
+    public function resolveActiveModel(): array
+    {
+        $configured = config('video_studio.google_video.model', 'veo-3.1-generate-preview');
+        if ($configured === 'veo-2.0-generate-001') {
+            $configured = 'veo-3.1-generate-preview';
+        }
+
+        $available = $this->listAvailableModels();
+
+        if (empty($available)) {
+            return [
+                'model' => $configured ?: 'veo-3.1-generate-preview',
+                'is_verified' => false,
+                'available_models' => [],
+            ];
+        }
+
+        // 1. Check if configured model exists and supports predictLongRunning
+        foreach ($available as $m) {
+            if ($m['name'] === $configured && in_array('predictLongRunning', $m['methods'], true)) {
+                return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
+            }
+        }
+
+        // 2. Look for any active model that supports predictLongRunning
+        foreach ($available as $m) {
+            if (in_array('predictLongRunning', $m['methods'], true)) {
+                return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
+            }
+        }
+
+        // 3. Look for any active model containing veo / video
+        foreach ($available as $m) {
+            if (str_contains(strtolower($m['name']), 'veo') || str_contains(strtolower($m['name']), 'video')) {
+                return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
+            }
+        }
+
+        // 4. Default to veo-3.1-generate-preview
+        return [
+            'model' => 'veo-3.1-generate-preview',
+            'is_verified' => false,
+            'available_models' => $available,
+        ];
+    }
+
+    /**
      * Submit an asynchronous video generation request to Google Veo API.
      *
      * @param string $primaryImagePath Absolute path to the primary product reference image
@@ -120,8 +217,11 @@ class GoogleVideoGenerationService
         $imageBase64 = base64_encode($imageBytes);
 
         $apiKey = config('video_studio.google_video.api_key');
-        $model = config('video_studio.google_video.model', 'veo-2.0-generate-001');
         $baseUrl = rtrim((string) config('video_studio.google_video.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+
+        // Resolve active video generation model dynamically
+        $modelResolution = $this->resolveActiveModel();
+        $model = $modelResolution['model'] ?: 'veo-3.1-generate-preview';
 
         // Veo model predictLongRunning endpoint
         $endpoint = "{$baseUrl}/models/{$model}:predictLongRunning";
