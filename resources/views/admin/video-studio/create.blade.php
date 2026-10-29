@@ -420,13 +420,14 @@
 
                     <button type="submit"
                             :disabled="!canSubmit()"
-                            class="w-full py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all flex items-center justify-center gap-2">
-                        <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            style="background-color: #d97706 !important; color: #ffffff !important;"
+                            class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                        <svg class="size-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                         </svg>
-                        <span>Render Video Now</span>
+                        <span style="color: #ffffff !important;">Render Video Now</span>
                     </button>
-                    <p class="text-[10px] text-center text-slate-400">Processing runs safely in the background. Original product images are never altered.</p>
+                    <p class="text-[10px] text-center text-slate-500 font-medium">Processing runs safely in the background. Original product images are never altered.</p>
                 </div>
 
             </div>

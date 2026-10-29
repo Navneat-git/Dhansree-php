@@ -77,11 +77,15 @@ class FfmpegService
     {
         try {
             $process = new Process([$this->ffmpegPath, '-version']);
-            $process->setTimeout(5);
+            $process->setTimeout(2);
             $process->run();
             if ($process->isSuccessful()) {
-                $firstLine = explode("\n", trim($process->getOutput()))[0] ?? null;
-                return $firstLine;
+                $firstLine = explode("\n", trim($process->getOutput()))[0] ?? '';
+                if (preg_match('/ffmpeg version ([^\s]+)/i', $firstLine, $matches)) {
+                    $raw = explode('-', $matches[1])[0];
+                    return 'v' . $raw;
+                }
+                return $firstLine ? substr($firstLine, 0, 30) : null;
             }
         } catch (\Throwable $e) {
             // ignore

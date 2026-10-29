@@ -6,75 +6,83 @@
 @section('content')
 <div class="space-y-6" x-data="videoStudioDashboard()">
 
-    <!-- Page Header Block -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-2.5">
-                <span class="inline-flex items-center justify-center size-9 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white shadow-xs">
-                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+    <!-- Page Header Block with Contrast & Depth -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center size-12 rounded-xl text-white shadow-sm"
+                      style="background: linear-gradient(135deg, #580000 0%, #8b0000 50%, #b45309 100%) !important;">
+                    <svg class="size-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                     </svg>
                 </span>
-                <h1 class="text-xl font-bold text-slate-900">Dhansree Video Studio</h1>
-                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
-                    Reels &amp; Ads
-                </span>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-black text-slate-900 tracking-tight">Dhansree Video Studio</h1>
+                        <span class="rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 text-xs font-bold shadow-2xs">
+                            Reels &amp; Ads
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-0.5">
+                        Transform uploaded product photos into marketing videos for Instagram Reels, Facebook Ads, and Website listings.
+                    </p>
+                </div>
             </div>
-            <p class="text-xs text-slate-500 mt-1">
-                Turn your existing catalog product photos into promotional videos for Instagram Reels, Facebook Ads, and Website listings.
-            </p>
-        </div>
 
-        <div class="flex items-center gap-3">
-            <a href="{{ route('admin.video-studio.create') }}"
-               class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-rose-600 to-amber-600 text-white hover:from-rose-700 hover:to-amber-700 transition-all shadow-sm">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span>Create New Video</span>
-            </a>
+            <div class="flex items-center gap-3 shrink-0">
+                <a href="{{ route('admin.video-studio.create') }}"
+                   style="background-color: #d97706 !important; color: #ffffff !important;"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:opacity-90 transition-opacity">
+                    <svg class="size-4 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    <span style="color: #ffffff !important;">Create New Video</span>
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Flash Messages -->
     @if(session('success'))
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 text-xs flex items-center justify-between shadow-xs">
+    <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-900 text-xs flex items-center justify-between shadow-xs">
         <div class="flex items-center gap-2.5">
             <svg class="size-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
-            <span class="font-medium">{{ session('success') }}</span>
+            <span class="font-bold">{{ session('success') }}</span>
         </div>
     </div>
     @endif
 
     @if(session('error'))
-    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 text-xs flex items-center justify-between shadow-xs">
+    <div class="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 text-xs flex items-center justify-between shadow-xs">
         <div class="flex items-center gap-2.5">
             <svg class="size-5 shrink-0 text-rose-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
-            <span class="font-medium">{{ session('error') }}</span>
+            <span class="font-bold">{{ session('error') }}</span>
         </div>
     </div>
     @endif
 
     <!-- Database Migration Notice -->
     @if($tableMissing ?? false)
-    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-xs">
+    <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-xs">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-start gap-3">
                 <svg class="size-5 shrink-0 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" />
                 </svg>
                 <div class="text-xs leading-relaxed">
-                    <p class="font-bold text-amber-900">Database Table Pending Initialization</p>
-                    <p class="mt-0.5 text-amber-800">The <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900">product_videos</code> table needs to be set up before saving videos.</p>
+                    <p class="font-black text-amber-950">Database Table Pending Initialization</p>
+                    <p class="mt-0.5 text-amber-900">The <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono text-amber-900 font-bold">product_videos</code> table needs to be created before saving videos.</p>
                 </div>
             </div>
             <form method="POST" action="{{ route('admin.video-studio.migrate-db') }}">
                 @csrf
-                <button type="submit" class="shrink-0 px-4 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg shadow-xs transition-colors">
+                <button type="submit"
+                        style="background-color: #d97706 !important; color: #ffffff !important;"
+                        class="shrink-0 px-4 py-2 text-xs font-bold rounded-lg shadow-xs hover:opacity-90 transition-opacity">
                     Initialize Database Table
                 </button>
             </form>
@@ -84,84 +92,88 @@
 
     <!-- FFmpeg Engine Notice for AWS Lightsail -->
     @if(!$ffmpegStatus['available'])
-    <div class="rounded-xl border border-rose-200 bg-rose-50/80 p-5 shadow-xs">
-        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div class="flex items-start gap-3.5">
-                <div class="p-2 rounded-lg bg-rose-100 text-rose-700 shrink-0">
-                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                    </svg>
+    <div class="rounded-xl border border-rose-300 bg-rose-50 p-5 shadow-xs">
+        <div class="flex items-start gap-3.5">
+            <div class="p-2 rounded-lg bg-rose-100 text-rose-700 shrink-0">
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+            </div>
+            <div class="text-xs space-y-1.5 text-slate-800">
+                <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    FFmpeg Engine Not Detected
+                    <span class="text-[11px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">Required for Video Rendering</span>
+                </h3>
+                <p class="text-slate-700 leading-relaxed">
+                    To render videos on your <strong>AWS Lightsail</strong> instance, connect via SSH and run:
+                </p>
+                <div class="bg-slate-900 text-amber-300 font-mono text-xs px-3.5 py-2.5 rounded-lg flex items-center justify-between gap-3 my-2 border border-slate-800 shadow-inner">
+                    <code>sudo apt update &amp;&amp; sudo apt install -y ffmpeg</code>
                 </div>
-                <div class="text-xs space-y-1.5 text-slate-700">
-                    <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        FFmpeg Engine Not Detected
-                        <span class="text-[11px] font-normal text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">Required for Video Rendering</span>
-                    </h3>
-                    <p class="text-slate-600 leading-relaxed">
-                        To render videos directly on your <strong>AWS Lightsail</strong> server, connect to your instance via SSH and run this single command:
-                    </p>
-                    <div class="bg-slate-900 text-slate-100 font-mono text-[11px] px-3 py-2 rounded-lg flex items-center justify-between gap-3 my-2">
-                        <code>sudo apt update &amp;&amp; sudo apt install -y ffmpeg</code>
-                    </div>
-                    <p class="text-[11px] text-slate-500">
-                        Once installed, FFmpeg is automatically detected at <code class="bg-slate-100 text-slate-700 px-1 py-0.5 rounded font-mono">/usr/bin/ffmpeg</code>. No server reboot is required.
-                    </p>
-                </div>
+                <p class="text-[11px] text-slate-600">
+                    Once installed, FFmpeg is automatically recognized at <code class="bg-slate-200 text-slate-900 px-1.5 py-0.5 rounded font-mono font-bold">/usr/bin/ffmpeg</code>.
+                </p>
             </div>
         </div>
     </div>
     @else
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 shadow-xs flex items-center justify-between text-xs">
-        <div class="flex items-center gap-2 text-emerald-900 font-medium">
-            <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3.5 shadow-xs flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2.5 text-emerald-950 font-bold">
+            <span class="size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200 animate-pulse"></span>
             <span>FFmpeg Rendering Engine Active:</span>
-            <code class="font-mono text-emerald-800 text-[11px] bg-emerald-100 px-1.5 py-0.5 rounded">{{ $ffmpegStatus['version'] ?? 'Ready' }}</code>
+            <span class="font-mono text-emerald-950 text-xs bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded font-bold">
+                {{ $ffmpegStatus['version'] ?? 'Ready' }}
+            </span>
         </div>
-        <span class="text-[11px] text-emerald-700">Ready to render slideshow videos</span>
+        <span class="text-xs text-emerald-800 font-semibold hidden sm:inline">Engine ready to render HD slideshow videos</span>
     </div>
     @endif
 
-    <!-- Metric Stats Cards -->
+    <!-- Metric Stats Cards with Color-Coded Top Borders -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div class="flex items-center justify-between text-xs font-medium text-slate-500 uppercase tracking-wider">
+        <!-- Total Videos -->
+        <div class="rounded-xl border-t-4 border-t-slate-800 border border-slate-200 bg-white p-4 shadow-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-600 uppercase tracking-wider">
                 <span>Total Videos</span>
-                <span class="p-1 rounded bg-slate-100 text-slate-600 text-xs font-semibold">All</span>
+                <span class="p-1 px-2 rounded bg-slate-100 text-slate-700 text-[11px] font-bold">All</span>
             </div>
-            <p class="text-2xl font-bold text-slate-900 mt-2">{{ number_format($stats['total']) }}</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Generated marketing videos</p>
+            <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['total']) }}</p>
+            <p class="text-[11px] text-slate-500 font-medium mt-1">Generated promo assets</p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div class="flex items-center justify-between text-xs font-medium text-emerald-600 uppercase tracking-wider">
+        <!-- Completed -->
+        <div class="rounded-xl border-t-4 border-t-emerald-500 border border-slate-200 bg-white p-4 shadow-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-emerald-700 uppercase tracking-wider">
                 <span>Completed</span>
                 <span class="size-2 rounded-full bg-emerald-500"></span>
             </div>
-            <p class="text-2xl font-bold text-slate-900 mt-2">{{ number_format($stats['completed']) }}</p>
-            <p class="text-[11px] text-emerald-600 font-medium mt-0.5">Ready to download &amp; publish</p>
+            <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['completed']) }}</p>
+            <p class="text-[11px] text-emerald-700 font-semibold mt-1">Ready to download &amp; publish</p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div class="flex items-center justify-between text-xs font-medium text-blue-600 uppercase tracking-wider">
+        <!-- In Progress -->
+        <div class="rounded-xl border-t-4 border-t-blue-500 border border-slate-200 bg-white p-4 shadow-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-blue-700 uppercase tracking-wider">
                 <span>In Progress</span>
                 <span class="size-2 rounded-full bg-blue-500 animate-pulse"></span>
             </div>
-            <p class="text-2xl font-bold text-slate-900 mt-2">{{ number_format($stats['processing']) }}</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Queued or rendering</p>
+            <p class="text-3xl font-black text-slate-900 mt-2">{{ number_format($stats['processing']) }}</p>
+            <p class="text-[11px] text-slate-500 font-medium mt-1">Queued or rendering</p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div class="flex items-center justify-between text-xs font-medium text-amber-700 uppercase tracking-wider">
+        <!-- Templates -->
+        <div class="rounded-xl border-t-4 border-t-amber-500 border border-slate-200 bg-white p-4 shadow-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-amber-800 uppercase tracking-wider">
                 <span>Templates</span>
-                <span class="rounded bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 text-[10px] font-bold">5 Active</span>
+                <span class="rounded bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 text-[10px] font-black">5 Active</span>
             </div>
-            <p class="text-2xl font-bold text-slate-900 mt-2">{{ count($templates) }}</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Festive, Showcase, Offers &amp; More</p>
+            <p class="text-3xl font-black text-slate-900 mt-2">{{ count($templates) }}</p>
+            <p class="text-[11px] text-slate-500 font-medium mt-1">Festive, Showcase, Offers</p>
         </div>
     </div>
 
-    <!-- Filters & Search Bar -->
-    <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+    <!-- Filters & Search Bar with Clear Slate Contrast -->
+    <div class="rounded-xl border border-slate-300 bg-slate-50 p-4 shadow-xs">
         <form method="GET" action="{{ route('admin.video-studio.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <!-- Search -->
             <div class="lg:col-span-2 relative">
@@ -169,7 +181,7 @@
                        name="search"
                        value="{{ request('search') }}"
                        placeholder="Search by title, product name or SKU..."
-                       class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                       class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 shadow-2xs">
                 <svg class="size-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
@@ -178,7 +190,7 @@
             <!-- Status Filter -->
             <div>
                 <select name="status" onchange="this.form.submit()"
-                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-amber-500">
+                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-amber-600 shadow-2xs">
                     <option value="all">All Statuses</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                     <option value="processing" {{ request('status') === 'processing' ? 'selected' : '' }}>Processing</option>
@@ -190,7 +202,7 @@
             <!-- Aspect Ratio Filter -->
             <div>
                 <select name="aspect_ratio" onchange="this.form.submit()"
-                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-amber-500">
+                        class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:border-amber-600 shadow-2xs">
                     <option value="all">All Formats</option>
                     @foreach($aspectRatios as $key => $preset)
                         <option value="{{ $key }}" {{ request('aspect_ratio') === $key ? 'selected' : '' }}>
@@ -202,11 +214,14 @@
 
             <!-- Actions / Reset -->
             <div class="flex items-center gap-2">
-                <button type="submit" class="flex-1 px-3 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors">
+                <button type="submit"
+                        style="background-color: #0f172a !important; color: #ffffff !important;"
+                        class="flex-1 px-4 py-2 text-xs font-bold rounded-lg shadow-xs hover:opacity-90 transition-opacity">
                     Filter
                 </button>
                 @if(request()->hasAny(['search', 'status', 'aspect_ratio', 'template', 'video_type']))
-                <a href="{{ route('admin.video-studio.index') }}" class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+                <a href="{{ route('admin.video-studio.index') }}"
+                   class="px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-950 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors">
                     Reset
                 </a>
                 @endif
@@ -214,25 +229,27 @@
         </form>
     </div>
 
-    <!-- Video Grid -->
+    <!-- Video Grid or High-Contrast Empty State -->
     @if($videos->isEmpty())
-    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
-        <div class="size-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 mx-auto flex items-center justify-center">
-            <svg class="size-8" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+    <div class="rounded-2xl border-2 border-dashed border-amber-300 bg-gradient-to-b from-amber-50/60 via-white to-amber-50/30 p-12 text-center shadow-xs">
+        <div class="size-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-md"
+             style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;">
+            <svg class="size-8 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
             </svg>
         </div>
-        <h3 class="text-base font-bold text-slate-900 mt-4">No Videos Generated Yet</h3>
-        <p class="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
-            Select any existing product from your catalog to automatically generate promotional videos for Instagram Reels, Facebook Ads, or your website gallery.
+        <h3 class="text-lg font-black text-slate-900 mt-4">No Videos Generated Yet</h3>
+        <p class="text-xs text-slate-600 max-w-md mx-auto mt-1.5 leading-relaxed font-medium">
+            Select an existing catalog product to automatically generate promotional videos for Instagram Reels, Facebook Ads, or your website gallery.
         </p>
         <div class="mt-6">
             <a href="{{ route('admin.video-studio.create') }}"
-               class="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-rose-600 to-amber-600 text-white hover:from-rose-700 hover:to-amber-700 transition-all shadow-sm">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+               style="background-color: #d97706 !important; color: #ffffff !important;"
+               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:opacity-90 transition-opacity">
+                <svg class="size-4 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                <span>Create Your First Video</span>
+                <span style="color: #ffffff !important;">Create Your First Video</span>
             </a>
         </div>
     </div>
@@ -314,7 +331,7 @@
                 </div>
             </div>
 
-            <!-- Card Body / Product Info (Clean light layout) -->
+            <!-- Card Body / Product Info -->
             <div class="p-3.5 flex-1 flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-bold text-slate-900 line-clamp-1 hover:text-amber-700 transition-colors" title="{{ $video->title }}">
@@ -322,20 +339,20 @@
                     </h4>
 
                     @if($video->product)
-                    <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                    <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-600">
                         <span class="font-mono text-slate-500">SKU: {{ $video->product->sku ?: 'N/A' }}</span>
                         <span>•</span>
-                        <span class="text-amber-800 font-semibold">{{ $video->product->formatted_price }}</span>
+                        <span class="text-amber-800 font-bold">{{ $video->product->formatted_price }}</span>
                     </div>
                     @else
                     <div class="text-[11px] text-slate-500 mt-1">Standalone Promotional Video</div>
                     @endif
 
                     <div class="flex items-center gap-2 mt-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-700 border border-slate-200">
                             {{ $video->template_label }}
                         </span>
-                        <span class="text-[10px] text-slate-400">
+                        <span class="text-[10px] text-slate-500 font-medium">
                             {{ $video->created_at->diffForHumans() }}
                         </span>
                     </div>
@@ -347,7 +364,8 @@
                         @if($video->isCompleted() && $video->video_url)
                         <button type="button"
                                 @click="openPreview('{{ $video->video_url }}', '{{ addslashes($video->title) }}', '{{ $video->aspect_ratio }}')"
-                                class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-slate-900 hover:bg-slate-800 text-white transition-colors flex items-center gap-1 shadow-2xs">
+                                style="background-color: #0f172a !important; color: #ffffff !important;"
+                                class="px-3 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1">
                             <svg class="size-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
@@ -367,7 +385,7 @@
                         <form method="POST" action="{{ route('admin.video-studio.retry', $video) }}">
                             @csrf
                             <button type="submit"
-                                    class="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 transition-colors flex items-center gap-1">
+                                    class="px-2.5 py-1 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 transition-colors flex items-center gap-1">
                                 <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                                 </svg>
