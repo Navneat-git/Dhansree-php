@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\VideoStudio;
 
 use App\Models\ProductVideo;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -130,45 +131,52 @@ class GoogleVideoGenerationService
      */
     public function resolveActiveModel(): array
     {
-        $configured = config('video_studio.google_video.model', 'veo-3.1-generate-preview');
-        if ($configured === 'veo-2.0-generate-001') {
-            $configured = 'veo-3.1-generate-preview';
+        $configured = config('video_studio.google_video.model', 'gemini-omni-1.1-flash');
+        if (in_array($configured, ['veo-2.0-generate-001', 'veo-3.1-generate-preview'], true)) {
+            $configured = 'gemini-omni-1.1-flash';
         }
 
         $available = $this->listAvailableModels();
 
         if (empty($available)) {
             return [
-                'model' => $configured ?: 'veo-3.1-generate-preview',
+                'model' => $configured ?: 'gemini-omni-1.1-flash',
                 'is_verified' => false,
                 'available_models' => [],
             ];
         }
 
-        // 1. Check if configured model exists and supports predictLongRunning
+        // 1. Check if configured model exists in available models (e.g. gemini-omni-1.1-flash)
         foreach ($available as $m) {
-            if ($m['name'] === $configured && in_array('predictLongRunning', $m['methods'], true)) {
+            if ($m['name'] === $configured) {
                 return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
             }
         }
 
-        // 2. Look for any active model that supports predictLongRunning
+        // 2. Look for gemini-omni-1.1-flash
+        foreach ($available as $m) {
+            if (str_contains(strtolower($m['name']), 'omni')) {
+                return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
+            }
+        }
+
+        // 3. Look for any active model that supports predictLongRunning
         foreach ($available as $m) {
             if (in_array('predictLongRunning', $m['methods'], true)) {
                 return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
             }
         }
 
-        // 3. Look for any active model containing veo / video
+        // 4. Look for any active model containing veo / video
         foreach ($available as $m) {
             if (str_contains(strtolower($m['name']), 'veo') || str_contains(strtolower($m['name']), 'video')) {
                 return ['model' => $m['name'], 'is_verified' => true, 'available_models' => $available];
             }
         }
 
-        // 4. Default to veo-3.1-generate-preview
+        // 5. Default to gemini-omni-1.1-flash
         return [
-            'model' => 'veo-3.1-generate-preview',
+            'model' => 'gemini-omni-1.1-flash',
             'is_verified' => false,
             'available_models' => $available,
         ];
@@ -221,17 +229,110 @@ class GoogleVideoGenerationService
 
         // Resolve active video generation model dynamically
         $modelResolution = $this->resolveActiveModel();
-        $model = $modelResolution['model'] ?: 'veo-3.1-generate-preview';
+        $model = $modelResolution['model'] ?: 'gemini-omni-1.1-flash';
 
-        // Veo model predictLongRunning endpoint
-        $endpoint = "{$baseUrl}/models/{$model}:predictLongRunning";
-
-        // Map aspect ratio for Google Veo API (supported: "9:16", "16:9", "1:1")
+        // Map aspect ratio for Google Video API (supported: "9:16", "16:9", "1:1")
         $apiAspectRatio = match ($aspectRatio) {
             '1:1' => '1:1',
             '16:9' => '16:9',
             default => '9:16',
         };
+
+        // If model is Gemini Omni Flash, call the Interactions API (Google's official recommendation)
+        if (str_contains(strtolower($model), 'omni') || !str_contains(strtolower($model), 'veo')) {
+            return $this->submitInteractionsGeneration($apiKey, $baseUrl, $model, $prompt, $imageBase64, $imageMime, $apiAspectRatio, $estimatedCost);
+        }
+
+        // Otherwise call predictLongRunning
+        return $this->submitPredictLongRunning($apiKey, $baseUrl, $model, $prompt, $imageBase64, $imageMime, $apiAspectRatio, $durationSeconds, $negativePrompt, $estimatedCost);
+    }
+
+    /**
+     * Submit video generation request via Google Interactions API (/v1beta/interactions).
+     */
+    protected function submitInteractionsGeneration(
+        string $apiKey,
+        string $baseUrl,
+        string $model,
+        string $prompt,
+        string $imageBase64,
+        string $imageMime,
+        string $aspectRatio,
+        float $estimatedCost
+    ): array {
+        $endpoint = "{$baseUrl}/interactions";
+
+        $input = [
+            [
+                'type' => 'text',
+                'text' => $prompt,
+            ],
+        ];
+
+        if (!empty($imageBase64)) {
+            $input[] = [
+                'type' => 'image',
+                'data' => $imageBase64,
+                'mime_type' => $imageMime,
+            ];
+        }
+
+        $payload = [
+            'model' => $model,
+            'input' => $input,
+            'response_format' => [
+                'aspect_ratio' => $aspectRatio,
+            ],
+        ];
+
+        Log::info("Submitting AI Fashion video request to Google Interactions API [{$model}]...", [
+            'aspect_ratio' => $aspectRatio,
+            'prompt_length' => strlen($prompt),
+        ]);
+
+        $response = Http::withHeaders([
+            'x-goog-api-key' => $apiKey,
+            'Content-Type' => 'application/json',
+        ])->timeout(120)->post($endpoint, $payload);
+
+        if (!$response->successful()) {
+            $errorBody = $response->json('error.message') ?? $response->body();
+            Log::error("Google Interactions API error ({$response->status()}): {$errorBody}");
+            throw new \RuntimeException("Google AI Video API error: {$errorBody}");
+        }
+
+        $data = $response->json();
+        $interactionId = $data['id'] ?? ('int-' . Str::uuid());
+
+        // Cache any immediately returned video bytes
+        $videoBytes = $this->extractVideoFromInteractionBody($data);
+        if ($videoBytes) {
+            Cache::put("google_video_interaction_{$interactionId}", $videoBytes, now()->addMinutes(30));
+        }
+
+        return [
+            'operation_id' => "interactions/{$interactionId}",
+            'estimated_cost' => $estimatedCost,
+            'mock' => false,
+        ];
+    }
+
+    /**
+     * Submit video generation request via predictLongRunning endpoint.
+     */
+    protected function submitPredictLongRunning(
+        string $apiKey,
+        string $baseUrl,
+        string $model,
+        string $prompt,
+        string $imageBase64,
+        string $imageMime,
+        string $apiAspectRatio,
+        int $durationSeconds,
+        ?string $negativePrompt,
+        float $estimatedCost
+    ): array {
+        $endpoint = "{$baseUrl}/models/{$model}:predictLongRunning";
 
         $instance = [
             'prompt' => $prompt,
@@ -294,6 +395,50 @@ class GoogleVideoGenerationService
     }
 
     /**
+     * Extract video binary data or download URL from Interactions API response body.
+     */
+    protected function extractVideoFromInteractionBody(array $data): ?string
+    {
+        // 1. Direct output_video.data (base64)
+        $raw = $data['output_video']['data'] ?? $data['outputVideo']['data'] ?? null;
+        if (!empty($raw)) {
+            $decoded = base64_decode($raw, true);
+            return $decoded !== false ? $decoded : $raw;
+        }
+
+        // 2. Direct output_video.uri (download from uri)
+        $uri = $data['output_video']['uri'] ?? $data['outputVideo']['uri'] ?? null;
+        if (!empty($uri)) {
+            try {
+                $apiKey = config('video_studio.google_video.api_key');
+                $res = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(60)->get($uri);
+                if ($res->successful()) {
+                    return $res->body();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Failed to download video from uri: ' . $e->getMessage());
+            }
+        }
+
+        // 3. Inspect steps array for video parts
+        if (!empty($data['steps'])) {
+            foreach ($data['steps'] as $step) {
+                $parts = $step['content']['parts'] ?? [];
+                foreach ($parts as $p) {
+                    if (!empty($p['inline_data']['data'])) {
+                        return base64_decode($p['inline_data']['data']);
+                    }
+                    if (!empty($p['video_data']['data'])) {
+                        return base64_decode($p['video_data']['data']);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Poll operation status until completion or timeout.
      *
      * @param string $operationId Google operation name or mock operation
@@ -317,6 +462,75 @@ class GoogleVideoGenerationService
 
         $apiKey = config('video_studio.google_video.api_key');
         $baseUrl = rtrim((string) config('video_studio.google_video.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+
+        // Handle Interactions API polling (operation starts with 'interactions/')
+        if (str_starts_with($operationId, 'interactions/')) {
+            $interactionId = str_replace('interactions/', '', $operationId);
+
+            // Check if video was already cached from the initial response
+            $cachedBytes = Cache::get("google_video_interaction_{$interactionId}");
+            if ($cachedBytes) {
+                if ($onProgress) $onProgress(100);
+                return [
+                    'status' => 'completed',
+                    'video_bytes' => $cachedBytes,
+                    'video_url' => null,
+                    'error' => null,
+                ];
+            }
+
+            $endpoint = "{$baseUrl}/interactions/{$interactionId}";
+            $startTime = time();
+            $maxPollSeconds = (int) config('video_studio.google_video.max_poll_seconds', 400);
+            $pollInterval = (int) config('video_studio.google_video.poll_interval_seconds', 8);
+
+            while ((time() - $startTime) < $maxPollSeconds) {
+                $res = Http::withHeaders(['x-goog-api-key' => $apiKey])->timeout(30)->get($endpoint);
+                if (!$res->successful()) {
+                    return [
+                        'status' => 'failed',
+                        'video_bytes' => null,
+                        'video_url' => null,
+                        'error' => 'Interactions polling error: ' . $res->body(),
+                    ];
+                }
+
+                $body = $res->json();
+                $status = $body['status'] ?? 'in_progress';
+
+                if ($status === 'completed') {
+                    $bytes = $this->extractVideoFromInteractionBody($body);
+                    if ($bytes) {
+                        if ($onProgress) $onProgress(100);
+                        return [
+                            'status' => 'completed',
+                            'video_bytes' => $bytes,
+                            'video_url' => null,
+                            'error' => null,
+                        ];
+                    }
+                }
+
+                if (in_array($status, ['failed', 'cancelled'], true)) {
+                    return [
+                        'status' => 'failed',
+                        'video_bytes' => null,
+                        'video_url' => null,
+                        'error' => $body['error']['message'] ?? "Interaction {$status}.",
+                    ];
+                }
+
+                if ($onProgress) $onProgress(min(65 + (time() - $startTime), 90));
+                sleep($pollInterval);
+            }
+
+            return [
+                'status' => 'timeout',
+                'video_bytes' => null,
+                'video_url' => null,
+                'error' => "Video generation timed out after {$maxPollSeconds} seconds.",
+            ];
+        }
 
         $cleanOp = ltrim($operationId, '/');
         $endpoint = "{$baseUrl}/{$cleanOp}";

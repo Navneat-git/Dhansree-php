@@ -176,7 +176,7 @@ return [
     'google_video' => [
         'enabled' => (bool) env('GOOGLE_VIDEO_ENABLED', false),
         'api_key' => env('GOOGLE_VIDEO_API_KEY', env('GEMINI_API_KEY', '')),
-        'model' => env('GOOGLE_VIDEO_MODEL', 'veo-3.1-generate-preview'),
+        'model' => env('GOOGLE_VIDEO_MODEL', 'gemini-omni-1.1-flash'),
         'base_url' => env('GOOGLE_VIDEO_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         'mock' => (bool) env('GOOGLE_VIDEO_MOCK', false),
         'estimated_cost_per_clip' => 0.15,
