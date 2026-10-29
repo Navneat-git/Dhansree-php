@@ -175,7 +175,7 @@ return [
     */
     'google_video' => [
         'enabled' => (bool) env('GOOGLE_VIDEO_ENABLED', false),
-        'api_key' => env('GOOGLE_VIDEO_API_KEY', ''),
+        'api_key' => env('GOOGLE_VIDEO_API_KEY', env('GEMINI_API_KEY', '')),
         'model' => env('GOOGLE_VIDEO_MODEL', 'veo-2.0-generate-001'),
         'base_url' => env('GOOGLE_VIDEO_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
         'mock' => (bool) env('GOOGLE_VIDEO_MOCK', false),
