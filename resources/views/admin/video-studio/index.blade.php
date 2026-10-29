@@ -119,7 +119,7 @@
     @else
     <div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3.5 shadow-xs flex items-center justify-between text-xs">
         <div class="flex items-center gap-2.5 text-emerald-950 font-bold">
-            <span class="size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200 animate-pulse"></span>
+            <span style="width: 10px; height: 10px;" class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200 animate-pulse"></span>
             <span>FFmpeg Rendering Engine Active:</span>
             <span class="font-mono text-emerald-950 text-xs bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded font-bold">
                 {{ $ffmpegStatus['version'] ?? 'Ready' }}
@@ -232,7 +232,8 @@
     <!-- Video Grid or High-Contrast Empty State -->
     @if($videos->isEmpty())
     <div class="rounded-2xl border-2 border-dashed border-amber-300 bg-gradient-to-b from-amber-50/60 via-white to-amber-50/30 p-12 text-center shadow-xs">
-        <div class="size-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-md"
+        <div style="width: 64px; height: 64px; min-width: 64px; max-width: 64px;"
+             class="w-16 h-16 rounded-2xl text-white mx-auto flex items-center justify-center shadow-md"
              style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;">
             <svg class="size-8 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -286,7 +287,7 @@
                     </span>
 
                     <span class="video-status-badge text-[10px] font-semibold px-2 py-0.5 rounded backdrop-blur-sm flex items-center gap-1.5 {{ $video->status_badge['class'] }}">
-                        <span class="size-1.5 rounded-full {{ $video->status_badge['dot'] }}"></span>
+                        <span style="width: 6px; height: 6px;" class="w-1.5 h-1.5 rounded-full {{ $video->status_badge['dot'] }}"></span>
                         <span>{{ $video->status_badge['text'] }}</span>
                     </span>
                 </div>

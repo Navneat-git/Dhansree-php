@@ -235,6 +235,52 @@ class FfmpegService
     }
 
     /**
+     * Resolve path to a bold TrueType font.
+     */
+    protected function resolveBoldFont(): ?string
+    {
+        $candidates = [
+            config('video_studio.brand.font_bold'),
+            resource_path('fonts/LiberationSans-Bold.ttf'),
+            '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+            '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf',
+        ];
+
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand)) {
+                return $cand;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve path to a regular TrueType font.
+     */
+    protected function resolveRegularFont(): ?string
+    {
+        $candidates = [
+            config('video_studio.brand.font_regular'),
+            resource_path('fonts/LiberationSans-Regular.ttf'),
+            '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+        ];
+
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand)) {
+                return $cand;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Create transparent PNG overlay with Dhansree logo, template badge, and product card.
      */
     protected function createOverlayGraphic(
@@ -254,38 +300,52 @@ class FfmpegService
         imagefilledrectangle($im, 0, 0, $canvasW, $canvasH, $trans);
         imagealphablending($im, true);
 
-        $fontBold = config('video_studio.brand.font_bold');
-        $fontRegular = config('video_studio.brand.font_regular');
+        $fontBold = $this->resolveBoldFont();
+        $fontRegular = $this->resolveRegularFont();
 
         // Brand colors
         $maroon = imagecolorallocate($im, 88, 0, 0);
         $gold = imagecolorallocate($im, 176, 136, 88);
         $goldBright = imagecolorallocate($im, 212, 175, 55);
         $white = imagecolorallocate($im, 255, 255, 255);
-        $cardBg = imagecolorallocatealpha($im, 18, 8, 8, 35); // Translucent glassmorphism
-        $badgeBg = imagecolorallocatealpha($im, 88, 0, 0, 20);
+        $creamBg = imagecolorallocatealpha($im, 251, 250, 248, 8); // 94% opaque luxury cream plate for perfect contrast
+        $cardBg = imagecolorallocatealpha($im, 16, 6, 6, 25); // Deep translucent glassmorphism
+        $badgeBg = imagecolorallocatealpha($im, 88, 0, 0, 25);
+        $shadow = imagecolorallocatealpha($im, 0, 0, 0, 80);
 
-        // Top safe area: Dhansree Brand Header
+        // Top safe area: Dhansree Brand Header inside Luxury Contrast Plate
         $logoPath = config('video_studio.brand.logo_path');
+        $tagY = (int) ($canvasH * 0.10);
         if (file_exists($logoPath)) {
             $logo = @imagecreatefrompng($logoPath);
             if ($logo) {
                 $lw = imagesx($logo);
                 $lh = imagesy($logo);
-                $targetLogoH = (int) ($canvasH * 0.038); // proportional logo height
+                $targetLogoH = (int) ($canvasH * 0.040); // Proportional logo height
                 $targetLogoW = (int) ($lw * ($targetLogoH / $lh));
-                $logoX = (int) (($canvasW - $targetLogoW) / 2);
-                $logoY = (int) ($canvasH * 0.045); // top safe area
 
-                imagecopyresampled($im, $logo, $logoX, $logoY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
+                $padX = 32;
+                $padY = 14;
+                $cardW = $targetLogoW + ($padX * 2);
+                $cardH = $targetLogoH + ($padY * 2);
+                $cardX = (int) (($canvasW - $cardW) / 2);
+                $cardY = (int) ($canvasH * 0.045); // Top safe area
+
+                // Draw pill shadow & luxury cream plate with gold border
+                imagefilledrectangle($im, $cardX + 3, $cardY + 3, $cardX + $cardW + 3, $cardY + $cardH + 3, $shadow);
+                imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $creamBg);
+                imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
+
+                imagecopyresampled($im, $logo, $cardX + $padX, $cardY + $padY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
                 imagedestroy($logo);
+
+                $tagY = $cardY + $cardH + 24;
             }
         }
 
         // Template Tag Badge (e.g. "NEW ARRIVAL", "FESTIVE SPECIAL", etc.)
         $tagText = strtoupper($templateConfig['tag'] ?? 'DHANSREE TRENDS');
-        $tagY = (int) ($canvasH * 0.098);
-        $this->drawBadge($im, $tagText, (int) ($canvasW / 2), $tagY, $gold, $badgeBg, $fontBold);
+        $this->drawBadge($im, $tagText, (int) ($canvasW / 2), $tagY, $white, $badgeBg, $fontBold, $goldBright);
 
         // Bottom Product Title & Price Card (if text overlays enabled)
         $showOverlays = $settings['text_overlay'] ?? true;
@@ -302,17 +362,19 @@ class FfmpegService
             $cardX = (int) (($canvasW - $cardW) / 2);
             $cardY = (int) ($canvasH * 0.82); // Above safe footer zone for Reels
 
-            // Draw rounded card
-            $this->drawRoundedCard($im, $cardX, $cardY, $cardW, $cardH, 20, $cardBg, $gold);
+            // Draw shadow & rounded card
+            imagefilledrectangle($im, $cardX + 4, $cardY + 4, $cardX + $cardW + 4, $cardY + $cardH + 4, $shadow);
+            imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $cardBg);
+            imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
 
-            // Title text
-            $displayTitle = mb_strimwidth($title, 0, 48, '...');
+            // Title text (up to 44 chars)
+            $displayTitle = mb_strimwidth($title, 0, 44, '...');
             if ($fontBold) {
-                $titleFontSize = (int) ($canvasW * 0.026);
+                $titleFontSize = (int) ($canvasW * 0.025);
                 $bbox = imagettfbbox($titleFontSize, 0, $fontBold, $displayTitle);
                 $tWidth = abs($bbox[2] - $bbox[0]);
                 $tX = (int) (($canvasW - $tWidth) / 2);
-                $tY = $cardY + (int) ($cardH * 0.42);
+                $tY = $cardY + (int) ($cardH * 0.44);
                 imagettftext($im, $titleFontSize, 0, $tX, $tY, $white, $fontBold, $displayTitle);
             } else {
                 $tX = (int) (($canvasW - (strlen($displayTitle) * 9)) / 2);
@@ -322,7 +384,7 @@ class FfmpegService
             // Price badge & Dhansree Trends note
             $subline = $priceText ? "{$priceText}  •  Dhansree Trends" : "Exclusively at dhansree.com";
             if ($fontBold) {
-                $subFontSize = (int) ($canvasW * 0.022);
+                $subFontSize = (int) ($canvasW * 0.021);
                 $sbox = imagettfbbox($subFontSize, 0, $fontBold, $subline);
                 $sWidth = abs($sbox[2] - $sbox[0]);
                 $sX = (int) (($canvasW - $sWidth) / 2);
@@ -330,7 +392,7 @@ class FfmpegService
                 imagettftext($im, $subFontSize, 0, $sX, $sY, $goldBright, $fontBold, $subline);
             } else {
                 $sX = (int) (($canvasW - (strlen($subline) * 8)) / 2);
-                imagestring($im, 4, $sX, $cardY + 54, $subline, $goldBright);
+                imagestring($im, 5, $sX, $cardY + 54, $subline, $goldBright);
             }
         }
 
@@ -494,7 +556,8 @@ class FfmpegService
         $cmd = array_merge($cmd, [
             '-t', (string) $duration,
             '-c:v', 'libx264',
-            '-preset', 'fast',
+            '-crf', '18',
+            '-preset', 'medium',
             '-pix_fmt', 'yuv420p',
             '-movflags', '+faststart',
             $outputVideoFile,
@@ -521,14 +584,17 @@ class FfmpegService
         imagefilledrectangle($im, 0, 0, $canvasW, $canvasH, $bg);
         imagealphablending($im, true);
 
-        $fontBold = config('video_studio.brand.font_bold');
-        $fontRegular = config('video_studio.brand.font_regular');
+        $fontBold = $this->resolveBoldFont();
+        $fontRegular = $this->resolveRegularFont();
 
-        $gold = imagecolorallocate($im, 212, 175, 55);
+        $gold = imagecolorallocate($im, 176, 136, 88);
+        $goldBright = imagecolorallocate($im, 212, 175, 55);
         $white = imagecolorallocate($im, 255, 255, 255);
         $maroon = imagecolorallocate($im, 88, 0, 0);
+        $creamBg = imagecolorallocatealpha($im, 251, 250, 248, 8); // 94% opaque luxury cream plate
+        $shadow = imagecolorallocatealpha($im, 0, 0, 0, 80);
 
-        // Center Dhansree Logo
+        // Center Dhansree Logo inside Luxury Contrast Plate
         $logoPath = config('video_studio.brand.logo_path');
         if (file_exists($logoPath)) {
             $logo = @imagecreatefrompng($logoPath);
@@ -537,26 +603,38 @@ class FfmpegService
                 $lh = imagesy($logo);
                 $targetLogoW = (int) ($canvasW * 0.45);
                 $targetLogoH = (int) ($lh * ($targetLogoW / $lw));
-                $logoX = (int) (($canvasW - $targetLogoW) / 2);
-                $logoY = (int) ($canvasH * 0.35);
 
-                imagecopyresampled($im, $logo, $logoX, $logoY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
+                $padX = 36;
+                $padY = 18;
+                $cardW = $targetLogoW + ($padX * 2);
+                $cardH = $targetLogoH + ($padY * 2);
+                $cardX = (int) (($canvasW - $cardW) / 2);
+                $cardY = (int) ($canvasH * 0.33);
+
+                // Draw luxury plate for logo
+                imagefilledrectangle($im, $cardX + 4, $cardY + 4, $cardX + $cardW + 4, $cardY + $cardH + 4, $shadow);
+                imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $creamBg);
+                imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
+
+                imagecopyresampled($im, $logo, $cardX + $padX, $cardY + $padY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
                 imagedestroy($logo);
             }
         }
 
         // Tagline
         $tagline = 'PREMIUM ETHNIC & FASHION WEAR';
-        $tagY = (int) ($canvasH * 0.46);
-        $this->drawBadge($im, $tagline, (int) ($canvasW / 2), $tagY, $gold, imagecolorallocatealpha($im, 88, 0, 0, 40), $fontBold);
+        $tagY = (int) ($canvasH * 0.48);
+        $this->drawBadge($im, $tagline, (int) ($canvasW / 2), $tagY, $goldBright, imagecolorallocatealpha($im, 88, 0, 0, 40), $fontBold, $gold);
 
         // Shop Now Button Card
-        $btnW = (int) ($canvasW * 0.65);
-        $btnH = (int) ($canvasH * 0.065);
+        $btnW = (int) ($canvasW * 0.68);
+        $btnH = (int) ($canvasH * 0.068);
         $btnX = (int) (($canvasW - $btnW) / 2);
-        $btnY = (int) ($canvasH * 0.55);
+        $btnY = (int) ($canvasH * 0.56);
 
-        $this->drawRoundedCard($im, $btnX, $btnY, $btnW, $btnH, 15, $maroon, $gold);
+        imagefilledrectangle($im, $btnX + 4, $btnY + 4, $btnX + $btnW + 4, $btnY + $btnH + 4, $shadow);
+        imagefilledrectangle($im, $btnX, $btnY, $btnX + $btnW, $btnY + $btnH, $maroon);
+        imagerectangle($im, $btnX, $btnY, $btnX + $btnW, $btnY + $btnH, $goldBright);
 
         $btnText = 'SHOP NOW AT DHANSREE.COM';
         if ($fontBold) {
@@ -573,13 +651,14 @@ class FfmpegService
 
         // Website footer
         $footerText = 'Free Shipping Across India  •  Cash on Delivery Available';
-        if ($fontRegular) {
+        $footFont = $fontRegular ?: $fontBold;
+        if ($footFont) {
             $footSize = (int) ($canvasW * 0.018);
-            $fbox = imagettfbbox($footSize, 0, $fontRegular, $footerText);
+            $fbox = imagettfbbox($footSize, 0, $footFont, $footerText);
             $fW = abs($fbox[2] - $fbox[0]);
             $fX = (int) (($canvasW - $fW) / 2);
             $fY = (int) ($canvasH * 0.66);
-            imagettftext($im, $footSize, 0, $fX, $fY, $gold, $fontRegular, $footerText);
+            imagettftext($im, $footSize, 0, $fX, $fY, $gold, $footFont, $footerText);
         }
 
         imagepng($im, $destImagePath, 6);
@@ -655,19 +734,20 @@ class FfmpegService
         int $centerY,
         int $textColor,
         int $bgColor,
-        ?string $font
+        ?string $font,
+        ?int $borderColor = null
     ): void {
-        $fontSize = (int) (imagesx($im) * 0.017);
-        $padX = 18;
-        $padY = 8;
+        $fontSize = (int) (imagesx($im) * 0.018);
+        $padX = 22;
+        $padY = 10;
 
         if ($font) {
             $bbox = imagettfbbox($fontSize, 0, $font, $text);
             $w = abs($bbox[2] - $bbox[0]);
             $h = abs($bbox[7] - $bbox[1]);
         } else {
-            $w = strlen($text) * 8;
-            $h = 12;
+            $w = strlen($text) * 9;
+            $h = 16;
         }
 
         $rx = (int) ($centerX - ($w / 2) - $padX);
@@ -676,12 +756,12 @@ class FfmpegService
         $rh = (int) ($h + ($padY * 2));
 
         imagefilledrectangle($im, $rx, $ry, $rx + $rw, $ry + $rh, $bgColor);
-        imagerectangle($im, $rx, $ry, $rx + $rw, $ry + $rh, $textColor);
+        imagerectangle($im, $rx, $ry, $rx + $rw, $ry + $rh, $borderColor ?? $textColor);
 
         if ($font) {
-            imagettftext($im, $fontSize, 0, (int) ($centerX - ($w / 2)), (int) ($centerY + ($h / 3)), $textColor, $font, $text);
+            imagettftext($im, $fontSize, 0, (int) ($centerX - ($w / 2)), (int) ($centerY + ($h / 2.5)), $textColor, $font, $text);
         } else {
-            imagestring($im, 4, (int) ($centerX - ($w / 2)), (int) ($centerY - 6), $text, $textColor);
+            imagestring($im, 5, (int) ($centerX - ($w / 2)), (int) ($centerY - 8), $text, $textColor);
         }
     }
 

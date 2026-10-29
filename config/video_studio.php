@@ -38,12 +38,24 @@ return [
             'dark' => '#140808',
         ],
         'logo_path' => public_path('brand/logo-header.png'),
-        'font_bold' => file_exists('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf')
-            ? '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf'
-            : null,
-        'font_regular' => file_exists('/usr/share/fonts/truetype/freefont/FreeSans.ttf')
-            ? '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
-            : null,
+        'font_bold' => file_exists(resource_path('fonts/LiberationSans-Bold.ttf'))
+            ? resource_path('fonts/LiberationSans-Bold.ttf')
+            : (file_exists('/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf')
+                ? '/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf'
+                : (file_exists('/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf')
+                    ? '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
+                    : (file_exists('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')
+                        ? '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+                        : null))),
+        'font_regular' => file_exists(resource_path('fonts/LiberationSans-Regular.ttf'))
+            ? resource_path('fonts/LiberationSans-Regular.ttf')
+            : (file_exists('/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf')
+                ? '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf'
+                : (file_exists('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf')
+                    ? '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+                    : (file_exists('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')
+                        ? '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+                        : null))),
     ],
 
     /*
