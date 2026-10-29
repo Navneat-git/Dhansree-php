@@ -155,13 +155,13 @@
             </div>
             @endif
 
-            @if(session('error') || $errors->any())
+            @if(session('error') || (isset($errors) && $errors->any()))
             <div class="mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-xl bg-rose-50 border border-rose-200 p-4 text-sm text-rose-800 flex items-center justify-between" x-data="{ show: true }" x-show="show">
                 <div class="flex items-center gap-2.5">
                     <svg class="size-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
                     </svg>
-                    <span>{{ session('error') ?? $errors->first() }}</span>
+                    <span>{{ session('error') ?? ($errors->first() ?? '') }}</span>
                 </div>
                 <button type="button" @click="show = false" class="text-rose-600 hover:text-rose-900">&times;</button>
             </div>
