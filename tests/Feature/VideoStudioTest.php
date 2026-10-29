@@ -354,6 +354,15 @@ class VideoStudioTest extends TestCase
         Storage::disk($disk)->delete($video->thumbnail_path);
     }
 
+    public function test_admin_can_trigger_migration_endpoint(): void
+    {
+        $response = $this->adminRequest()
+            ->post('/admin/video-studio/migrate-db');
+
+        $response->assertRedirect('/admin/video-studio');
+        $response->assertSessionHas('success');
+    }
+
     protected function tearDown(): void
     {
         File::deleteDirectory(public_path('media/test-studio'));

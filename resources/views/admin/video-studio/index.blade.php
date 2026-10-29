@@ -31,6 +31,52 @@
         </div>
     </div>
 
+    <!-- Flash Messages -->
+    @if(session('success'))
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <svg class="size-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+            <span>{{ session('success') }}</span>
+        </div>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-300 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <svg class="size-4 shrink-0 text-rose-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <span>{{ session('error') }}</span>
+        </div>
+    </div>
+    @endif
+
+    <!-- Database Migration Notice -->
+    @if($tableMissing ?? false)
+    <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-200">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <svg class="size-5 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z" />
+                </svg>
+                <div class="text-xs leading-relaxed">
+                    <p class="font-semibold text-amber-300">Database table initialization required</p>
+                    <p class="mt-1 text-slate-300">The <code class="bg-slate-900 px-1 py-0.5 rounded text-amber-300">product_videos</code> table has not been created yet. Click the button to initialize now or run <code class="bg-slate-900 px-1 py-0.5 rounded text-amber-300">php artisan migrate --force</code> on the server.</p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('admin.video-studio.migrate-db') }}">
+                @csrf
+                <button type="submit" class="shrink-0 px-4 py-2 text-xs font-semibold bg-amber-500 text-slate-950 hover:bg-amber-400 rounded-lg shadow-sm transition-colors">
+                    Initialize Database Table
+                </button>
+            </form>
+        </div>
+    </div>
+    @endif
+
     <!-- System Status Banner -->
     @if(!$ffmpegStatus['available'])
     <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-200">

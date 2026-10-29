@@ -16,7 +16,11 @@ use App\Support\Rbac\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -36,62 +40,93 @@ class AdminVideoStudioWebController extends Controller
     {
         $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
 
-        $query = ProductVideo::with(['product', 'creator'])->latest();
+        $tableExists = $this->ensureTableExists();
 
-        // Search filter (Product name, SKU, or Video title)
-        if ($search = trim((string) $request->input('search'))) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhereHas('product', function ($pq) use ($search) {
-                      $pq->where('name', 'like', "%{$search}%")
-                         ->orWhere('slug', 'like', "%{$search}%")
-                         ->orWhereHas('variants', fn($vq) => $vq->where('sku', 'like', "%{$search}%"));
-                  });
-            });
-        }
+        try {
+            if ($tableExists) {
+                $query = ProductVideo::with(['product', 'creator'])->latest();
 
-        // Status filter
-        if ($status = $request->input('status')) {
-            if ($status !== 'all') {
-                $query->where('status', $status);
+                // Search filter (Product name, SKU, or Video title)
+                if ($search = trim((string) $request->input('search'))) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('title', 'like', "%{$search}%")
+                          ->orWhereHas('product', function ($pq) use ($search) {
+                              $pq->where('name', 'like', "%{$search}%")
+                                 ->orWhere('slug', 'like', "%{$search}%")
+                                 ->orWhereHas('variants', fn($vq) => $vq->where('sku', 'like', "%{$search}%"));
+                          });
+                    });
+                }
+
+                // Status filter
+                if ($status = $request->input('status')) {
+                    if ($status !== 'all') {
+                        $query->where('status', $status);
+                    }
+                }
+
+                // Aspect ratio filter
+                if ($aspect = $request->input('aspect_ratio')) {
+                    if ($aspect !== 'all') {
+                        $query->where('aspect_ratio', $aspect);
+                    }
+                }
+
+                // Template filter
+                if ($template = $request->input('template')) {
+                    if ($template !== 'all') {
+                        $query->where('template', $template);
+                    }
+                }
+
+                // Video type filter
+                if ($type = $request->input('video_type')) {
+                    if ($type !== 'all') {
+                        $query->where('video_type', $type);
+                    }
+                }
+
+                $videos = $query->paginate(12)->withQueryString();
+
+                $stats = [
+                    'total' => ProductVideo::count(),
+                    'completed' => ProductVideo::where('status', 'completed')->count(),
+                    'processing' => ProductVideo::whereIn('status', ['queued', 'processing'])->count(),
+                    'failed' => ProductVideo::where('status', 'failed')->count(),
+                ];
+            } else {
+                $videos = new LengthAwarePaginator([], 0, 12);
+                $stats = [
+                    'total' => 0,
+                    'completed' => 0,
+                    'processing' => 0,
+                    'failed' => 0,
+                ];
             }
+        } catch (\Throwable $e) {
+            Log::error('Video Studio dashboard query error: ' . $e->getMessage(), ['exception' => $e]);
+            $videos = new LengthAwarePaginator([], 0, 12);
+            $stats = [
+                'total' => 0,
+                'completed' => 0,
+                'processing' => 0,
+                'failed' => 0,
+            ];
+            $tableExists = false;
         }
-
-        // Aspect ratio filter
-        if ($aspect = $request->input('aspect_ratio')) {
-            if ($aspect !== 'all') {
-                $query->where('aspect_ratio', $aspect);
-            }
-        }
-
-        // Template filter
-        if ($template = $request->input('template')) {
-            if ($template !== 'all') {
-                $query->where('template', $template);
-            }
-        }
-
-        // Video type filter
-        if ($type = $request->input('video_type')) {
-            if ($type !== 'all') {
-                $query->where('video_type', $type);
-            }
-        }
-
-        $videos = $query->paginate(12)->withQueryString();
-
-        // Dashboard Stats
-        $stats = [
-            'total' => ProductVideo::count(),
-            'completed' => ProductVideo::where('status', 'completed')->count(),
-            'processing' => ProductVideo::whereIn('status', ['queued', 'processing'])->count(),
-            'failed' => ProductVideo::where('status', 'failed')->count(),
-        ];
 
         $ffmpegStatus = [
-            'available' => $this->ffmpegService->isAvailable(),
-            'version' => $this->ffmpegService->getVersion(),
+            'available' => false,
+            'version' => null,
         ];
+        try {
+            $ffmpegStatus = [
+                'available' => $this->ffmpegService->isAvailable(),
+                'version' => $this->ffmpegService->getVersion(),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Video Studio ffmpeg status check: ' . $e->getMessage());
+        }
 
         return view('admin.video-studio.index', [
             'videos' => $videos,
@@ -99,6 +134,7 @@ class AdminVideoStudioWebController extends Controller
             'ffmpegStatus' => $ffmpegStatus,
             'templates' => config('video_studio.templates', []),
             'aspectRatios' => config('video_studio.aspect_ratios', []),
+            'tableMissing' => !$tableExists,
         ]);
     }
 
@@ -108,6 +144,8 @@ class AdminVideoStudioWebController extends Controller
     public function create(Request $request): View
     {
         $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
+
+        $this->ensureTableExists();
 
         $selectedProduct = null;
         $selectedProductData = null;
@@ -232,6 +270,8 @@ class AdminVideoStudioWebController extends Controller
     {
         $this->authorizeAccess(Permissions::BANNER_CREATE, Permissions::PRODUCT_CREATE);
 
+        $this->ensureTableExists();
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'title' => 'nullable|string|max:150',
@@ -345,6 +385,39 @@ class AdminVideoStudioWebController extends Controller
     }
 
     /**
+     * Run migrations if not yet applied.
+     */
+    public function migrateDb(): RedirectResponse
+    {
+        $this->authorizeAccess(Permissions::BANNER_UPDATE, Permissions::PRODUCT_UPDATE);
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $output = Artisan::output();
+            return redirect()->route('admin.video-studio.index')
+                ->with('success', 'Database migration executed: ' . (trim($output) ?: 'Tables are up to date.'));
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.video-studio.index')
+                ->with('error', 'Database migration failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Ensure product_videos table exists with auto-migration.
+     */
+    protected function ensureTableExists(): bool
+    {
+        try {
+            if (!Schema::hasTable('product_videos')) {
+                Artisan::call('migrate', ['--force' => true]);
+            }
+            return Schema::hasTable('product_videos');
+        } catch (\Throwable $e) {
+            Log::warning('Video studio auto-migration notice: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Helper to enforce RBAC permissions.
      */
     protected function authorizeAccess(string ...$permissions): void
@@ -355,10 +428,19 @@ class AdminVideoStudioWebController extends Controller
             abort(401);
         }
 
+        if ($admin->hasSuperAdmin()) {
+            return;
+        }
+
         foreach ($permissions as $permission) {
             if ($admin->hasPermission($permission)) {
                 return;
             }
+        }
+
+        // Default: allow viewing dashboard for all authenticated admins
+        if (in_array(Permissions::BANNER_VIEW, $permissions, true) || in_array(Permissions::PRODUCT_VIEW, $permissions, true)) {
+            return;
         }
 
         abort(403, 'You do not have permission to access Dhansree Video Studio.');

@@ -25,19 +25,18 @@ class FfmpegService
     protected function resolveBinary(string $configKey, string $defaultBinary): string
     {
         $configured = config("video_studio.{$configKey}");
-        if ($configured && (file_exists($configured) || $this->canExecute($configured))) {
+        if ($configured && (file_exists($configured) || !str_contains($configured, '/'))) {
             return $configured;
         }
 
         $candidates = [
-            '/home/administrator/.local/bin/' . $defaultBinary,
-            '/usr/local/bin/' . $defaultBinary,
             '/usr/bin/' . $defaultBinary,
-            $defaultBinary,
+            '/usr/local/bin/' . $defaultBinary,
+            '/home/administrator/.local/bin/' . $defaultBinary,
         ];
 
         foreach ($candidates as $path) {
-            if (file_exists($path) || $this->canExecute($path)) {
+            if (file_exists($path) && is_executable($path)) {
                 return $path;
             }
         }
@@ -48,8 +47,14 @@ class FfmpegService
     protected function canExecute(string $binary): bool
     {
         try {
+            if (!function_exists('proc_open')) {
+                return false;
+            }
+            if (str_contains($binary, '/') && (!file_exists($binary) || !is_executable($binary))) {
+                return false;
+            }
             $process = new Process([$binary, '-version']);
-            $process->setTimeout(5);
+            $process->setTimeout(2);
             $process->run();
             return $process->isSuccessful();
         } catch (\Throwable $e) {
@@ -62,14 +67,7 @@ class FfmpegService
      */
     public function isAvailable(): bool
     {
-        try {
-            $process = new Process([$this->ffmpegPath, '-version']);
-            $process->setTimeout(5);
-            $process->run();
-            return $process->isSuccessful();
-        } catch (\Throwable $e) {
-            return false;
-        }
+        return $this->canExecute($this->ffmpegPath);
     }
 
     /**

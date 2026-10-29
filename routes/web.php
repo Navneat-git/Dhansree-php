@@ -411,6 +411,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/{video}/download', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'download'])->name('download');
             Route::post('/{video}/retry', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'retry'])->name('retry');
             Route::delete('/{video}', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'destroy'])->name('destroy');
+            Route::post('/migrate-db', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'migrateDb'])->name('migrate-db');
         });
 
 
