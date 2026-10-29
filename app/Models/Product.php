@@ -94,6 +94,14 @@ class Product extends Model
         return $this->hasMany(ProductVideo::class, 'product_id', 'id')->latest();
     }
 
+    public function getApprovedVideoAttribute(): ?ProductVideo
+    {
+        if ($this->relationLoaded('videos')) {
+            return $this->videos->first(fn($v) => $v->status === 'completed' && $v->isApproved());
+        }
+        return $this->videos()->where('status', 'completed')->approved()->latest('id')->first();
+    }
+
     public function bestSellerPins(): HasMany
     {
         return $this->hasMany(BestSellerPin::class, 'product_id', 'id');

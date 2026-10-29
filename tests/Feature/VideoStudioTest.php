@@ -15,9 +15,11 @@ use App\Services\VideoStudio\FfmpegService;
 use App\Services\VideoStudio\VideoStudioService;
 use App\Support\Auth\AdminSessionManager;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 class VideoStudioTest extends TestCase
@@ -392,6 +394,103 @@ class VideoStudioTest extends TestCase
 
         $response->assertRedirect('/admin/video-studio');
         $response->assertSessionHas('success');
+    }
+
+    public function test_imported_branded_requires_video_file(): void
+    {
+        $data = [
+            'product_id' => $this->product->id,
+            'title' => 'Missing Video Test',
+            'video_type' => 'imported_branded',
+            'template' => 'fashion_showcase',
+            'aspect_ratio' => '9:16',
+            'duration_seconds' => 8,
+        ];
+
+        $response = $this->adminRequest()
+            ->postJson(route('admin.video-studio.store'), $data);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['uploaded_video']);
+    }
+
+    public function test_admin_can_upload_and_brand_raw_ai_video(): void
+    {
+        $disk = config('video_studio.disk', 'public');
+        Storage::fake($disk);
+
+        $fakeVideo = UploadedFile::fake()->create('google_flow_raw.mp4', 500, 'video/mp4');
+
+        $tempVideo = tempnam(sys_get_temp_dir(), 'test_v') . '.mp4';
+        $tempThumb = tempnam(sys_get_temp_dir(), 'test_t') . '.jpg';
+        file_put_contents($tempVideo, 'fake-rendered-mp4-data');
+        file_put_contents($tempThumb, 'fake-rendered-thumb-data');
+
+        $ffmpegMock = Mockery::mock(FfmpegService::class);
+        $ffmpegMock->shouldReceive('brandAiVideo')
+            ->once()
+            ->andReturn([
+                'video_file' => $tempVideo,
+                'thumbnail_file' => $tempThumb,
+                'file_size' => 12345,
+            ]);
+        $this->app->instance(FfmpegService::class, $ffmpegMock);
+
+        $data = [
+            'product_id' => $this->product->id,
+            'title' => 'Google Flow Branded Reel',
+            'video_type' => 'imported_branded',
+            'template' => 'fashion_showcase',
+            'aspect_ratio' => '9:16',
+            'duration_seconds' => 8,
+            'uploaded_video' => $fakeVideo,
+            'enable_music' => '1',
+            'audio_track' => 'festive_royal',
+            'text_overlay' => '1',
+            'show_price' => '1',
+            'call_to_action' => '1',
+        ];
+
+        $response = $this->adminRequest()
+            ->post(route('admin.video-studio.store'), $data);
+
+        $response->assertRedirect(route('admin.video-studio.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('product_videos', [
+            'product_id' => $this->product->id,
+            'title' => 'Google Flow Branded Reel',
+            'video_type' => 'imported_branded',
+            'status' => 'completed',
+            'progress' => 100,
+            'approval_status' => 'approved',
+        ]);
+
+        if (file_exists($tempVideo)) @unlink($tempVideo);
+        if (file_exists($tempThumb)) @unlink($tempThumb);
+    }
+
+    public function test_product_approved_video_accessor_returns_completed_approved_video(): void
+    {
+        $video = ProductVideo::create([
+            'product_id' => $this->product->id,
+            'title' => 'Approved Test Reel',
+            'video_type' => 'imported_branded',
+            'template' => 'fashion_showcase',
+            'aspect_ratio' => '9:16',
+            'width' => 1080,
+            'height' => 1920,
+            'duration_seconds' => 8,
+            'status' => 'completed',
+            'progress' => 100,
+            'approval_status' => 'approved',
+            'video_path' => 'video-studio/test.mp4',
+            'thumbnail_path' => 'video-studio/test.jpg',
+        ]);
+
+        $this->product->refresh();
+        $this->assertNotNull($this->product->approved_video);
+        $this->assertEquals($video->id, $this->product->approved_video->id);
     }
 
     protected function tearDown(): void

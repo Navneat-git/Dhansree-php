@@ -57,6 +57,7 @@
     <!-- Main Form Grid -->
     <form action="{{ route('admin.video-studio.store') }}"
           method="POST"
+          enctype="multipart/form-data"
           id="create-video-form"
           @keydown.enter="if ($event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); }"
           @submit="return handleFormSubmit($event)">
@@ -67,13 +68,13 @@
             <!-- Left 2 Cols: Mode Selection + Product Search + Images + Prompts / Templates -->
             <div class="lg:col-span-2 space-y-6">
 
-                <!-- 1. Video Generation Mode Selector (3 Distinct Modes) -->
+                <!-- 1. Video Generation Mode Selector (4 Modes) -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-3">
                         1. Select Video Production Mode
                     </label>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                         <!-- Mode 1: FFmpeg Slideshow (Default & Free) -->
                         <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
                                :class="videoType === 'slideshow' ? 'border-amber-500 bg-amber-50/70 ring-1 ring-amber-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
@@ -90,7 +91,23 @@
                             <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">Smooth crossfades, zoom effects, audio, and branding directly from catalog photos.</p>
                         </label>
 
-                        <!-- Mode 2: AI Fashion Shoot (Raw Google Veo Footage) -->
+                        <!-- Mode 2: Import AI Video + Brand (from Google Flow) -->
+                        <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
+                               :class="videoType === 'imported_branded' ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-500/40' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="video_type" value="imported_branded" x-model="videoType" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <svg class="size-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                                    </svg>
+                                    Import &amp; Brand
+                                </span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-semibold">Flow / Reel</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">Upload video from Google Flow or camera; FFmpeg burns logo, price, royal music &amp; CTA.</p>
+                        </label>
+
+                        <!-- Mode 3: AI Fashion Shoot (Raw Google Veo Footage) -->
                         <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
                                :class="videoType === 'ai_fashion' ? 'border-purple-500 bg-purple-50/70 ring-1 ring-purple-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
                             <input type="radio" name="video_type" value="ai_fashion" x-model="videoType" class="sr-only">
@@ -106,7 +123,7 @@
                             <p class="text-[11px] text-slate-600 mt-2 leading-relaxed">Photorealistic model wearing and moving in your catalog suit. Pure raw AI footage.</p>
                         </label>
 
-                        <!-- Mode 3: AI Fashion Shoot + Branded Export (Veo + FFmpeg Post-Processing) -->
+                        <!-- Mode 4: AI Fashion Shoot + Branded Export (Veo + FFmpeg Post-Processing) -->
                         <label class="relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all"
                                :class="videoType === 'ai_fashion_branded' ? 'border-indigo-500 bg-indigo-50/70 ring-1 ring-indigo-500/30' : 'border-slate-200 bg-white hover:border-slate-300'">
                             <input type="radio" name="video_type" value="ai_fashion_branded" x-model="videoType" class="sr-only">
@@ -129,7 +146,7 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                         2. Search &amp; Select Product
                     </label>
-                    <p class="text-xs text-slate-500 mb-4">Choose an active product from your catalog. Its uploaded catalog photos will load automatically below.</p>
+                    <p class="text-xs text-slate-500 mb-4">Choose an active product from your catalog to link with this video.</p>
 
                     <!-- Search Input with AJAX Auto-complete & Search Button -->
                     <div class="relative">
@@ -217,6 +234,68 @@
                     <input type="hidden" name="product_id" :value="selectedProductId">
                 </div>
 
+                <!-- 2b. Upload Raw Video File (Only for imported_branded mode) -->
+                <div class="rounded-xl border border-amber-300 bg-white p-5 shadow-xs space-y-4" x-show="videoType === 'imported_branded'" x-cloak>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-amber-950">
+                                2b. Upload Raw Video File (Google Flow / Camera / Studio)
+                            </label>
+                            <p class="text-xs text-slate-500 mt-0.5">Select a raw MP4, MOV, or WebM video file (max 60MB). FFmpeg will automatically brand it with audio, logo, and price.</p>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            MP4 / MOV (Max 60MB)
+                        </span>
+                    </div>
+
+                    <!-- Dropzone Area -->
+                    <div class="relative border-2 border-dashed rounded-xl p-6 text-center transition-colors"
+                         :class="uploadedVideoName ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-300 bg-slate-50 hover:bg-slate-100/70'">
+                        <input type="file"
+                               id="uploaded_video_input"
+                               name="uploaded_video"
+                               accept="video/mp4,video/quicktime,video/webm"
+                               @change="handleVideoFileChange($event)"
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+
+                        <template x-if="!uploadedVideoName">
+                            <div class="space-y-2 pointer-events-none">
+                                <div class="size-12 rounded-full bg-amber-100 text-amber-700 mx-auto flex items-center justify-center">
+                                    <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                    </svg>
+                                </div>
+                                <p class="text-xs font-bold text-slate-800">
+                                    Click to choose video file, or drag and drop
+                                </p>
+                                <p class="text-[11px] text-slate-500">
+                                    Google Flow generated video, phone camera recording, or downloaded reel
+                                </p>
+                            </div>
+                        </template>
+
+                        <template x-if="uploadedVideoName">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-center gap-2 text-emerald-800 font-bold text-xs">
+                                    <svg class="size-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                    </svg>
+                                    <span x-text="uploadedVideoName"></span>
+                                    <span class="text-[11px] text-slate-500 font-normal" x-text="'(' + uploadedVideoSize + ')'"></span>
+                                </div>
+
+                                <div class="max-w-xs mx-auto aspect-[9/16] max-h-64 rounded-xl overflow-hidden bg-black shadow-md border border-slate-700">
+                                    <video :src="uploadedVideoPreviewUrl" controls playsinline class="w-full h-full object-contain"></video>
+                                </div>
+
+                                <button type="button" @click="clearUploadedVideo()" class="text-xs font-bold text-rose-600 hover:text-rose-800 relative z-20">
+                                    ✕ Remove &amp; choose different video
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- 3. AI Fashion Shoot Styles & Direct Prompt Controls (Active for AI modes) -->
                 <div class="rounded-xl border border-purple-200 bg-white p-5 shadow-xs" x-show="isAiMode" x-cloak>
                     <div class="flex items-center justify-between mb-3">
@@ -295,7 +374,10 @@
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
                                 4. Select Images &amp; Primary Reference (<span x-text="selectedImageIds.length"></span> selected)
                             </label>
-                            <p class="text-xs text-slate-500 mt-0.5" x-show="!isAiMode">Click an image to toggle inclusion. Use arrows to change playback sequence.</p>
+                            <p class="text-xs text-slate-500 mt-0.5" x-show="!isAiMode && videoType !== 'imported_branded'">Click an image to toggle inclusion. Use arrows to change playback sequence.</p>
+                            <p class="text-xs text-amber-700 mt-0.5 font-medium" x-show="videoType === 'imported_branded'">
+                                ★ In Imported Video mode, image selection is optional (used as poster / thumbnail).
+                            </p>
                             <p class="text-xs text-purple-700 mt-0.5 font-medium" x-show="isAiMode">
                                 ★ In AI Fashion mode, select the <strong>Primary Reference</strong> (full front view) the AI model will wear.
                             </p>
@@ -359,7 +441,7 @@
                     <input type="hidden" name="primary_image_id" :value="primaryImageId">
 
                     <!-- Minimum 1 Image Warning -->
-                    <div x-show="selectedImageIds.length === 0" class="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                    <div x-show="selectedImageIds.length === 0 && videoType !== 'imported_branded'" class="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
                         <svg class="size-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
                         <span>Please select at least one catalog image to generate the video.</span>
                     </div>
@@ -525,7 +607,7 @@
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-500">Mode:</span>
                             <span class="font-bold" :class="isAiMode ? 'text-purple-700' : 'text-amber-800'"
-                                  x-text="videoType === 'slideshow' ? 'FFmpeg Slideshow' : (videoType === 'ai_fashion' ? 'AI Fashion Shoot' : 'AI Shoot + Branded')"></span>
+                                  x-text="videoType === 'slideshow' ? 'FFmpeg Slideshow' : (videoType === 'imported_branded' ? 'Import AI Video + Brand' : (videoType === 'ai_fashion' ? 'AI Fashion Shoot' : 'AI Shoot + Branded'))"></span>
                         </div>
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-500">Target Product:</span>
@@ -549,14 +631,14 @@
                     <button type="button"
                             @click="handleFormSubmit($event)"
                             :disabled="!canSubmit() || isSubmitting"
-                            :style="isAiMode ? 'background-color: #7e22ce !important; color: #ffffff !important;' : 'background-color: #d97706 !important; color: #ffffff !important;'"
+                            :style="isAiMode ? 'background-color: #7e22ce !important; color: #ffffff !important;' : (videoType === 'imported_branded' ? 'background-color: #b45309 !important; color: #ffffff !important;' : 'background-color: #d97706 !important; color: #ffffff !important;')"
                             class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <template x-if="!isSubmitting">
                             <span class="flex items-center gap-2">
                                 <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                                 </svg>
-                                <span style="color: #ffffff !important;" x-text="isAiMode ? 'Generate AI Fashion Video' : 'Render Video Now'"></span>
+                                <span style="color: #ffffff !important;" x-text="videoType === 'imported_branded' ? 'Upload & Brand Video with FFmpeg' : (isAiMode ? 'Generate AI Fashion Video' : 'Render Video Now')"></span>
                             </span>
                         </template>
                         <template x-if="isSubmitting">
@@ -565,7 +647,7 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span x-text="isAiMode ? 'Directing Google Veo AI...' : 'Rendering with FFmpeg...'"></span>
+                                <span x-text="videoType === 'imported_branded' ? 'Uploading & Branding with FFmpeg...' : (isAiMode ? 'Directing Google Veo AI...' : 'Rendering with FFmpeg...')"></span>
                             </span>
                         </template>
                     </button>
@@ -596,9 +678,9 @@
                     </svg>
                 </div>
 
-                <h3 class="text-base font-bold text-slate-900" x-text="isAiMode ? 'Generating AI Fashion Shoot Video' : 'Rendering Video Studio Reel'"></h3>
+                <h3 class="text-base font-bold text-slate-900" x-text="videoType === 'imported_branded' ? 'Importing & Branding Video with FFmpeg' : (isAiMode ? 'Generating AI Fashion Shoot Video' : 'Rendering Video Studio Reel')"></h3>
                 <p class="text-xs text-slate-600 mt-1 max-w-xs mx-auto"
-                   x-text="isAiMode ? 'Google Veo AI is directing a moving model wearing the exact catalog garment.' : 'FFmpeg is composing high-definition slides, Ken Burns motion, luxury branding, and audio.'">
+                   x-text="videoType === 'imported_branded' ? 'FFmpeg is applying Dhansree branding, verified selling price, royal audio soundtrack, and end CTA.' : (isAiMode ? 'Google Veo AI is directing a moving model wearing the exact catalog garment.' : 'FFmpeg is composing high-definition slides, Ken Burns motion, luxury branding, and audio.')">
                 </p>
 
                 <!-- Dynamic Animated Progress Bar -->
@@ -671,6 +753,11 @@ function videoStudioCreator() {
         showPrice: true,
         callToAction: true,
         customTitle: '',
+
+        uploadedVideoFile: null,
+        uploadedVideoName: '',
+        uploadedVideoSize: '',
+        uploadedVideoPreviewUrl: '',
 
         aiPrompt: '',
         aiNegativePrompt: @json($defaultNegativePrompt ?? ''),
@@ -815,9 +902,33 @@ function videoStudioCreator() {
             }
         },
 
-        clearAllImages() {
-            this.selectedImageIds = [];
-            this.primaryImageId = null;
+        handleVideoFileChange(e) {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (file.size > 61440 * 1024) {
+                alert('Video file is larger than 60MB. Please choose a smaller video.');
+                e.target.value = '';
+                return;
+            }
+            this.uploadedVideoFile = file;
+            this.uploadedVideoName = file.name;
+            this.uploadedVideoSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+            if (this.uploadedVideoPreviewUrl) {
+                URL.revokeObjectURL(this.uploadedVideoPreviewUrl);
+            }
+            this.uploadedVideoPreviewUrl = URL.createObjectURL(file);
+        },
+
+        clearUploadedVideo() {
+            this.uploadedVideoFile = null;
+            this.uploadedVideoName = '';
+            this.uploadedVideoSize = '';
+            if (this.uploadedVideoPreviewUrl) {
+                URL.revokeObjectURL(this.uploadedVideoPreviewUrl);
+                this.uploadedVideoPreviewUrl = '';
+            }
+            const input = document.getElementById('uploaded_video_input');
+            if (input) input.value = '';
         },
 
         handleFormSubmit(e) {
@@ -828,7 +939,12 @@ function videoStudioCreator() {
                 alert('Please search and select a catalog product first.');
                 return;
             }
-            if (this.selectedImageIds.length === 0) {
+            if (this.videoType === 'imported_branded') {
+                if (!this.uploadedVideoFile) {
+                    alert('Please select a video file to upload and brand.');
+                    return;
+                }
+            } else if (this.selectedImageIds.length === 0) {
                 alert('Please select at least one genuine product image for the video.');
                 return;
             }
@@ -836,7 +952,9 @@ function videoStudioCreator() {
             this.isSubmitting = true;
             this.showProcessingModal = true;
             this.progressPercent = 15;
-            this.currentStepText = this.isAiMode ? 'Connecting to Google Veo API...' : 'Preparing authentic product photos...';
+            this.currentStepText = this.videoType === 'imported_branded'
+                ? 'Uploading video footage & preparing FFmpeg...'
+                : (this.isAiMode ? 'Connecting to Google Veo API...' : 'Preparing authentic product photos...');
 
             const form = document.getElementById('create-video-form');
             const formData = new FormData(form);
@@ -845,7 +963,15 @@ function videoStudioCreator() {
             this.progressTimer = setInterval(() => {
                 if (this.progressPercent < 85) {
                     this.progressPercent += 5;
-                    if (this.isAiMode) {
+                    if (this.videoType === 'imported_branded') {
+                        if (this.progressPercent >= 25 && this.progressPercent < 50) {
+                            this.currentStepText = 'Uploading footage & analyzing aspect ratio...';
+                        } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
+                            this.currentStepText = 'Overlaying luxury Dhansree logo & verified price...';
+                        } else if (this.progressPercent >= 75) {
+                            this.currentStepText = 'Encoding H.264 branded reel with royal soundtrack...';
+                        }
+                    } else if (this.isAiMode) {
                         if (this.progressPercent >= 25 && this.progressPercent < 50) {
                             this.currentStepText = 'Synthesizing model motion & fabric physics...';
                         } else if (this.progressPercent >= 50 && this.progressPercent < 75) {
@@ -938,7 +1064,11 @@ function videoStudioCreator() {
         },
 
         canSubmit() {
-            return this.selectedProductId && this.selectedImageIds.length > 0;
+            if (!this.selectedProductId) return false;
+            if (this.videoType === 'imported_branded') {
+                return !!this.uploadedVideoFile;
+            }
+            return this.selectedImageIds.length > 0;
         }
     };
 }

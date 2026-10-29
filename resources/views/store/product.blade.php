@@ -257,6 +257,8 @@
     if (!$firstImg) {
         $firstImg = $product->primary_image_url ?? $product->images->first()?->url;
     }
+
+    $approvedVideo = $product->approved_video;
 @endphp
 
 @push('head')
@@ -275,6 +277,7 @@
         expanded: false,
         activeImage: '{{ $firstImg }}',
         zoomModalOpen: false,
+        videoModalOpen: false,
         sizeChartOpen: false,
         sizeChartZoomOpen: false,
         chartZoomScale: 1,
@@ -412,6 +415,60 @@
                 class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto"
                 :class="visibleImages.length === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'">
                 
+                @if($approvedVideo)
+                    <li class="w-full shrink-0 snap-center lg:col-span-2">
+                        <div class="relative aspect-[4/5] sm:aspect-[16/9] lg:aspect-[16/9] overflow-hidden rounded-2xl border-2 border-amber-400/80 bg-black group shadow-md"
+                             x-data="{ isPlaying: false, isMuted: true }">
+                            <video x-ref="galleryVideo"
+                                   src="{{ $approvedVideo->video_url }}"
+                                   poster="{{ $approvedVideo->thumbnail_url }}"
+                                   playsinline
+                                   loop
+                                   muted
+                                   preload="metadata"
+                                   class="w-full h-full object-contain bg-black cursor-pointer"
+                                   @play="isPlaying = true"
+                                   @pause="isPlaying = false"
+                                   @click="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }"></video>
+
+                            <!-- Top Overlay Badge -->
+                            <div class="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[11px] font-bold shadow-md">
+                                    <span class="size-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                    <span>Watch Model Motion</span>
+                                    <span class="text-[9px] font-mono text-slate-300">({{ $approvedVideo->duration_seconds ?? 8 }}s)</span>
+                                </span>
+                            </div>
+
+                            <!-- Play/Pause Overlay Button -->
+                            <div class="absolute inset-0 flex items-center justify-center transition-opacity pointer-events-none"
+                                 :class="isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'">
+                                <button type="button"
+                                        @click.stop="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }"
+                                        class="size-14 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-xl hover:scale-110 transition-transform pointer-events-auto cursor-pointer border border-white/20">
+                                    <svg class="size-6 fill-white translate-x-0.5" x-show="!isPlaying" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="size-6 fill-white" x-show="isPlaying" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- Bottom Controls: Unmute + Fullscreen Reel Modal Button -->
+                            <div class="absolute bottom-3 inset-x-3 flex items-center justify-between z-10">
+                                <button type="button"
+                                        @click.stop="$refs.galleryVideo.muted = !$refs.galleryVideo.muted; isMuted = $refs.galleryVideo.muted;"
+                                        class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-medium flex items-center gap-1.5 hover:bg-black/90 transition-colors shadow-xs">
+                                    <span x-text="isMuted ? '🔇 Unmute' : '🔊 Mute'"></span>
+                                </button>
+
+                                <button type="button"
+                                        @click.stop="videoModalOpen = true; $refs.modalVideo?.play()"
+                                        class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all shadow-md">
+                                    <span>Full Screen Reel ➔</span>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                @endif
+                
                 <template x-for="(img, idx) in visibleImages" :key="img.id + '-' + (selectedColor || 'all')">
                     <li class="w-full shrink-0 snap-center"
                         :class="{
@@ -535,6 +592,18 @@
             <p class="text-[0.6875rem] text-rich-black/50 -mt-2">
                 Price inclusive of all taxes. Free express shipping on orders over ₹999.
             </p>
+
+            @if($approvedVideo)
+                <div class="pt-1">
+                    <button type="button"
+                            @click="videoModalOpen = true; $refs.modalVideo?.play()"
+                            class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border border-amber-300 text-maroon-900 text-xs font-bold hover:border-amber-400 hover:shadow-xs transition-all cursor-pointer">
+                        <span class="size-5 rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 text-white flex items-center justify-center text-[10px] shadow-xs">▶</span>
+                        <span class="tracking-wide">Watch in Motion (Model Reel)</span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white text-amber-900 border border-amber-200/60 font-semibold">{{ $approvedVideo->duration_seconds ?? 8 }}s</span>
+                    </button>
+                </div>
+            @endif
 
             @php $defaultCoupon = \App\Models\StoreSettings::current()->getDefaultCoupon(); @endphp
             @if($defaultCoupon)
@@ -781,6 +850,49 @@
             <img :src="activeImage" alt="{{ $product->name }}" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl">
         </div>
     </div>
+
+    @if($approvedVideo)
+    <!-- Fullscreen Fashion Reel Lightbox Modal -->
+    <div x-show="videoModalOpen"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md"
+         @keydown.escape.window="videoModalOpen = false; $refs.modalVideo?.pause()">
+        <div class="relative max-w-sm w-full max-h-[92vh] flex flex-col items-center justify-center bg-black rounded-3xl overflow-hidden shadow-2xl border border-amber-400/50">
+            <!-- Close Button -->
+            <button type="button"
+                    @click="videoModalOpen = false; $refs.modalVideo?.pause()"
+                    class="absolute top-4 right-4 z-20 size-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition-all border border-white/20 cursor-pointer shadow-lg">
+                ✕
+            </button>
+
+            <!-- Video Player in 9:16 vertical ratio -->
+            <div class="w-full aspect-[9/16] relative bg-black">
+                <video x-ref="modalVideo"
+                       src="{{ $approvedVideo->video_url }}"
+                       poster="{{ $approvedVideo->thumbnail_url }}"
+                       playsinline
+                       loop
+                       controls
+                       autoplay
+                       class="w-full h-full object-contain"></video>
+            </div>
+
+            <!-- Bottom Floating Tagged Product Details -->
+            <div class="absolute bottom-4 inset-x-4 p-3 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/10 text-white flex items-center justify-between gap-3 z-20">
+                <div class="min-w-0">
+                    <p class="text-[10px] uppercase tracking-wider text-amber-300 font-bold">Featured in Reel</p>
+                    <p class="text-xs font-bold text-white truncate">{{ $product->name }}</p>
+                    <p class="text-xs font-bold text-amber-400 mt-0.5" x-text="selectedVariantPrice"></p>
+                </div>
+                <button type="button"
+                        @click="videoModalOpen = false; $refs.modalVideo?.pause()"
+                        class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-md transition-colors cursor-pointer">
+                    Shop Now
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Customer Reviews Section -->
     <section id="customer-reviews" class="mt-16 md:mt-24 pt-12 border-t border-light-gold">

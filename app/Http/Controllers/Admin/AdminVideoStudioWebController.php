@@ -326,12 +326,13 @@ class AdminVideoStudioWebController extends Controller
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'title' => 'nullable|string|max:150',
-                'video_type' => 'required|in:slideshow,ai_fashion,ai_fashion_branded,ai_motion',
+                'video_type' => 'required|in:slideshow,ai_fashion,ai_fashion_branded,ai_motion,imported_branded',
                 'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
                 'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
-                'duration_seconds' => 'required|integer|min:5|max:30',
-                'image_ids' => 'required|array|min:1',
+                'duration_seconds' => 'required|integer|min:4|max:30',
+                'image_ids' => 'nullable|required_unless:video_type,imported_branded|array',
                 'image_ids.*' => 'integer|exists:product_images,id',
+                'uploaded_video' => 'nullable|required_if:video_type,imported_branded|file|mimes:mp4,mov,webm,quicktime|max:61440',
                 'primary_image_id' => 'nullable|integer|exists:product_images,id',
                 'prompt_template' => 'nullable|string',
                 'prompt' => 'nullable|string|max:2000',
@@ -344,8 +345,8 @@ class AdminVideoStudioWebController extends Controller
                 'custom_headline' => 'nullable|string|max:60',
             ], [
                 'product_id.required' => 'Please select a product.',
-                'image_ids.required' => 'Please select at least one product image for the video.',
-                'image_ids.min' => 'Please select at least one product image for the video.',
+                'image_ids.required_unless' => 'Please select at least one product image for the video.',
+                'uploaded_video.required_if' => 'Please upload a raw video file to brand with FFmpeg.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->wantsJson() || $request->ajax()) {
@@ -356,6 +357,49 @@ class AdminVideoStudioWebController extends Controller
                 ], 422);
             }
             throw $e;
+        }
+
+        /** @var AdminUser|null $admin */
+        $admin = Auth::guard('admin')->user();
+
+        // Handle direct raw video import & FFmpeg branding (e.g. from Google Flow)
+        if ($validated['video_type'] === 'imported_branded') {
+            if (!$request->hasFile('uploaded_video')) {
+                $msg = 'Please upload a raw video file from Google Flow or your camera.';
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->with('error', $msg);
+            }
+
+            try {
+                $video = $this->videoStudioService->importAndBrand($validated, $request->file('uploaded_video'), $admin);
+                session()->flash('success', "AI fashion video successfully imported and branded with FFmpeg for '{$video->title}'.");
+
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'video' => [
+                            'id' => $video->id,
+                            'title' => $video->title,
+                            'status' => $video->status,
+                            'is_completed' => $video->isCompleted(),
+                            'video_url' => $video->video_url,
+                        ],
+                        'redirect' => route('admin.video-studio.index'),
+                        'message' => "Video branded successfully.",
+                    ]);
+                }
+
+                return redirect()->route('admin.video-studio.index')
+                    ->with('success', "Video branded and exported successfully for '{$video->title}'.");
+            } catch (\Throwable $e) {
+                Log::error('Video import and branding error: ' . $e->getMessage(), ['exception' => $e]);
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Branding failed: ' . $e->getMessage()], 500);
+                }
+                return back()->withInput()->with('error', 'Branding failed: ' . $e->getMessage());
+            }
         }
 
         // Guard legacy/placeholder AI motion when disabled

@@ -87,17 +87,20 @@ class ProductVideo extends Model
 
     public function scopeApproved(Builder $query): Builder
     {
-        return $query->where('approval_status', 'approved');
+        return $query->where(function ($q) {
+            $q->whereIn('video_type', ['slideshow', 'imported_branded'])
+              ->orWhere('approval_status', 'approved');
+        });
     }
 
     public function scopeAiVideos(Builder $query): Builder
     {
-        return $query->whereIn('video_type', ['ai_fashion', 'ai_fashion_branded', 'ai_motion']);
+        return $query->whereIn('video_type', ['ai_fashion', 'ai_fashion_branded', 'ai_motion', 'imported_branded']);
     }
 
     public function isAi(): bool
     {
-        return in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion'], true);
+        return in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion', 'imported_branded'], true);
     }
 
     public function isPendingApproval(): bool
@@ -107,6 +110,9 @@ class ProductVideo extends Model
 
     public function isApproved(): bool
     {
+        if (in_array($this->video_type, ['slideshow', 'imported_branded'], true)) {
+            return $this->approval_status !== 'rejected';
+        }
         return $this->approval_status === 'approved';
     }
 
@@ -210,6 +216,11 @@ class ProductVideo extends Model
             'ai_fashion_branded' => [
                 'text' => 'AI Shoot + Branded',
                 'class' => 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30',
+                'icon' => 'sparkles-badge',
+            ],
+            'imported_branded' => [
+                'text' => 'Imported + Branded Reel',
+                'class' => 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
                 'icon' => 'sparkles-badge',
             ],
             default => [

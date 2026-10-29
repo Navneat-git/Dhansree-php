@@ -369,4 +369,136 @@ class VideoStudioService
 
         return null;
     }
+
+    /**
+     * Import a raw AI fashion video (e.g. from Google Flow), store it, and run the FFmpeg branding pipeline.
+     */
+    public function importAndBrand(array $data, \Illuminate\Http\UploadedFile $uploadedVideo, ?AdminUser $admin = null): ProductVideo
+    {
+        $productId = $data['product_id'] ?? null;
+        $product = $productId ? Product::find($productId) : null;
+
+        $aspectRatio = $data['aspect_ratio'] ?? '9:16';
+        $aspectConfig = config("video_studio.aspect_ratios.{$aspectRatio}", [
+            'width' => 1080,
+            'height' => 1920,
+        ]);
+
+        $template = $data['template'] ?? 'fashion_showcase';
+        $title = !empty($data['title']) ? trim($data['title']) : ($product ? "{$product->name} (Fashion Reel)" : 'Imported Dhansree Fashion Reel');
+
+        $renderSettings = [
+            'enable_music' => (bool) ($data['enable_music'] ?? true),
+            'audio_track' => $data['audio_track'] ?? 'festive_royal',
+            'text_overlay' => (bool) ($data['text_overlay'] ?? true),
+            'show_price' => (bool) ($data['show_price'] ?? true),
+            'call_to_action' => (bool) ($data['call_to_action'] ?? true),
+            'custom_headline' => $data['custom_headline'] ?? null,
+        ];
+
+        $primaryImageId = !empty($data['primary_image_id']) ? (int) $data['primary_image_id'] : $product?->primaryImage?->id;
+
+        // 1. Store the uploaded raw video as ai_master_video
+        $disk = config('video_studio.disk', 'public');
+        $storageDir = config('video_studio.storage_dir', 'video-studio');
+        $rawFilename = 'raw_imported_' . Str::uuid() . '.' . ($uploadedVideo->getClientOriginalExtension() ?: 'mp4');
+        $rawPath = $uploadedVideo->storeAs($storageDir, $rawFilename, $disk);
+
+        // 2. Create the ProductVideo record
+        $video = ProductVideo::create([
+            'product_id' => $product?->id,
+            'title' => $title,
+            'video_type' => 'imported_branded',
+            'template' => $template,
+            'aspect_ratio' => $aspectRatio,
+            'width' => $aspectConfig['width'] ?? 1080,
+            'height' => $aspectConfig['height'] ?? 1920,
+            'duration_seconds' => (int) ($data['duration_seconds'] ?? 8),
+            'status' => 'processing',
+            'progress' => 30,
+            'ai_master_video_path' => $rawPath,
+            'primary_image_id' => $primaryImageId,
+            'render_settings' => $renderSettings,
+            'approval_status' => 'approved', // Admin imported directly, approved by default
+            'created_by' => $admin?->id,
+            'reviewed_by' => $admin?->id,
+            'reviewed_at' => now(),
+        ]);
+
+        // 3. Run FFmpeg branding pipeline directly
+        $this->brandMasterVideo($video);
+
+        return $video;
+    }
+
+    /**
+     * Brand a raw master video with Dhansree logo, selling price, royal music, and CTA slide using FFmpeg.
+     */
+    public function brandMasterVideo(ProductVideo $video): bool
+    {
+        $video->update([
+            'status' => 'processing',
+            'progress' => 45,
+            'error_message' => null,
+        ]);
+
+        $disk = config('video_studio.disk', 'public');
+        $storageDir = config('video_studio.storage_dir', 'video-studio');
+
+        $tempDir = storage_path('app/temp/video-studio-brand-' . Str::uuid());
+        File::ensureDirectoryExists($tempDir);
+
+        try {
+            $masterRawPath = Storage::disk($disk)->path($video->ai_master_video_path);
+            if (!file_exists($masterRawPath)) {
+                throw new \RuntimeException("Raw video file not found on disk at: {$masterRawPath}");
+            }
+
+            $video->update(['progress' => 60]);
+
+            // Execute FFmpeg branding
+            $brandedResult = $this->ffmpegService->brandAiVideo($video, $masterRawPath, $tempDir);
+
+            // Store branded MP4
+            $finalFilename = 'branded_' . Str::uuid() . '.mp4';
+            $finalRelativePath = "{$storageDir}/{$finalFilename}";
+            Storage::disk($disk)->put(
+                $finalRelativePath,
+                File::get($brandedResult['video_file'])
+            );
+
+            // Store thumbnail
+            $thumbFilename = 'thumb_' . Str::uuid() . '.jpg';
+            $thumbRelativePath = "{$storageDir}/{$thumbFilename}";
+            Storage::disk($disk)->put(
+                $thumbRelativePath,
+                File::get($brandedResult['thumbnail_file'])
+            );
+
+            $video->update([
+                'status' => 'completed',
+                'progress' => 100,
+                'video_path' => $finalRelativePath,
+                'thumbnail_path' => $thumbRelativePath,
+                'file_size_bytes' => $brandedResult['file_size'] ?? filesize($brandedResult['video_file']),
+                'completed_at' => now(),
+                'error_message' => null,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Failed to brand master video for ProductVideo #{$video->id}: " . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $video->update([
+                'status' => 'failed',
+                'error_message' => 'Branding failed: ' . $e->getMessage(),
+            ]);
+
+            return false;
+        } finally {
+            File::deleteDirectory($tempDir);
+        }
+    }
 }
