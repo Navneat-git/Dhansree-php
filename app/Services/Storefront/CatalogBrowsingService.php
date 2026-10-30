@@ -231,6 +231,7 @@ class CatalogBrowsingService
             'images.productImageOptionValues',
             'images.productImageVariants',
             'options.values',
+            'videos',
         ])
             ->where('status', ProductStatus::ACTIVE)
             ->whereHas('category', function (Builder $cq) use ($featuredBlock) {
@@ -319,7 +320,7 @@ class CatalogBrowsingService
 
                 $instagramFeed = \App\Models\InstagramPost::query()
                     ->visible()
-                    ->with(['taggedProduct.defaultVariant'])
+                    ->with(['taggedProduct.defaultVariant', 'taggedProduct.videos'])
                     ->orderBy('position')
                     ->orderByDesc('id')
                     ->take(12)
@@ -642,6 +643,7 @@ class CatalogBrowsingService
             'images.productImageOptionValues',
             'images.productImageVariants',
             'options.values',
+            'videos',
         ])
             ->where('status', ProductStatus::ACTIVE)
             ->whereIn('category_id', $categoryIds);
@@ -711,6 +713,7 @@ class CatalogBrowsingService
         $product = Product::with([
             'category.parent',
             'productContent',
+            'videos',
             'variants' => fn($q) => $q->whereNull('archived_at')->orderBy('position')->with(['optionValues', 'inventoryLevels']),
             'options' => fn($q) => $q->orderBy('position')->with(['values' => fn($vq) => $vq->orderBy('position')]),
             'images' => fn($q) => $q->orderBy('position')->with(['productImageVariants', 'productImageOptionValues']),
@@ -721,7 +724,7 @@ class CatalogBrowsingService
         ->firstOrFail();
 
         // Related products in the same category
-        $relatedProducts = Product::with(['primaryImage', 'variants.inventoryLevels'])
+        $relatedProducts = Product::with(['primaryImage', 'variants.inventoryLevels', 'videos'])
             ->where('status', ProductStatus::ACTIVE)
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
@@ -851,6 +854,7 @@ class CatalogBrowsingService
             'images.productImageOptionValues',
             'images.productImageVariants',
             'options.values',
+            'videos',
         ])
             ->where('status', ProductStatus::ACTIVE)
             ->where(function (Builder $q) use ($clean, $term, $words) {

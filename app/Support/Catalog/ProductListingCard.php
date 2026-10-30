@@ -53,6 +53,7 @@ class ProductListingCard implements Arrayable, JsonSerializable
             'variants' => $this->variants,
             'has_multiple_variants', 'hasMultipleVariants' => $this->hasMultipleVariants,
             'in_stock', 'inStock' => $this->inStock,
+            'approved_video', 'approvedVideo' => $this->product->approved_video,
             default => $this->product->getAttribute($key),
         };
     }
@@ -65,6 +66,7 @@ class ProductListingCard implements Arrayable, JsonSerializable
             'primary_image_url', 'url', 'formatted_price', 'formatted_mrp',
             'discount_percentage', 'first_variant', 'firstVariant',
             'variants', 'has_multiple_variants', 'hasMultipleVariants', 'in_stock', 'inStock',
+            'approved_video', 'approvedVideo',
         ], true) || isset($this->product->{$key});
     }
 

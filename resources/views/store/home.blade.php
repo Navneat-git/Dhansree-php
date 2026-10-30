@@ -330,28 +330,46 @@
                 @php
                     $firstVariant = $product->firstVariant ?? $product->variants->whereNull('archived_at')->first();
                     $hasMultipleVariants = $product->hasMultipleVariants ?? ($product->variants->whereNull('archived_at')->count() > 1);
+                    $prodVideo = $product->approved_video;
                 @endphp
                 <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                     x-data="{ selectedVariantId: {{ $firstVariant?->id ?? 'null' }} }">
+                     x-data="{ selectedVariantId: {{ $firstVariant?->id ?? 'null' }}, isHovered: false }"
+                     @mouseenter="isHovered = true; if ($refs.cardVideo) { $refs.cardVideo.play().catch(() => {}); }"
+                     @mouseleave="isHovered = false; if ($refs.cardVideo) { $refs.cardVideo.pause(); $refs.cardVideo.currentTime = 0; }">
                     
                     <div>
-                        <!-- Image Container (3:4 ratio) -->
+                        <!-- Image Container (3:4 ratio) with video play on hover -->
                         <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-warm-beige mb-3">
-                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}">
+                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}" class="block w-full h-full relative">
                                 <img src="{{ $product->primary_image_url }}"
                                      alt="{{ $product->name }}"
                                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                      loading="lazy">
+
+                                @if($prodVideo)
+                                    <video x-ref="cardVideo"
+                                           x-show="isHovered"
+                                           playsinline
+                                           loop
+                                           muted
+                                           preload="none"
+                                           class="absolute inset-0 w-full h-full object-cover">
+                                        @if($prodVideo->webm_url)
+                                            <source src="{{ $prodVideo->webm_url }}" type="video/webm">
+                                        @endif
+                                        <source src="{{ $prodVideo->video_url }}" type="video/mp4">
+                                    </video>
+                                @endif
                             </a>
 
                             @if($product->discount_percentage)
-                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase">
+                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase pointer-events-none z-10">
                                     {{ $product->discount_percentage }}% OFF
                                 </span>
                             @endif
 
-                            @if($product->approved_video)
-                                <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10"
+                            @if($prodVideo)
+                                <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
                                       title="Watch fashion reel in motion">
                                     <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span>▶ Reel</span>
@@ -359,7 +377,7 @@
                             @endif
 
                             @if(!empty($product->color_name))
-                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60">
+                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60 pointer-events-none z-10">
                                     <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
                                     <span>{{ $product->color_name }}</span>
                                 </span>
@@ -724,27 +742,48 @@
                              loading="lazy">
                     @endif
 
-                    <!-- Top Scrim with Reel Icon & Views -->
+                    <!-- Top Scrim with Reel Icon & Views (Only shown when real video exists) -->
                     <div class="absolute inset-x-0 top-0 p-2.5 sm:p-3 bg-gradient-to-b from-black/60 via-black/20 to-transparent flex items-center justify-between z-10">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full {{ $hasRealVideo ? 'bg-amber-500/90 text-slate-950 font-bold' : 'bg-black/50 text-white' }} backdrop-blur-xs text-[10px] sm:text-[11px] font-semibold">
-                            <span class="{{ $hasRealVideo ? 'text-rose-700' : 'text-rose-400' }}">🎬</span>
-                            <span>{{ $hasRealVideo ? 'Model Reel' : ($item->type === 'reel' ? 'Reel' : 'Post') }}</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-white drop-shadow-sm">
-                            <span>▶</span>
-                            <span>{{ $item->formatted_views }}</span>
-                        </span>
+                        @if($hasRealVideo)
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-amber-500/90 text-slate-950 font-bold backdrop-blur-xs text-[10px] sm:text-[11px]">
+                                <span class="text-rose-700">🎬</span>
+                                <span>Model Reel</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-white drop-shadow-sm">
+                                <span>▶</span>
+                                <span>{{ $item->formatted_views }}</span>
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-black/50 text-white backdrop-blur-xs text-[10px] sm:text-[11px] font-semibold">
+                                <span>📸</span>
+                                <span>Look</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-white/90 drop-shadow-sm">
+                                @if($item->formatted_views)
+                                    <svg class="size-3 text-white/80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                    </svg>
+                                    <span>{{ $item->formatted_views }}</span>
+                                @else
+                                    <span>❤️</span>
+                                    <span>{{ $item->formatted_likes }}</span>
+                                @endif
+                            </span>
+                        @endif
                     </div>
 
-                    <!-- Center Play Button Overlay on Hover -->
-                    <div class="absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10"
-                         :class="isVideoHovered ? 'opacity-0' : 'opacity-100 sm:opacity-80 group-hover:opacity-100'">
-                        <span class="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                            <svg class="size-5 sm:size-6 fill-white translate-x-0.5" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                            </svg>
-                        </span>
-                    </div>
+                    @if($hasRealVideo)
+                        <!-- Center Play Button Overlay on Hover (ONLY shown if product has real video) -->
+                        <div class="absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none z-10"
+                             :class="isVideoHovered ? 'opacity-0' : 'opacity-100 sm:opacity-80 group-hover:opacity-100'">
+                            <span class="w-11 h-11 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                                <svg class="size-5 sm:size-6 fill-white translate-x-0.5" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                            </span>
+                        </div>
+                    @endif
 
                     <!-- Bottom Gradient Overlay with Tagged Product, Likes & Caption -->
                     <div class="absolute inset-x-0 bottom-0 p-2.5 sm:p-3 bg-gradient-to-t from-black/85 via-black/50 to-transparent text-white space-y-1.5 z-10">

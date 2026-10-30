@@ -63,26 +63,45 @@
             @foreach($productCards ?? $products as $product)
                 @php
                     $firstVariant = $product->firstVariant ?? $product->variants->whereNull('archived_at')->first();
+                    $prodVideo = $product->approved_video;
                 @endphp
-                <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                     x-data="{ isHovered: false }"
+                     @mouseenter="isHovered = true; if ($refs.cardVideo) { $refs.cardVideo.play().catch(() => {}); }"
+                     @mouseleave="isHovered = false; if ($refs.cardVideo) { $refs.cardVideo.pause(); $refs.cardVideo.currentTime = 0; }">
                     <div>
-                        <!-- Image Container (3:4 ratio) -->
+                        <!-- Image Container (3:4 ratio) with video play on hover -->
                         <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-warm-beige mb-3">
-                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}">
+                            <a href="{{ $product->url ?? url('/product/' . $product->slug) }}" class="block w-full h-full relative">
                                 <img src="{{ $product->primary_image_url }}"
                                      alt="{{ $product->name }}"
                                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                      loading="lazy">
+
+                                @if($prodVideo)
+                                    <video x-ref="cardVideo"
+                                           x-show="isHovered"
+                                           playsinline
+                                           loop
+                                           muted
+                                           preload="none"
+                                           class="absolute inset-0 w-full h-full object-cover">
+                                        @if($prodVideo->webm_url)
+                                            <source src="{{ $prodVideo->webm_url }}" type="video/webm">
+                                        @endif
+                                        <source src="{{ $prodVideo->video_url }}" type="video/mp4">
+                                    </video>
+                                @endif
                             </a>
 
                             @if($product->discount_percentage)
-                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase">
+                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase pointer-events-none z-10">
                                     {{ $product->discount_percentage }}% OFF
                                 </span>
                             @endif
 
-                            @if($product->approved_video)
-                                <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10"
+                            @if($prodVideo)
+                                <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
                                       title="Watch fashion reel in motion">
                                     <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span>▶ Reel</span>
@@ -90,7 +109,7 @@
                             @endif
 
                             @if(!empty($product->color_name))
-                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60">
+                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60 pointer-events-none z-10">
                                     <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
                                     <span>{{ $product->color_name }}</span>
                                 </span>

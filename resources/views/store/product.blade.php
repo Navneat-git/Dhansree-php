@@ -1092,12 +1092,41 @@
 
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 @foreach($relatedProducts as $rel)
-                    <div class="bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                    @php
+                        $relVideo = $rel->approved_video;
+                    @endphp
+                    <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                         x-data="{ isHovered: false }"
+                         @mouseenter="isHovered = true; if ($refs.cardVideo) { $refs.cardVideo.play().catch(() => {}); }"
+                         @mouseleave="isHovered = false; if ($refs.cardVideo) { $refs.cardVideo.pause(); $refs.cardVideo.currentTime = 0; }">
                         <div>
                             <div class="relative aspect-[3/4] rounded-lg overflow-hidden bg-warm-beige mb-3">
-                                <a href="{{ url('/product/' . $rel->slug) }}">
-                                    <img src="{{ $rel->primary_image_url }}" alt="{{ $rel->name }}" class="w-full h-full object-cover">
+                                <a href="{{ url('/product/' . $rel->slug) }}" class="block w-full h-full relative">
+                                    <img src="{{ $rel->primary_image_url }}" alt="{{ $rel->name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+
+                                    @if($relVideo)
+                                        <video x-ref="cardVideo"
+                                               x-show="isHovered"
+                                               playsinline
+                                               loop
+                                               muted
+                                               preload="none"
+                                               class="absolute inset-0 w-full h-full object-cover">
+                                            @if($relVideo->webm_url)
+                                                <source src="{{ $relVideo->webm_url }}" type="video/webm">
+                                            @endif
+                                            <source src="{{ $relVideo->video_url }}" type="video/mp4">
+                                        </video>
+                                    @endif
                                 </a>
+
+                                @if($relVideo)
+                                    <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
+                                          title="Watch fashion reel in motion">
+                                        <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                        <span>▶ Reel</span>
+                                    </span>
+                                @endif
 
                                 <button type="button"
                                         @click.stop.prevent="toggleWishlist({{ $rel->id }})"
