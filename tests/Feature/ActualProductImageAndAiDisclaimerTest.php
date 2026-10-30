@@ -416,18 +416,20 @@ class ActualProductImageAndAiDisclaimerTest extends TestCase
         $response = $this->get(route('store.product', $product->slug));
         $response->assertOk();
 
-        // Verify title wrapping class
+        // Verify title wrapping class and white text color
         $response->assertSee('line-clamp-2 break-words');
-        // Verify Shop Now button with full text
-        $response->assertSee('Shop Now');
+        $response->assertSee('color: #ffffff !important;');
+        // Verify Buy Now button with direct cart action
+        $response->assertSee('Buy Now');
+        $response->assertSee('buyNowFromReel()');
         // Verify Featured in Reel tag
         $response->assertSee('Featured in Reel');
         // Verify AI disclaimer badge in reel modal
-        $response->assertSee('ⓘ AI-generated video');
+        $response->assertSee('AI Video Disclaimer');
         // Verify Model Motion badge in bottom-right of video card
         $response->assertSee('Model Motion');
-        // Verify AI disclaimer hover tooltip markup
-        $response->assertSee('group/ai-info');
+        // Verify AI disclaimer tooltip markup
+        $response->assertSee('AI-generated video for illustration purposes only');
         $response->assertSee('group/modal-disclaimer');
     }
 }

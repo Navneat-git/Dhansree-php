@@ -428,6 +428,34 @@
                 this.selectedVariantDiscount = found.discount;
                 this.inStock = found.inStock;
             }
+        },
+        isBuying: false,
+        async buyNowFromReel() {
+            this.isBuying = true;
+            this.videoModalOpen = false;
+            if (this.$refs.modalVideo) this.$refs.modalVideo.pause();
+
+            const vId = this.selectedVariantId || (this.variantsMatrix && this.variantsMatrix[0] ? this.variantsMatrix[0].id : null);
+            if (!vId) {
+                window.location.href = '{{ route('cart.index') }}';
+                return;
+            }
+
+            try {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                await fetch('{{ route('cart.add') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify({ variant_id: vId, quantity: 1 })
+                });
+                window.location.href = '{{ route('cart.index') }}';
+            } catch (e) {
+                window.location.href = '{{ route('cart.index') }}';
+            }
         }
      }">
 
@@ -461,7 +489,8 @@
                 @if($approvedVideo)
                     <li class="w-full shrink-0 snap-center" x-show="currentVideo">
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-black group shadow-xs"
-                             x-data="{ isPlaying: false, isMuted: true, showDisclaimer: false }">
+                             x-data="{ isPlaying: false, isMuted: true, showDisclaimer: false }"
+                             @mouseleave="showDisclaimer = false">
                             <video x-ref="galleryVideo"
                                    :poster="currentVideo?.thumbnail_url"
                                    :src="currentVideo?.webm_url || currentVideo?.video_url"
@@ -480,37 +509,37 @@
                                 <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
                             </video>
 
-                            <!-- Top-Right: AI Video Disclaimer (ⓘ) with Native + CSS + Tap Tooltip -->
+                            <!-- Top-Right: AI Video Disclaimer (ⓘ) Button -->
                             <div x-show="Boolean(currentVideo ? currentVideo.is_ai_generated : {{ $approvedVideo?->isAiGenerated() ? 'true' : 'false' }})"
-                                 class="absolute top-2.5 right-2.5 z-20 pointer-events-auto"
-                                 x-data="{ showDisclaimer: false }"
-                                 @click.outside="showDisclaimer = false">
-                                <div class="relative group/ai-info inline-flex"
-                                     @mouseenter="showDisclaimer = true"
-                                     @mouseleave="showDisclaimer = false">
-                                    <button type="button"
-                                            @click.stop="showDisclaimer = !showDisclaimer"
-                                            title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details."
-                                            aria-label="AI Video Disclaimer"
-                                            class="size-7 rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md focus:outline-none">
-                                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </button>
+                                 class="absolute top-2.5 right-2.5 z-20 pointer-events-auto">
+                                <button type="button"
+                                        @mouseenter="showDisclaimer = true"
+                                        @click.stop="showDisclaimer = !showDisclaimer"
+                                        title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details."
+                                        aria-label="AI Video Disclaimer"
+                                        class="size-7 rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md focus:outline-none">
+                                    <span class="font-bold text-sm leading-none select-none">ⓘ</span>
+                                </button>
+                            </div>
 
-                                    <!-- Disclaimer Tooltip (CSS group-hover on desktop + Alpine tap on mobile) -->
-                                    <div :class="showDisclaimer ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none group-hover/ai-info:opacity-100 group-hover/ai-info:visible group-hover/ai-info:pointer-events-auto'"
-                                         @click.stop
-                                         class="transition-all duration-200 ease-out absolute right-0 top-full pt-2 w-64 sm:w-72 z-30">
-                                        <div class="p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/50 text-[11px] leading-relaxed shadow-2xl">
-                                            <div class="flex items-start gap-2">
-                                                <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
-                                                <p class="text-slate-200 font-normal">
-                                                    AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <!-- AI Video Disclaimer Tooltip Banner (Safely centered within card, never clipped by overflow-hidden) -->
+                            <div x-show="showDisclaimer"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 translate-y-1"
+                                 @mouseenter="showDisclaimer = true"
+                                 @click.outside="showDisclaimer = false"
+                                 @click.stop
+                                 class="absolute top-11 z-30 pointer-events-auto p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/50 text-[11px] leading-relaxed shadow-2xl"
+                                 style="left: 10px; right: 10px; width: calc(100% - 20px);">
+                                <div class="flex items-start gap-2">
+                                    <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
+                                    <p class="text-slate-100 font-normal">
+                                        AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
+                                    </p>
                                 </div>
                             </div>
 
@@ -1012,18 +1041,20 @@
                     <button type="button"
                             @click.stop="showModalDisclaimer = !showModalDisclaimer"
                             title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details."
-                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-md text-amber-200 border border-amber-400/40 text-[10px] font-medium shadow-md cursor-pointer hover:bg-slate-900">
-                        <span>ⓘ AI-generated video</span>
+                            aria-label="AI Video Disclaimer"
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/85 hover:bg-black text-amber-300 hover:text-amber-200 border border-amber-400/70 text-xs font-bold shadow-xl cursor-pointer transition-all backdrop-blur-md">
+                        <span class="size-4 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/60 flex items-center justify-center text-[10px] font-serif italic shrink-0">i</span>
+                        <span class="tracking-wide">AI Video Disclaimer</span>
                     </button>
 
                     <!-- Hover/Tap Tooltip -->
                     <div :class="showModalDisclaimer ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none group-hover/modal-disclaimer:opacity-100 group-hover/modal-disclaimer:visible group-hover/modal-disclaimer:pointer-events-auto'"
                          @click.stop
-                         class="transition-all duration-200 ease-out absolute left-0 top-full pt-2 w-64 sm:w-72 z-40">
-                        <div class="p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/50 text-[11px] leading-relaxed shadow-2xl">
-                            <div class="flex items-start gap-2">
-                                <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
-                                <p class="text-slate-200 font-normal">
+                         class="transition-all duration-200 ease-out absolute left-0 top-full pt-2 w-72 sm:w-80 z-40">
+                        <div class="p-3.5 rounded-xl bg-slate-950/98 text-slate-100 backdrop-blur-md border border-amber-500/60 text-xs leading-relaxed shadow-2xl">
+                            <div class="flex items-start gap-2.5">
+                                <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
+                                <p class="text-white font-normal text-xs leading-relaxed" style="color: #ffffff !important;">
                                     AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
                                 </p>
                             </div>
@@ -1051,27 +1082,34 @@
             </div>
 
             <!-- Bottom Floating Tagged Product Details (Direct child of modal, always visible above native controls) -->
-            <div class="absolute bottom-3 sm:bottom-4 inset-x-3 sm:inset-x-4 p-3 sm:p-3.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 text-white shadow-2xl z-30 pointer-events-auto">
+            <div class="absolute bottom-3 sm:bottom-4 inset-x-3 sm:inset-x-4 p-3.5 sm:p-4 rounded-2xl shadow-2xl z-30 pointer-events-auto"
+                 style="background-color: rgba(10, 10, 14, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(251, 191, 36, 0.35);">
                 <div class="flex items-center justify-between gap-3">
                     <div class="min-w-0 flex-1">
-                        <span class="inline-block text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-0.5">
+                        <span class="inline-block text-[10px] uppercase tracking-wider font-bold mb-1"
+                              style="color: #fbbf24 !important;">
                             Featured in Reel
                         </span>
-                        <!-- Product Title in Wrap Mode -->
-                        <p class="text-xs sm:text-[13px] font-semibold text-white leading-snug line-clamp-2 break-words">
+                        <!-- Product Title in Wrap Mode with Pure White Color -->
+                        <p class="text-xs sm:text-sm font-bold leading-snug line-clamp-2 break-words"
+                           style="color: #ffffff !important;">
                             {{ $product->name }}
                         </p>
                         <!-- Complete Pricing Display -->
                         <div class="flex items-baseline gap-2 mt-1 flex-wrap">
-                            <span class="text-sm font-black text-amber-400" x-text="selectedVariantPrice">
+                            <span class="text-sm sm:text-base font-black"
+                                  style="color: #fbbf24 !important;"
+                                  x-text="selectedVariantPrice">
                                 {{ $firstMatch['price'] ?? $product->formatted_price }}
                             </span>
-                            <span class="text-[11px] text-slate-400 line-through"
+                            <span class="text-xs line-through"
+                                  style="color: #cbd5e1 !important;"
                                   x-text="selectedVariantMrp"
                                   x-show="selectedVariantMrp">
                                 {{ $firstMatch['mrp'] ?? ($product->formatted_mrp ?? '') }}
                             </span>
-                            <span class="text-[10px] font-bold text-emerald-400"
+                            <span class="text-[11px] font-bold"
+                                  style="color: #34d399 !important;"
                                   x-text="selectedVariantDiscount"
                                   x-show="selectedVariantDiscount">
                                 {{ $firstMatch['discount'] ?? ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}
@@ -1079,12 +1117,13 @@
                         </div>
                     </div>
 
-                    <!-- Complete CTA Button (Never Clipped) -->
+                    <!-- Buy Now CTA Button (Adds to cart & navigates directly to cart) -->
                     <button type="button"
-                            @click="videoModalOpen = false; $refs.modalVideo?.pause()"
-                            class="shrink-0 px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 text-xs font-black shadow-md transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 self-center">
-                        <span>Shop Now</span>
-                        <span class="text-xs">➔</span>
+                            @click="buyNowFromReel()"
+                            :disabled="isBuying || !inStock"
+                            class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-slate-950 text-xs font-black shadow-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 self-center">
+                        <span x-text="isBuying ? 'Adding...' : (inStock ? 'Buy Now' : 'Sold Out')">Buy Now</span>
+                        <span class="text-xs" x-show="!isBuying">➔</span>
                     </button>
                 </div>
             </div>
