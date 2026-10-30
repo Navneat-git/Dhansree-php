@@ -153,9 +153,10 @@
                         <div class="flex items-center gap-2">
                             <div class="relative flex-1">
                                 <input type="text"
+                                       id="product-search-input"
                                        x-model="searchQuery"
                                        @input.debounce.300ms="searchProducts()"
-                                       @keydown.enter.prevent="searchProducts()"
+                                       @keydown.enter.prevent="if (searchResults.length > 0) { selectProduct(searchResults[0]); } else { searchProducts(); }"
                                        @focus="searchDropdownOpen = true"
                                        placeholder="Type product name, SKU or keyword..."
                                        class="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
@@ -199,13 +200,44 @@
                                     <button type="button"
                                             @click="selectProduct(prod)"
                                             style="background-color: #0f172a !important; color: #ffffff !important;"
-                                            class="shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg shadow-2xs hover:opacity-90 transition-opacity">
+                                            class="shrink-0 px-3 py-1.5 text-xs font-bold rounded-lg shadow-2xs hover:opacity-90 transition-opacity cursor-pointer">
                                         Choose Product
                                     </button>
                                 </div>
                             </template>
                         </div>
                     </div>
+
+                    <!-- Quick-Select from Recent Catalog Products -->
+                    @if(!empty($recentProducts) && count($recentProducts) > 0)
+                    <div x-show="!selectedProduct" class="mt-4 pt-3 border-t border-slate-100">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                            ⚡ Or 1-Click Pick from Catalog Products:
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                            @foreach($recentProducts->take(8) as $rp)
+                                <div @click="selectProduct(@js([
+                                        'id' => $rp->id,
+                                        'name' => $rp->name,
+                                        'sku' => $rp->sku,
+                                        'price' => $rp->formatted_price,
+                                        'primary_image' => $rp->primary_image_url,
+                                        'images' => $rp->images->map(fn($img) => ['id' => $img->id, 'url' => $img->url])->values()->all(),
+                                     ]))"
+                                     class="flex items-center gap-2.5 p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-400 transition-all cursor-pointer group">
+                                    <img src="{{ $rp->primary_image_url }}" class="size-10 rounded-lg object-cover bg-white border border-slate-200 shrink-0">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-xs font-bold text-slate-800 truncate group-hover:text-amber-900">{{ $rp->name }}</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">
+                                            <span class="font-mono text-slate-600">{{ $rp->sku ?: 'SKU' }}</span> • <span class="text-amber-700 font-bold">{{ $rp->formatted_price }}</span>
+                                        </p>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity">Select ➔</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Selected Product Banner -->
                     <div x-show="selectedProduct" class="mt-4 p-4 rounded-xl border border-amber-300 bg-amber-50/60 flex items-center justify-between gap-4">
@@ -226,7 +258,7 @@
                             </div>
                         </div>
 
-                        <button type="button" @click="clearProduct()" class="text-xs text-slate-400 hover:text-rose-600 font-bold p-1">
+                        <button type="button" @click="clearProduct()" class="text-xs text-slate-400 hover:text-rose-600 font-bold p-1 cursor-pointer">
                             ✕ Change
                         </button>
                     </div>
@@ -256,7 +288,8 @@
                                name="uploaded_video"
                                accept="video/mp4,video/quicktime,video/webm"
                                @change="handleVideoFileChange($event)"
-                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                               :class="uploadedVideoName ? 'pointer-events-none' : ''">
 
                         <template x-if="!uploadedVideoName">
                             <div class="space-y-2 pointer-events-none">
@@ -627,10 +660,51 @@
                         </div>
                     </div>
 
+                    <!-- Dynamic Production Readiness Checklist -->
+                    <div class="p-3 rounded-xl border text-xs space-y-2 transition-all"
+                         :class="canSubmit() ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-amber-50/90 border-amber-300 text-amber-950'">
+                        <div class="font-bold flex items-center justify-between text-[11px] uppercase tracking-wider">
+                            <span>Ready Checklist</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                  :class="canSubmit() ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'"
+                                  x-text="canSubmit() ? '✓ Ready to Produce' : '⚠️ Action Needed'"></span>
+                        </div>
+
+                        <!-- Product Status -->
+                        <div class="flex items-start gap-2 pt-1 border-t border-slate-200/50">
+                            <span class="font-bold text-sm leading-none shrink-0" :class="selectedProductId ? 'text-emerald-600' : 'text-amber-600'" x-text="selectedProductId ? '✓' : '⚠️'"></span>
+                            <div class="flex-1 min-w-0">
+                                <span class="font-semibold block" x-text="selectedProductId ? 'Catalog Product Linked' : 'Step 2: Choose Product (Required)'"></span>
+                                <p class="text-[10px] text-slate-500 truncate" x-text="selectedProduct ? (selectedProduct.name + ' • ' + selectedProduct.price) : 'Pick or search your suit in Step 2'"></p>
+                            </div>
+                        </div>
+
+                        <!-- Video / Images Status -->
+                        <template x-if="videoType === 'imported_branded'">
+                            <div class="flex items-start gap-2 pt-1 border-t border-slate-200/50">
+                                <span class="font-bold text-sm leading-none shrink-0" :class="uploadedVideoFile ? 'text-emerald-600' : 'text-amber-600'" x-text="uploadedVideoFile ? '✓' : '⚠️'"></span>
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-semibold block" x-text="uploadedVideoFile ? 'Raw Video Loaded' : 'Step 2b: Choose Video File (Required)'"></span>
+                                    <p class="text-[10px] text-slate-500 truncate" x-text="uploadedVideoFile ? (uploadedVideoName + ' (' + uploadedVideoSize + ')') : 'Browse raw MP4/MOV from Google Flow'"></p>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="videoType !== 'imported_branded'">
+                            <div class="flex items-start gap-2 pt-1 border-t border-slate-200/50">
+                                <span class="font-bold text-sm leading-none shrink-0" :class="selectedImageIds.length > 0 ? 'text-emerald-600' : 'text-amber-600'" x-text="selectedImageIds.length > 0 ? '✓' : '⚠️'"></span>
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-semibold block" x-text="selectedImageIds.length > 0 ? (selectedImageIds.length + ' Product Photos Selected') : 'Step 2: Select Photos (Required)'"></span>
+                                    <p class="text-[10px] text-slate-500" x-text="selectedImageIds.length > 0 ? 'Ready for FFmpeg slideshow rendering' : 'Select at least 1 image'"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
                     <!-- Main Submit Button -->
                     <button type="button"
                             @click="handleFormSubmit($event)"
-                            :disabled="!canSubmit() || isSubmitting"
+                            :disabled="isSubmitting"
                             :style="isAiMode ? 'background-color: #7e22ce !important; color: #ffffff !important;' : (videoType === 'imported_branded' ? 'background-color: #b45309 !important; color: #ffffff !important;' : 'background-color: #d97706 !important; color: #ffffff !important;')"
                             class="w-full py-3.5 px-4 rounded-xl text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <template x-if="!isSubmitting">
@@ -936,16 +1010,26 @@ function videoStudioCreator() {
             if (this.isSubmitting) return;
 
             if (!this.selectedProductId) {
-                alert('Please search and select a catalog product first.');
+                alert("⚠️ Please select a catalog product first in Step 2.\n\nDhansree Video Studio needs a catalog product to brand its verified selling price & title onto the video, and to feature it on your storefront product & listing pages.");
+                const searchEl = document.getElementById('product-search-input');
+                if (searchEl) {
+                    searchEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    searchEl.focus();
+                }
                 return;
             }
+
             if (this.videoType === 'imported_branded') {
                 if (!this.uploadedVideoFile) {
-                    alert('Please select a video file to upload and brand.');
+                    alert("⚠️ Please select or browse your video file in Step 2b before clicking upload.\n\n(Choose the MP4 or MOV video you generated with Google Flow or recorded with your camera).");
+                    const dropzoneEl = document.getElementById('uploaded_video_input');
+                    if (dropzoneEl) {
+                        dropzoneEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                     return;
                 }
             } else if (this.selectedImageIds.length === 0) {
-                alert('Please select at least one genuine product image for the video.');
+                alert("⚠️ Please select at least one genuine product image for the video in Step 2.");
                 return;
             }
 

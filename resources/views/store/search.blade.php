@@ -81,6 +81,14 @@
                                 </span>
                             @endif
 
+                            @if($product->approved_video)
+                                <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10"
+                                      title="Watch fashion reel in motion">
+                                    <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                    <span>▶ Reel</span>
+                                </span>
+                            @endif
+
                             @if(!empty($product->color_name))
                                 <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60">
                                     <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>

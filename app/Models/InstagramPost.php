@@ -37,6 +37,14 @@ class InstagramPost extends Model
         'tagged_product_id' => 'integer',
     ];
 
+    protected $appends = [
+        'display_media_url',
+        'display_instagram_url',
+        'formatted_likes',
+        'formatted_views',
+        'real_video_url',
+    ];
+
     /**
      * Optional product featured in this reel or post.
      */
@@ -116,5 +124,25 @@ class InstagramPost extends Model
         $likes = (int) ($this->likes_count ?: 1200);
         $views = round(($likes * 14.5) / 1000, 1);
         return "{$views}K";
+    }
+
+    /**
+     * Resolves playable video stream URL: direct video_url, or the approved video from the tagged product.
+     */
+    public function getRealVideoUrlAttribute(): ?string
+    {
+        if (!empty($this->video_url)) {
+            $raw = trim((string) $this->video_url);
+            if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+                return $raw;
+            }
+            return url('/media/' . ltrim($raw, '/'));
+        }
+
+        if ($this->taggedProduct && $this->taggedProduct->approved_video) {
+            return $this->taggedProduct->approved_video->video_url;
+        }
+
+        return null;
     }
 }
