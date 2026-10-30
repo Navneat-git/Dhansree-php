@@ -34,6 +34,8 @@ class ProductVideo extends Model
 
     protected $appends = [
         'video_url',
+        'webm_url',
+        'branded_video_url',
         'thumbnail_url',
         'master_video_url',
         'status_badge',
@@ -149,6 +151,58 @@ class ProductVideo extends Model
 
         // Fallback relative url
         return url('/storage/' . ltrim($this->video_path, '/'));
+    }
+
+    /**
+     * Resolves high-efficiency WebM URL for lightning-fast web streaming.
+     */
+    public function getWebmUrlAttribute(): ?string
+    {
+        $settings = $this->render_settings ?? [];
+        $webmPath = $settings['webm_path'] ?? null;
+
+        if ($webmPath) {
+            $disk = config('video_studio.disk', 'public');
+            if (Storage::disk($disk)->exists($webmPath)) {
+                return Storage::disk($disk)->url($webmPath);
+            }
+            return url('/storage/' . ltrim($webmPath, '/'));
+        }
+
+        if ($this->video_path && str_ends_with(strtolower($this->video_path), '.webm')) {
+            return $this->video_url;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolves branded social media MP4 (with logo, price & audio) for Instagram / WhatsApp downloads.
+     */
+    public function getBrandedVideoUrlAttribute(): ?string
+    {
+        $settings = $this->render_settings ?? [];
+        $brandedPath = $settings['branded_video_path'] ?? null;
+
+        if ($brandedPath) {
+            $disk = config('video_studio.disk', 'public');
+            if (Storage::disk($disk)->exists($brandedPath)) {
+                return Storage::disk($disk)->url($brandedPath);
+            }
+            return url('/storage/' . ltrim($brandedPath, '/'));
+        }
+
+        return $this->video_url;
+    }
+
+    public function isCleanStorefront(): bool
+    {
+        $settings = $this->render_settings ?? [];
+        $preset = $settings['export_preset'] ?? null;
+        if ($preset === 'clean_storefront' || $preset === 'dual') {
+            return true;
+        }
+        return !($settings['text_overlay'] ?? true);
     }
 
     public function getMasterVideoUrlAttribute(): ?string

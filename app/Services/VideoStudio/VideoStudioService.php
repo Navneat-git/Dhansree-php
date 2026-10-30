@@ -388,12 +388,16 @@ class VideoStudioService
         $template = $data['template'] ?? 'fashion_showcase';
         $title = !empty($data['title']) ? trim($data['title']) : ($product ? "{$product->name} (Fashion Reel)" : 'Imported Dhansree Fashion Reel');
 
+        $exportPreset = $data['export_preset'] ?? 'clean_storefront';
+        $isClean = $exportPreset === 'clean_storefront';
+
         $renderSettings = [
-            'enable_music' => (bool) ($data['enable_music'] ?? true),
+            'export_preset' => $exportPreset,
+            'enable_music' => (bool) ($data['enable_music'] ?? (!$isClean)),
             'audio_track' => $data['audio_track'] ?? 'festive_royal',
-            'text_overlay' => (bool) ($data['text_overlay'] ?? true),
-            'show_price' => (bool) ($data['show_price'] ?? true),
-            'call_to_action' => (bool) ($data['call_to_action'] ?? true),
+            'text_overlay' => (bool) ($data['text_overlay'] ?? (!$isClean)),
+            'show_price' => (bool) ($data['show_price'] ?? (!$isClean)),
+            'call_to_action' => (bool) ($data['call_to_action'] ?? (!$isClean)),
             'custom_headline' => $data['custom_headline'] ?? null,
         ];
 
@@ -460,13 +464,35 @@ class VideoStudioService
             // Execute FFmpeg branding
             $brandedResult = $this->ffmpegService->brandAiVideo($video, $masterRawPath, $tempDir);
 
-            // Store branded MP4
-            $finalFilename = 'branded_' . Str::uuid() . '.mp4';
+            // Store primary MP4
+            $finalFilename = 'video_' . Str::uuid() . '.mp4';
             $finalRelativePath = "{$storageDir}/{$finalFilename}";
             Storage::disk($disk)->put(
                 $finalRelativePath,
                 File::get($brandedResult['video_file'])
             );
+
+            // Store clean WebM if generated (ultra-fast web streaming)
+            $webmRelativePath = null;
+            if (!empty($brandedResult['webm_file']) && file_exists($brandedResult['webm_file'])) {
+                $webmFilename = 'clean_' . Str::uuid() . '.webm';
+                $webmRelativePath = "{$storageDir}/{$webmFilename}";
+                Storage::disk($disk)->put(
+                    $webmRelativePath,
+                    File::get($brandedResult['webm_file'])
+                );
+            }
+
+            // Store social branded MP4 if generated in dual export mode
+            $brandedRelativePath = null;
+            if (!empty($brandedResult['branded_file']) && file_exists($brandedResult['branded_file'])) {
+                $brandedFilename = 'social_branded_' . Str::uuid() . '.mp4';
+                $brandedRelativePath = "{$storageDir}/{$brandedFilename}";
+                Storage::disk($disk)->put(
+                    $brandedRelativePath,
+                    File::get($brandedResult['branded_file'])
+                );
+            }
 
             // Store thumbnail
             $thumbFilename = 'thumb_' . Str::uuid() . '.jpg';
@@ -476,11 +502,20 @@ class VideoStudioService
                 File::get($brandedResult['thumbnail_file'])
             );
 
+            $currentSettings = $video->render_settings ?? [];
+            if ($webmRelativePath) {
+                $currentSettings['webm_path'] = $webmRelativePath;
+            }
+            if ($brandedRelativePath) {
+                $currentSettings['branded_video_path'] = $brandedRelativePath;
+            }
+
             $video->update([
                 'status' => 'completed',
                 'progress' => 100,
                 'video_path' => $finalRelativePath,
                 'thumbnail_path' => $thumbRelativePath,
+                'render_settings' => $currentSettings,
                 'file_size_bytes' => $brandedResult['file_size'] ?? filesize($brandedResult['video_file']),
                 'completed_at' => now(),
                 'error_message' => null,
@@ -490,9 +525,12 @@ class VideoStudioService
             if ($video->product_id) {
                 try {
                     $existingPost = InstagramPost::where('tagged_product_id', $video->product_id)->first();
+                    // Prefer social branded video for Instagram if available, otherwise video_url
+                    $instaVideoUrl = $video->branded_video_url ?: $video->video_url;
+
                     if ($existingPost) {
                         $existingPost->update([
-                            'video_url' => $video->video_url,
+                            'video_url' => $instaVideoUrl,
                             'media_url' => $video->thumbnail_url ?: $existingPost->media_url,
                             'type' => 'reel',
                             'is_visible' => true,
@@ -503,7 +541,7 @@ class VideoStudioService
                             'type' => 'reel',
                             'caption' => "Discover {$productName} — exclusive luxury ethnic wear handcrafted for festive perfection. Tap to shop now.",
                             'media_url' => $video->thumbnail_url ?: ($video->product?->primary_image_url ?? ''),
-                            'video_url' => $video->video_url,
+                            'video_url' => $instaVideoUrl,
                             'instagram_url' => 'https://www.instagram.com/dhansreetrends',
                             'tagged_product_id' => $video->product_id,
                             'views_count' => rand(15, 35) . '.' . rand(1, 9) . 'K',

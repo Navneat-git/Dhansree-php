@@ -578,6 +578,71 @@
                     </div>
                 </div>
 
+                <!-- Video Purpose & Branding Style Preset -->
+                <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs" x-show="videoType !== 'ai_fashion'">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                            Video Purpose &amp; Branding Style
+                        </label>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                            Website WebM / Social MP4
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Choose whether this video is for your website catalog (clean &amp; fast WebM) or social media ads (branded MP4).
+                    </p>
+
+                    <div class="space-y-2.5">
+                        <!-- Option 1: Clean Storefront WebM (Recommended for Website) -->
+                        <label class="relative flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all"
+                               :class="exportPreset === 'clean_storefront' ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500/40' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="export_preset" value="clean_storefront" x-model="exportPreset" @change="setExportPreset('clean_storefront')" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span>🌐</span>
+                                    <span>Clean Storefront (Optimized WebM)</span>
+                                </span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-950">Recommended for PDP</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                                Pure model &amp; fabric movement. <strong>No logo plate, no burned price, no CTA, muted loop</strong>. Up to 70% smaller file size for instant loading.
+                            </p>
+                        </label>
+
+                        <!-- Option 2: Social Media & Ad Reel (Branded MP4) -->
+                        <label class="relative flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all"
+                               :class="exportPreset === 'social_branded' ? 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-500/40' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="export_preset" value="social_branded" x-model="exportPreset" @change="setExportPreset('social_branded')" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span>📱</span>
+                                    <span>Social Media Reel (Branded MP4)</span>
+                                </span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">Instagram / Ads</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                                Burns Dhansree royal logo, verified selling price, royal music, and closing "Shop Now" card for Instagram &amp; WhatsApp status.
+                            </p>
+                        </label>
+
+                        <!-- Option 3: Dual Export (Best of Both Worlds) -->
+                        <label class="relative flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all"
+                               :class="exportPreset === 'dual' ? 'border-indigo-600 bg-indigo-50/80 ring-2 ring-indigo-500/40' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <input type="radio" name="export_preset" value="dual" x-model="exportPreset" @change="setExportPreset('dual')" class="sr-only">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                    <span>⚡</span>
+                                    <span>Dual Export (WebM for Website + Branded MP4 for Social)</span>
+                                </span>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-900">All-in-One</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
+                                Generates both in 1 click! Clean WebM attaches to your website product page; Branded MP4 is ready to download for Instagram.
+                            </p>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Text Overlays & CTA (for Slideshow and AI Branded) -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs" x-show="videoType !== 'ai_fashion'">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -658,6 +723,12 @@
                             <span class="text-slate-500">Duration:</span>
                             <span class="font-bold text-slate-900" x-text="duration + 's'"></span>
                         </div>
+                        <div class="flex justify-between pt-1">
+                            <span class="text-slate-500">Style:</span>
+                            <span class="font-bold text-slate-900 truncate max-w-[150px]"
+                                  :class="exportPreset === 'clean_storefront' ? 'text-emerald-700' : 'text-amber-800'"
+                                  x-text="exportPreset === 'clean_storefront' ? 'Clean Storefront (WebM)' : (exportPreset === 'dual' ? 'Dual (WebM + Social)' : 'Social Branded MP4')"></span>
+                        </div>
                     </div>
 
                     <!-- Dynamic Production Readiness Checklist -->
@@ -712,7 +783,7 @@
                                 <svg style="width: 18px; height: 18px;" class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                                 </svg>
-                                <span style="color: #ffffff !important;" x-text="videoType === 'imported_branded' ? 'Upload & Brand Video with FFmpeg' : (isAiMode ? 'Generate AI Fashion Video' : 'Render Video Now')"></span>
+                                <span style="color: #ffffff !important;" x-text="videoType === 'imported_branded' ? (exportPreset === 'clean_storefront' ? 'Optimize & Upload Clean WebM' : (exportPreset === 'dual' ? 'Upload Dual (WebM + Branded MP4)' : 'Upload & Brand Video for Social')) : (isAiMode ? 'Generate AI Fashion Video' : 'Render Video Now')"></span>
                             </span>
                         </template>
                         <template x-if="isSubmitting">
@@ -721,7 +792,7 @@
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span x-text="videoType === 'imported_branded' ? 'Uploading & Branding with FFmpeg...' : (isAiMode ? 'Directing Google Veo AI...' : 'Rendering with FFmpeg...')"></span>
+                                <span x-text="videoType === 'imported_branded' ? (exportPreset === 'clean_storefront' ? 'Encoding Clean WebM with FFmpeg...' : 'Encoding Video with FFmpeg...') : (isAiMode ? 'Directing Google Veo AI...' : 'Rendering with FFmpeg...')"></span>
                             </span>
                         </template>
                     </button>
@@ -817,16 +888,32 @@ function videoStudioCreator() {
         selectedImageIds: @json(array_column($availableImagesData ?? [], 'id')),
         primaryImageId: @json($availableImagesData[0]['id'] ?? null),
 
+        exportPreset: 'clean_storefront',
         selectedTemplate: 'fashion_showcase',
         selectedFashionStyle: 'runway_walk',
         selectedAspectRatio: '9:16',
         duration: 10,
-        enableMusic: true,
+        enableMusic: false,
         selectedAudioTrack: 'festive_royal',
-        textOverlay: true,
-        showPrice: true,
-        callToAction: true,
+        textOverlay: false,
+        showPrice: false,
+        callToAction: false,
         customTitle: '',
+
+        setExportPreset(preset) {
+            this.exportPreset = preset;
+            if (preset === 'clean_storefront') {
+                this.textOverlay = false;
+                this.showPrice = false;
+                this.enableMusic = false;
+                this.callToAction = false;
+            } else if (preset === 'social_branded' || preset === 'dual') {
+                this.textOverlay = true;
+                this.showPrice = true;
+                this.enableMusic = true;
+                this.callToAction = true;
+            }
+        },
 
         uploadedVideoFile: null,
         uploadedVideoName: '',

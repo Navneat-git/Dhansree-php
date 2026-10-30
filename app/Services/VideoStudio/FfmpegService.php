@@ -157,9 +157,9 @@ class FfmpegService
     }
 
     /**
-     * Post-process an AI-generated fashion video with Dhansree branding, logo, price tag, music, and closing CTA.
+     * Post-process an AI-generated fashion video with Dhansree branding or clean storefront WebM optimization.
      *
-     * @return array{video_file: string, thumbnail_file: string, file_size: int}
+     * @return array{video_file: string, webm_file?: string|null, branded_file?: string|null, thumbnail_file: string, file_size: int}
      */
     public function brandAiVideo(
         ProductVideo $video,
@@ -170,6 +170,7 @@ class FfmpegService
         $height = $video->height ?: 1920;
         $duration = $video->duration_seconds ?: 5;
         $settings = $video->render_settings ?? [];
+        $exportPreset = $settings['export_preset'] ?? 'clean_storefront';
         $templateKey = $video->template ?? 'fashion_showcase';
         $templateConfig = config("video_studio.templates.{$templateKey}", [
             'name' => "Women's Fashion Showcase",
@@ -178,27 +179,91 @@ class FfmpegService
             'bg_tone' => '#140808',
         ]);
 
-        // 1. Generate graphic overlay elements (watermark, title/price card, closing CTA)
-        $overlayFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_overlay_card.png';
-        $this->createOverlayGraphic($video, $overlayFile, $width, $height, $templateConfig, $settings);
+        $thumbnailFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_poster_thumbnail.jpg';
+        $result = [];
 
-        // 2. Burn overlay graphic and final call-to-action onto the AI master video
-        $finalVideoFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_branded_render.mp4';
-        $this->applyOverlaysAndAudio($rawMasterVideoFile, $overlayFile, $finalVideoFile, $video, $duration, $settings);
+        // 1. Clean Storefront (WebM + MP4) - Optimized for website PDP and listings with zero distracting overlays or audio
+        if ($exportPreset === 'clean_storefront' || $exportPreset === 'dual') {
+            $cleanWebmFile = $tempDir . DIRECTORY_SEPARATOR . 'clean_storefront.webm';
+            $this->renderCleanWebm($rawMasterVideoFile, $cleanWebmFile, $width, $height);
 
-        if (!file_exists($finalVideoFile) || filesize($finalVideoFile) === 0) {
-            throw new \RuntimeException("AI video branding failed: output file is empty or was not created.");
+            $cleanMp4File = $tempDir . DIRECTORY_SEPARATOR . 'clean_storefront.mp4';
+            $this->renderCleanMp4($rawMasterVideoFile, $cleanMp4File, $width, $height);
+
+            $this->generateThumbnail($cleanMp4File, $thumbnailFile);
+
+            $result['video_file'] = $cleanMp4File;
+            $result['webm_file'] = file_exists($cleanWebmFile) ? $cleanWebmFile : null;
+            $result['thumbnail_file'] = $thumbnailFile;
+            $result['file_size'] = filesize($cleanMp4File);
         }
 
-        // 3. Generate high-quality thumbnail
-        $thumbnailFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_poster_thumbnail.jpg';
-        $this->generateThumbnail($finalVideoFile, $thumbnailFile);
+        // 2. Social Branded MP4 - Burns luxury Dhansree logo, verified price, royal audio music, and closing CTA
+        if ($exportPreset === 'social_branded' || $exportPreset === 'dual') {
+            $overlayFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_overlay_card.png';
+            $this->createOverlayGraphic($video, $overlayFile, $width, $height, $templateConfig, $settings);
 
-        return [
-            'video_file' => $finalVideoFile,
-            'thumbnail_file' => $thumbnailFile,
-            'file_size' => filesize($finalVideoFile),
+            $brandedVideoFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_branded_render.mp4';
+            $this->applyOverlaysAndAudio($rawMasterVideoFile, $overlayFile, $brandedVideoFile, $video, $duration, $settings);
+
+            if (!file_exists($brandedVideoFile) || filesize($brandedVideoFile) === 0) {
+                throw new \RuntimeException("AI video branding failed: output file is empty or was not created.");
+            }
+
+            if ($exportPreset === 'social_branded') {
+                $this->generateThumbnail($brandedVideoFile, $thumbnailFile);
+                $result['video_file'] = $brandedVideoFile;
+                $result['thumbnail_file'] = $thumbnailFile;
+                $result['file_size'] = filesize($brandedVideoFile);
+            } else {
+                // In dual export mode: clean MP4/WebM serves the storefront, and branded MP4 is available for social media download
+                $result['branded_file'] = $brandedVideoFile;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Render clean, high-efficiency WebM (VP9, muted) for instant web playback.
+     */
+    public function renderCleanWebm(string $inputFile, string $outputWebmFile, int $width, int $height): void
+    {
+        $scaleFilter = "scale={$width}:{$height}:force_original_aspect_ratio=decrease,pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p";
+        $cmd = [
+            $this->ffmpegPath, '-y',
+            '-i', $inputFile,
+            '-vf', $scaleFilter,
+            '-c:v', 'libvpx-vp9',
+            '-deadline', 'realtime',
+            '-cpu-used', '4',
+            '-crf', '32',
+            '-b:v', '0',
+            '-an',
+            $outputWebmFile,
         ];
+        $this->runCommand($cmd, 120);
+    }
+
+    /**
+     * Render clean web-optimized MP4 (H.264, muted, faststart) as universal web fallback.
+     */
+    public function renderCleanMp4(string $inputFile, string $outputMp4File, int $width, int $height): void
+    {
+        $scaleFilter = "scale={$width}:{$height}:force_original_aspect_ratio=decrease,pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2,format=yuv420p";
+        $cmd = [
+            $this->ffmpegPath, '-y',
+            '-i', $inputFile,
+            '-vf', $scaleFilter,
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '22',
+            '-an',
+            '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            $outputMp4File,
+        ];
+        $this->runCommand($cmd, 120);
     }
 
     /**
@@ -371,39 +436,42 @@ class FfmpegService
         $badgeBg = imagecolorallocatealpha($im, 88, 0, 0, 25);
         $shadow = imagecolorallocatealpha($im, 0, 0, 0, 80);
 
-        // Top safe area: Dhansree Brand Header inside Luxury Contrast Plate
-        $logoPath = config('video_studio.brand.logo_path');
-        $tagY = (int) ($canvasH * 0.10);
-        if (file_exists($logoPath)) {
-            $logo = @imagecreatefrompng($logoPath);
-            if ($logo) {
-                $lw = imagesx($logo);
-                $lh = imagesy($logo);
-                $targetLogoH = (int) ($canvasH * 0.040); // Proportional logo height
-                $targetLogoW = (int) ($lw * ($targetLogoH / $lh));
+        // Top safe area: Dhansree Brand Header inside Luxury Contrast Plate (only when branding enabled)
+        $showBrandHeader = ($settings['export_preset'] ?? null) !== 'clean_storefront' && ($settings['text_overlay'] ?? true);
+        if ($showBrandHeader) {
+            $logoPath = config('video_studio.brand.logo_path');
+            $tagY = (int) ($canvasH * 0.10);
+            if (file_exists($logoPath)) {
+                $logo = @imagecreatefrompng($logoPath);
+                if ($logo) {
+                    $lw = imagesx($logo);
+                    $lh = imagesy($logo);
+                    $targetLogoH = (int) ($canvasH * 0.040); // Proportional logo height
+                    $targetLogoW = (int) ($lw * ($targetLogoH / $lh));
 
-                $padX = 32;
-                $padY = 14;
-                $cardW = $targetLogoW + ($padX * 2);
-                $cardH = $targetLogoH + ($padY * 2);
-                $cardX = (int) (($canvasW - $cardW) / 2);
-                $cardY = (int) ($canvasH * 0.045); // Top safe area
+                    $padX = 32;
+                    $padY = 14;
+                    $cardW = $targetLogoW + ($padX * 2);
+                    $cardH = $targetLogoH + ($padY * 2);
+                    $cardX = (int) (($canvasW - $cardW) / 2);
+                    $cardY = (int) ($canvasH * 0.045); // Top safe area
 
-                // Draw pill shadow & luxury cream plate with gold border
-                imagefilledrectangle($im, $cardX + 3, $cardY + 3, $cardX + $cardW + 3, $cardY + $cardH + 3, $shadow);
-                imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $creamBg);
-                imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
+                    // Draw pill shadow & luxury cream plate with gold border
+                    imagefilledrectangle($im, $cardX + 3, $cardY + 3, $cardX + $cardW + 3, $cardY + $cardH + 3, $shadow);
+                    imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $creamBg);
+                    imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
 
-                imagecopyresampled($im, $logo, $cardX + $padX, $cardY + $padY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
-                imagedestroy($logo);
+                    imagecopyresampled($im, $logo, $cardX + $padX, $cardY + $padY, 0, 0, $targetLogoW, $targetLogoH, $lw, $lh);
+                    imagedestroy($logo);
 
-                $tagY = $cardY + $cardH + 24;
+                    $tagY = $cardY + $cardH + 24;
+                }
             }
-        }
 
-        // Template Tag Badge (e.g. "NEW ARRIVAL", "FESTIVE SPECIAL", etc.)
-        $tagText = strtoupper($templateConfig['tag'] ?? 'DHANSREE TRENDS');
-        $this->drawBadge($im, $tagText, (int) ($canvasW / 2), $tagY, $white, $badgeBg, $fontBold, $goldBright);
+            // Template Tag Badge (e.g. "NEW ARRIVAL", "FESTIVE SPECIAL", etc.)
+            $tagText = strtoupper($templateConfig['tag'] ?? 'DHANSREE TRENDS');
+            $this->drawBadge($im, $tagText, (int) ($canvasW / 2), $tagY, $white, $badgeBg, $fontBold, $goldBright);
+        }
 
         // Bottom Product Title & Price Card (if text overlays enabled)
         $showOverlays = $settings['text_overlay'] ?? true;

@@ -370,6 +370,11 @@
                         <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-700 border border-slate-200">
                             {{ $video->template_label }}
                         </span>
+                        @if($video->webm_url)
+                        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-50 text-emerald-800 border border-emerald-200" title="Optimized WebM active on storefront">
+                            🌐 WebM
+                        </span>
+                        @endif
                         @if($video->isAi())
                         <span class="text-[10px] px-2 py-0.5 rounded font-bold {{ $video->approval_badge['class'] }}">
                             {{ $video->approval_badge['text'] }}
@@ -399,20 +404,36 @@
                         <button type="button"
                                 @click="openPreview('{{ $video->video_url }}', '{{ addslashes($video->title) }}', '{{ $video->aspect_ratio }}')"
                                 style="background-color: #0f172a !important; color: #ffffff !important;"
-                                class="px-2.5 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1">
+                                class="px-2.5 py-1 text-[11px] font-bold rounded-md shadow-2xs hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer">
                             <svg class="size-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                             </svg>
                             Preview
                         </button>
 
-                        <a href="{{ route('admin.video-studio.download', $video) }}"
-                           class="p-1 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
-                           title="Download Video">
-                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                        </a>
+                        <div class="flex items-center gap-1 pl-1">
+                            <a href="{{ route('admin.video-studio.download', $video) }}"
+                               class="p-1 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+                               title="Download MP4">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                            </a>
+                            @if($video->webm_url)
+                            <a href="{{ route('admin.video-studio.download', [$video, 'format' => 'webm']) }}"
+                               class="px-1.5 py-0.5 text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 rounded transition-colors"
+                               title="Download WebM format">
+                                WebM
+                            </a>
+                            @endif
+                            @if(!empty($video->render_settings['branded_video_path']))
+                            <a href="{{ route('admin.video-studio.download', [$video, 'format' => 'branded']) }}"
+                               class="px-1.5 py-0.5 text-[9px] font-bold text-amber-900 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded transition-colors"
+                               title="Download Social Media Reel (Branded MP4 with audio & logo)">
+                                Reel
+                            </a>
+                            @endif
+                        </div>
                         @endif
 
                         @if($video->isFailed())

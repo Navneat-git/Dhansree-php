@@ -493,6 +493,57 @@ class VideoStudioTest extends TestCase
         $this->assertEquals($video->id, $this->product->approved_video->id);
     }
 
+    public function test_admin_can_upload_clean_storefront_video_with_webm(): void
+    {
+        $disk = config('video_studio.disk', 'public');
+        Storage::fake($disk);
+
+        $fakeVideo = UploadedFile::fake()->create('google_flow_raw.mp4', 500, 'video/mp4');
+
+        $tempVideo = tempnam(sys_get_temp_dir(), 'test_v') . '.mp4';
+        $tempWebm = tempnam(sys_get_temp_dir(), 'test_w') . '.webm';
+        $tempThumb = tempnam(sys_get_temp_dir(), 'test_t') . '.jpg';
+        file_put_contents($tempVideo, 'fake-clean-mp4-data');
+        file_put_contents($tempWebm, 'fake-clean-webm-data');
+        file_put_contents($tempThumb, 'fake-thumb-data');
+
+        $ffmpegMock = Mockery::mock(FfmpegService::class);
+        $ffmpegMock->shouldReceive('brandAiVideo')
+            ->once()
+            ->andReturn([
+                'video_file' => $tempVideo,
+                'webm_file' => $tempWebm,
+                'thumbnail_file' => $tempThumb,
+                'file_size' => 54321,
+            ]);
+        $this->app->instance(FfmpegService::class, $ffmpegMock);
+
+        $data = [
+            'product_id' => $this->product->id,
+            'title' => 'Clean Storefront WebM Video',
+            'video_type' => 'imported_branded',
+            'export_preset' => 'clean_storefront',
+            'template' => 'fashion_showcase',
+            'aspect_ratio' => '9:16',
+            'duration_seconds' => 8,
+            'uploaded_video' => $fakeVideo,
+        ];
+
+        $response = $this->adminRequest()
+            ->post(route('admin.video-studio.store'), $data);
+
+        $response->assertRedirect(route('admin.video-studio.index'));
+
+        $video = ProductVideo::where('title', 'Clean Storefront WebM Video')->first();
+        $this->assertNotNull($video);
+        $this->assertTrue($video->isCleanStorefront());
+        $this->assertNotNull($video->webm_url);
+
+        if (file_exists($tempVideo)) @unlink($tempVideo);
+        if (file_exists($tempWebm)) @unlink($tempWebm);
+        if (file_exists($tempThumb)) @unlink($tempThumb);
+    }
+
     protected function tearDown(): void
     {
         File::deleteDirectory(public_path('media/test-studio'));

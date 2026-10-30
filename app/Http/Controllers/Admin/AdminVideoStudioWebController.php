@@ -330,6 +330,7 @@ class AdminVideoStudioWebController extends Controller
                 'template' => 'required|string|in:' . implode(',', array_keys(config('video_studio.templates', []))),
                 'aspect_ratio' => 'required|string|in:' . implode(',', array_keys(config('video_studio.aspect_ratios', []))),
                 'duration_seconds' => 'required|integer|min:4|max:30',
+                'export_preset' => 'nullable|string|in:clean_storefront,social_branded,dual',
                 'image_ids' => 'nullable|required_unless:video_type,imported_branded|array',
                 'image_ids.*' => 'integer|exists:product_images,id',
                 'uploaded_video' => 'nullable|required_if:video_type,imported_branded|file|mimes:mp4,mov,webm,quicktime|max:61440',
@@ -494,22 +495,34 @@ class AdminVideoStudioWebController extends Controller
     {
         $this->authorizeAccess(Permissions::BANNER_VIEW, Permissions::PRODUCT_VIEW);
 
-        if (!$video->video_path) {
-            return back()->with('error', 'Video file is not available for download.');
-        }
-
+        $format = request('format'); // 'webm', 'branded', or default
         $disk = config('video_studio.disk', 'public');
-        if (!Storage::disk($disk)->exists($video->video_path)) {
-            return back()->with('error', 'Video file not found on storage disk.');
-        }
+        $settings = $video->render_settings ?? [];
 
-        $absolutePath = Storage::disk($disk)->path($video->video_path);
+        $relativePath = $video->video_path;
         $cleanTitle = Str::slug($video->title ?: 'dhansree-product-video');
         $aspect = str_replace(':', 'x', $video->aspect_ratio);
         $downloadName = "Dhansree-{$cleanTitle}-{$aspect}.mp4";
+        $contentType = 'video/mp4';
+
+        if ($format === 'webm' && !empty($settings['webm_path']) && Storage::disk($disk)->exists($settings['webm_path'])) {
+            $relativePath = $settings['webm_path'];
+            $downloadName = "Dhansree-{$cleanTitle}-clean-{$aspect}.webm";
+            $contentType = 'video/webm';
+        } elseif ($format === 'branded' && !empty($settings['branded_video_path']) && Storage::disk($disk)->exists($settings['branded_video_path'])) {
+            $relativePath = $settings['branded_video_path'];
+            $downloadName = "Dhansree-{$cleanTitle}-branded-social-{$aspect}.mp4";
+            $contentType = 'video/mp4';
+        }
+
+        if (!$relativePath || !Storage::disk($disk)->exists($relativePath)) {
+            return back()->with('error', 'Requested video file is not available on disk.');
+        }
+
+        $absolutePath = Storage::disk($disk)->path($relativePath);
 
         return response()->download($absolutePath, $downloadName, [
-            'Content-Type' => 'video/mp4',
+            'Content-Type' => $contentType,
         ]);
     }
 

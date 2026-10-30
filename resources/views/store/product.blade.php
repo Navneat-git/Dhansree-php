@@ -420,7 +420,6 @@
                         <div class="relative aspect-[4/5] sm:aspect-[16/9] lg:aspect-[16/9] overflow-hidden rounded-2xl border-2 border-amber-400/80 bg-black group shadow-md"
                              x-data="{ isPlaying: false, isMuted: true }">
                             <video x-ref="galleryVideo"
-                                   src="{{ $approvedVideo->video_url }}"
                                    poster="{{ $approvedVideo->thumbnail_url }}"
                                    playsinline
                                    loop
@@ -429,7 +428,12 @@
                                    class="w-full h-full object-contain bg-black cursor-pointer"
                                    @play="isPlaying = true"
                                    @pause="isPlaying = false"
-                                   @click="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }"></video>
+                                   @click="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }">
+                                @if($approvedVideo->webm_url)
+                                    <source src="{{ $approvedVideo->webm_url }}" type="video/webm">
+                                @endif
+                                <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
+                            </video>
 
                             <!-- Top Overlay Badge -->
                             <div class="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
@@ -868,13 +872,17 @@
             <!-- Video Player in 9:16 vertical ratio -->
             <div class="w-full aspect-[9/16] relative bg-black">
                 <video x-ref="modalVideo"
-                       src="{{ $approvedVideo->video_url }}"
                        poster="{{ $approvedVideo->thumbnail_url }}"
                        playsinline
                        loop
                        controls
                        autoplay
-                       class="w-full h-full object-contain"></video>
+                       class="w-full h-full object-contain">
+                    @if($approvedVideo->webm_url)
+                        <source src="{{ $approvedVideo->webm_url }}" type="video/webm">
+                    @endif
+                    <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
+                </video>
             </div>
 
             <!-- Bottom Floating Tagged Product Details -->

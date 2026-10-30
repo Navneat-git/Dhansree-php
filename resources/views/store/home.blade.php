@@ -705,13 +705,17 @@
                     @if($hasRealVideo)
                         <!-- Real Playable Video with auto-play on hover -->
                         <video x-ref="reelVideo"
-                               src="{{ $item->real_video_url }}"
                                poster="{{ $item->display_media_url }}"
                                playsinline
                                loop
                                muted
                                preload="metadata"
-                               class="w-full h-full object-cover"></video>
+                               class="w-full h-full object-cover">
+                            @if(!empty($item->taggedProduct?->approved_video?->webm_url))
+                                <source src="{{ $item->taggedProduct->approved_video->webm_url }}" type="video/webm">
+                            @endif
+                            <source src="{{ $item->real_video_url }}" type="video/mp4">
+                        </video>
                     @else
                         <!-- Cover Image -->
                         <img src="{{ $item->display_media_url }}"
