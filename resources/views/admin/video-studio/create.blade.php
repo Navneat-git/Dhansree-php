@@ -1084,7 +1084,7 @@ function videoStudioCreator() {
             // Check if file exceeds the current server PHP upload_max_filesize limit
             if (this.phpUploadLimitBytes && file.size > this.phpUploadLimitBytes) {
                 const fileSizeMb = (file.size / (1024 * 1024)).toFixed(1);
-                alert(`⚠️ Server Upload Limit Warning:\n\nThis video is ${fileSizeMb} MB, which exceeds your server's current PHP upload_max_filesize limit (${this.phpUploadLimitText}).\n\nIf the upload fails, please run the fix command on your Lightsail server:\nsudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/fpm/php.ini\nsudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/fpm/php.ini\nsudo systemctl restart php8.3-fpm`);
+                alert(`⚠️ Server Upload Limit Warning:\n\nThis video is ${fileSizeMb} MB, which exceeds your server's current PHP upload_max_filesize limit (${this.phpUploadLimitText}).\n\nIf the upload fails, run this command on your Lightsail server:\nsudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/apache2/php.ini 2>/dev/null || true\nsudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/apache2/php.ini 2>/dev/null || true\nsudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/fpm/php.ini 2>/dev/null || true\nsudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/fpm/php.ini 2>/dev/null || true\nsudo systemctl restart apache2`);
             }
 
             this.uploadedVideoFile = file;

@@ -29,10 +29,12 @@ class FixUploadLimitsCommand extends Command
         $this->info("Scanning candidate PHP-FPM and Web php.ini files on system...");
 
         $candidates = [
-            '/etc/php/8.3/fpm/php.ini',
-            '/etc/php/8.2/fpm/php.ini',
-            '/etc/php/8.1/fpm/php.ini',
             '/etc/php/8.3/apache2/php.ini',
+            '/etc/php/8.3/fpm/php.ini',
+            '/etc/php/8.2/apache2/php.ini',
+            '/etc/php/8.2/fpm/php.ini',
+            '/etc/php/8.1/apache2/php.ini',
+            '/etc/php/8.1/fpm/php.ini',
             '/etc/php/8.3/cli/php.ini',
         ];
 
@@ -67,15 +69,15 @@ class FixUploadLimitsCommand extends Command
         $this->info("✓ Created/Updated public/.user.ini with 100M limit.");
 
         $this->newLine();
-        $this->info("── Quick 1-Step Fix on Server (Lightsail / Ubuntu) ──");
-        $this->line("To ensure PHP-FPM and Nginx permit video uploads up to 100MB, run these 3 commands:");
+        $this->info("── Quick 1-Step Fix for Apache2 on Lightsail (Ubuntu) ──");
+        $this->line("Run these commands to apply 100M upload limit to Apache2 and PHP:");
         $this->newLine();
-        $this->warn("sudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/fpm/php.ini");
-        $this->warn("sudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/fpm/php.ini");
-        $this->warn("sudo systemctl restart php8.3-fpm");
-        $this->newLine();
-        $this->line("And if Nginx has default 1M/2M client_max_body_size, run:");
-        $this->warn("sudo sed -i '/http {/a \\    client_max_body_size 100M;' /etc/nginx/nginx.conf && sudo systemctl reload nginx");
+        $this->warn("sudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/apache2/php.ini 2>/dev/null || true");
+        $this->warn("sudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/apache2/php.ini 2>/dev/null || true");
+        $this->warn("sudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/fpm/php.ini 2>/dev/null || true");
+        $this->warn("sudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/fpm/php.ini 2>/dev/null || true");
+        $this->warn("sudo systemctl restart apache2");
+        $this->warn("sudo systemctl restart php8.3-fpm 2>/dev/null || true");
         $this->newLine();
 
         return 0;

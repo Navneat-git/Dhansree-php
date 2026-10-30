@@ -327,7 +327,7 @@ class AdminVideoStudioWebController extends Controller
         // 1. Check if POST was truncated due to post_max_size
         if (empty($_POST) && empty($_FILES) && (int) ($request->server('CONTENT_LENGTH') ?? 0) > 0) {
             $postMax = ini_get('post_max_size') ?: '8M';
-            $msg = "The uploaded file exceeds the server's post_max_size limit ({$postMax}). Please increase post_max_size and upload_max_filesize to 100M in your PHP configuration (/etc/php/8.3/fpm/php.ini) and restart php8.3-fpm.";
+            $msg = "The uploaded file exceeds the server's post_max_size limit ({$postMax}). Please increase post_max_size and upload_max_filesize to 100M in your PHP configuration (/etc/php/8.3/apache2/php.ini or /etc/php/8.3/fpm/php.ini) and restart Apache2 (sudo systemctl restart apache2).";
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
@@ -337,7 +337,7 @@ class AdminVideoStudioWebController extends Controller
         // 2. Check if uploaded_video hit PHP's upload_max_filesize limit
         if (isset($_FILES['uploaded_video']['error']) && $_FILES['uploaded_video']['error'] === UPLOAD_ERR_INI_SIZE) {
             $uploadMax = ini_get('upload_max_filesize') ?: '2M';
-            $msg = "The video file exceeds PHP's upload_max_filesize limit ({$uploadMax}). Please increase upload_max_filesize to 100M in /etc/php/8.3/fpm/php.ini and restart php8.3-fpm.";
+            $msg = "The video file exceeds PHP's upload_max_filesize limit ({$uploadMax}). Please increase upload_max_filesize to 100M in /etc/php/8.3/apache2/php.ini (or fpm/php.ini) and restart Apache2 (sudo systemctl restart apache2).";
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $msg], 422);
             }
