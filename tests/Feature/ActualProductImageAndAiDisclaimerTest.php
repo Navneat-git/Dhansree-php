@@ -424,6 +424,11 @@ class ActualProductImageAndAiDisclaimerTest extends TestCase
         $response->assertSee('Featured in Reel');
         // Verify AI disclaimer badge in reel modal
         $response->assertSee('ⓘ AI-generated video');
+        // Verify Model Motion badge in bottom-right of video card
+        $response->assertSee('Model Motion');
+        // Verify AI disclaimer hover tooltip markup
+        $response->assertSee('group/ai-info');
+        $response->assertSee('group/modal-disclaimer');
     }
 }
 
