@@ -408,16 +408,16 @@
         
         <!-- Left: Image Gallery (All images displayed together in 2-column grid on desktop, swipeable on mobile) -->
         <div class="min-w-0 w-full max-w-full overflow-hidden {{ $isSmartLivingHub ? 'lg:col-span-7' : '' }}">
+            @php $hasApprovedVideo = (bool) $approvedVideo; @endphp
             
             <ul x-ref="galleryTrack"
                 @scroll.passive="updateScroll($el)"
                 aria-label="{{ $product->name }} pictures"
-                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:gap-3 lg:overflow-x-visible lg:scroll-auto"
-                :class="visibleImages.length === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'">
+                class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-3 lg:overflow-x-visible lg:scroll-auto">
                 
                 @if($approvedVideo)
-                    <li class="w-full shrink-0 snap-center lg:col-span-2">
-                        <div class="relative aspect-[4/5] sm:aspect-[16/9] lg:aspect-[16/9] overflow-hidden rounded-2xl border-2 border-amber-400/80 bg-black group shadow-md"
+                    <li class="w-full shrink-0 snap-center">
+                        <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-black group shadow-xs"
                              x-data="{ isPlaying: false, isMuted: true }">
                             <video x-ref="galleryVideo"
                                    poster="{{ $approvedVideo->thumbnail_url }}"
@@ -425,7 +425,7 @@
                                    loop
                                    muted
                                    preload="metadata"
-                                   class="w-full h-full object-contain bg-black cursor-pointer"
+                                   class="w-full h-full object-cover bg-black cursor-pointer"
                                    @play="isPlaying = true"
                                    @pause="isPlaying = false"
                                    @click="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }">
@@ -436,10 +436,10 @@
                             </video>
 
                             <!-- Top Overlay Badge -->
-                            <div class="absolute top-3 left-3 flex items-center gap-2 z-10 pointer-events-none">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[11px] font-bold shadow-md">
-                                    <span class="size-2 rounded-full bg-rose-500 animate-pulse"></span>
-                                    <span>Watch Model Motion</span>
+                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-bold shadow-xs">
+                                    <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                    <span>Model Motion</span>
                                     <span class="text-[9px] font-mono text-slate-300">({{ $approvedVideo->duration_seconds ?? 8 }}s)</span>
                                 </span>
                             </div>
@@ -449,24 +449,24 @@
                                  :class="isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'">
                                 <button type="button"
                                         @click.stop="if ($refs.galleryVideo.paused) { $refs.galleryVideo.play(); } else { $refs.galleryVideo.pause(); }"
-                                        class="size-14 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-xl hover:scale-110 transition-transform pointer-events-auto cursor-pointer border border-white/20">
-                                    <svg class="size-6 fill-white translate-x-0.5" x-show="!isPlaying" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                    <svg class="size-6 fill-white" x-show="isPlaying" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                        class="size-11 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform pointer-events-auto cursor-pointer border border-white/20">
+                                    <svg class="size-5 fill-white translate-x-0.5" x-show="!isPlaying" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <svg class="size-5 fill-white" x-show="isPlaying" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                                 </button>
                             </div>
 
                             <!-- Bottom Controls: Unmute + Fullscreen Reel Modal Button -->
-                            <div class="absolute bottom-3 inset-x-3 flex items-center justify-between z-10">
+                            <div class="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between z-10">
                                 <button type="button"
                                         @click.stop="$refs.galleryVideo.muted = !$refs.galleryVideo.muted; isMuted = $refs.galleryVideo.muted;"
-                                        class="px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-white text-[11px] font-medium flex items-center gap-1.5 hover:bg-black/90 transition-colors shadow-xs">
+                                        class="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-white text-[10px] font-medium flex items-center gap-1 hover:bg-black/90 transition-colors shadow-xs">
                                     <span x-text="isMuted ? '🔇 Unmute' : '🔊 Mute'"></span>
                                 </button>
 
                                 <button type="button"
                                         @click.stop="videoModalOpen = true; $refs.modalVideo?.play()"
-                                        class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-[11px] font-bold flex items-center gap-1 transition-all shadow-md">
-                                    <span>Full Screen Reel ➔</span>
+                                        class="px-2.5 py-0.5 rounded-md bg-amber-500 hover:bg-amber-600 text-slate-950 text-[10px] font-bold flex items-center gap-1 transition-all shadow-xs">
+                                    <span>Reel ➔</span>
                                 </button>
                             </div>
                         </div>
@@ -476,8 +476,7 @@
                 <template x-for="(img, idx) in visibleImages" :key="img.id + '-' + (selectedColor || 'all')">
                     <li class="w-full shrink-0 snap-center"
                         :class="{
-                            'lg:col-span-2': (visibleImages.length > 1 && visibleImages.length % 2 === 1 && idx === 0),
-                            'lg:hidden': (!expanded && idx >= 6)
+                            'lg:hidden': (!expanded && (idx + {{ $hasApprovedVideo ? 1 : 0 }}) >= 6)
                         }">
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white group cursor-zoom-in"
                              x-data="{ isHovered: false, origin: '50% 50%' }"
@@ -504,7 +503,19 @@
                     </li>
                 </template>
 
-                <template x-if="visibleImages.length === 0">
+                <!-- Blank Card for Odd Counts (1, 3, 5, 7, 9 etc.) so all cards maintain identical small size -->
+                <li x-show="((visibleImages.length + {{ $hasApprovedVideo ? 1 : 0 }}) % 2 === 1) && (expanded || (visibleImages.length + {{ $hasApprovedVideo ? 1 : 0 }}) < 6)"
+                    class="hidden lg:block w-full shrink-0">
+                    <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-dashed border-light-gold/60 bg-warm-beige/20 flex flex-col items-center justify-center p-6 text-center select-none">
+                        <div class="w-10 h-10 rounded-full border border-light-gold/60 bg-white/60 flex items-center justify-center text-maroon-800 font-serif font-bold text-sm mb-1.5 shadow-xs">
+                            D
+                        </div>
+                        <span class="font-serif text-[11px] uppercase tracking-widest text-rich-black/35 font-semibold">Dhansree</span>
+                        <span class="text-[9px] uppercase tracking-wider text-rich-black/25 mt-0.5">Jaipur Ethnic Elegance</span>
+                    </div>
+                </li>
+
+                <template x-if="visibleImages.length === 0 && !{{ $hasApprovedVideo ? 'true' : 'false' }}">
                     <li class="w-full lg:col-span-2 {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
                         <svg class="w-12 h-12 stroke-current" fill="none" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/>
@@ -515,9 +526,9 @@
 
             <!-- Fallback for non-JS / crawlers -->
             <noscript>
-                <div class="grid grid-cols-1 {{ count($initialImages) === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2' }} gap-3">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     @forelse($initialImages as $position => $img)
-                        <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white {{ count($initialImages) > 1 && count($initialImages) % 2 === 1 && $position === 0 ? 'lg:col-span-2' : '' }}">
+                        <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white">
                             <img src="{{ $img['url'] }}" alt="{{ $img['alt'] }}" class="w-full h-full object-contain" loading="{{ $position === 0 ? 'eager' : 'lazy' }}">
                         </div>
                     @empty
@@ -525,30 +536,50 @@
                             No image available
                         </div>
                     @endforelse
+                    @if((count($initialImages) + ($approvedVideo ? 1 : 0)) % 2 === 1)
+                        <div class="hidden lg:flex relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-dashed border-light-gold/60 bg-warm-beige/20 flex-col items-center justify-center p-6 text-center">
+                            <div class="w-10 h-10 rounded-full border border-light-gold/60 bg-white/60 flex items-center justify-center text-maroon-800 font-serif font-bold text-sm mb-1.5 shadow-xs">
+                                D
+                            </div>
+                            <span class="font-serif text-[11px] uppercase tracking-widest text-rich-black/35 font-semibold">Dhansree</span>
+                        </div>
+                    @endif
                 </div>
             </noscript>
 
-            <!-- View all photos button (Desktop, if more than 6 images) -->
-            <div x-show="visibleImages.length > 6 && !expanded" class="hidden lg:block">
+            <!-- View all photos button (Desktop, if more than 6 media items) -->
+            <div x-show="(visibleImages.length + {{ $hasApprovedVideo ? 1 : 0 }}) > 6 && !expanded" class="hidden lg:block">
                 <button type="button"
                         @click="expanded = true"
                         class="mt-3 w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl border border-light-gold bg-warm-beige/40 text-xs font-bold uppercase tracking-wider text-rich-black hover:bg-warm-beige transition-colors">
-                    <span x-text="'View all ' + visibleImages.length + ' photos'"></span>
+                    <span x-text="'View all ' + (visibleImages.length + {{ $hasApprovedVideo ? 1 : 0 }}) + ' photos & video'"></span>
                 </button>
             </div>
 
             <!-- Mobile Dot Indicators -->
-            <ul x-show="visibleImages.length > 1"
+            <ul x-show="(visibleImages.length + {{ $hasApprovedVideo ? 1 : 0 }}) > 1"
                 aria-label="Choose a picture of {{ $product->name }}"
                 class="mt-3 flex items-center justify-center gap-2 lg:hidden">
+                @if($hasApprovedVideo)
+                    <li>
+                        <button type="button"
+                                @click="scrollToImage(0)"
+                                aria-label="Show model video"
+                                class="grid h-11 w-6 place-items-center">
+                            <span aria-hidden
+                                  :class="activeIdx === 0 ? 'w-6 bg-amber-600' : 'w-2 bg-stone-300'"
+                                  class="block h-2 rounded-full transition-all duration-300"></span>
+                        </button>
+                    </li>
+                @endif
                 <template x-for="(img, position) in visibleImages" :key="'dot-' + img.id">
                     <li>
                         <button type="button"
-                                @click="scrollToImage(position)"
+                                @click="scrollToImage(position + {{ $hasApprovedVideo ? 1 : 0 }})"
                                 :aria-label="'Show picture ' + (position + 1) + ' of ' + visibleImages.length"
                                 class="grid h-11 w-6 place-items-center">
                             <span aria-hidden
-                                  :class="activeIdx === position ? 'w-6 bg-maroon-800' : 'w-2 bg-stone-300'"
+                                  :class="activeIdx === (position + {{ $hasApprovedVideo ? 1 : 0 }}) ? 'w-6 bg-maroon-800' : 'w-2 bg-stone-300'"
                                   class="block h-2 rounded-full transition-all duration-300"></span>
                         </button>
                     </li>
