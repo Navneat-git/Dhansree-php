@@ -96,6 +96,7 @@
             'alt' => $img->alt_text ?? $product->name,
             'position' => $img->position,
             'is_primary' => ($pos === 0 || $img->position === 0),
+            'is_actual' => (bool) $img->is_actual_product_image,
             'colors' => array_values(array_unique($assignedColors)),
         ];
     }
@@ -271,6 +272,7 @@
                     'webm_url' => $cVid->webm_url,
                     'thumbnail_url' => $cVid->thumbnail_url,
                     'duration' => $cVid->duration_seconds ?? 8,
+                    'is_ai_generated' => (bool) $cVid->isAiGenerated(),
                 ];
             }
         }
@@ -296,6 +298,7 @@
             'webm_url' => $approvedVideo->webm_url,
             'thumbnail_url' => $approvedVideo->thumbnail_url,
             'duration' => $approvedVideo->duration_seconds ?? 8,
+            'is_ai_generated' => (bool) $approvedVideo->isAiGenerated(),
         ] : null),
         activeIdx: 0,
         expanded: false,
@@ -457,7 +460,7 @@
                 @if($approvedVideo)
                     <li class="w-full shrink-0 snap-center" x-show="currentVideo">
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-black group shadow-xs"
-                             x-data="{ isPlaying: false, isMuted: true }">
+                             x-data="{ isPlaying: false, isMuted: true, showDisclaimer: false }">
                             <video x-ref="galleryVideo"
                                    :poster="currentVideo?.thumbnail_url"
                                    :src="currentVideo?.webm_url || currentVideo?.video_url"
@@ -476,13 +479,50 @@
                                 <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
                             </video>
 
-                            <!-- Top Overlay Badge -->
+                            <!-- Top-Left: Model Motion Badge -->
                             <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10 pointer-events-none">
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-bold shadow-xs">
                                     <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span>Model Motion</span>
                                     <span class="text-[9px] font-mono text-slate-300" x-text="'(' + (currentVideo?.duration || {{ $approvedVideo->duration_seconds ?? 8 }}) + 's)'">({{ $approvedVideo->duration_seconds ?? 8 }}s)</span>
                                 </span>
+                            </div>
+
+                            <!-- Top-Right: AI Video Disclaimer (ⓘ) -->
+                            <div x-show="Boolean(currentVideo?.is_ai_generated)"
+                                 class="absolute top-2.5 right-2.5 z-20 pointer-events-auto"
+                                 @click.outside="showDisclaimer = false">
+                                <div class="relative flex items-center justify-end">
+                                    <button type="button"
+                                            @mouseenter="showDisclaimer = true"
+                                            @mouseleave="showDisclaimer = false"
+                                            @click.stop="showDisclaimer = !showDisclaimer"
+                                            aria-label="AI Video Disclaimer"
+                                            class="size-6 rounded-full bg-slate-900/85 hover:bg-slate-900 text-amber-200 hover:text-amber-300 border border-amber-400/30 flex items-center justify-center text-xs font-serif italic shadow-md transition-all cursor-pointer backdrop-blur-md">
+                                        <span>ⓘ</span>
+                                    </button>
+
+                                    <!-- Disclaimer Tooltip / Mobile Popup -->
+                                    <div x-show="showDisclaimer"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0 scale-95"
+                                         x-transition:enter-end="opacity-100 scale-100"
+                                         x-transition:leave="transition ease-in duration-100"
+                                         x-transition:leave-start="opacity-100 scale-100"
+                                         x-transition:leave-end="opacity-0 scale-95"
+                                         @mouseenter="showDisclaimer = true"
+                                         @mouseleave="showDisclaimer = false"
+                                         @click.stop
+                                         style="display: none;"
+                                         class="absolute right-0 top-full mt-2 w-64 sm:w-72 p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/40 text-[11px] leading-relaxed shadow-2xl z-30 pointer-events-auto">
+                                        <div class="flex items-start gap-2">
+                                            <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">ⓘ</span>
+                                            <p class="text-slate-200 font-normal">
+                                                AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Play/Pause Overlay Button -->
@@ -540,6 +580,19 @@
                                      :loading="idx === 0 ? 'eager' : 'lazy'"
                                      class="w-full h-full object-contain">
                             </div>
+
+                            <!-- Actual Product Image Badge -->
+                            <template x-if="img.is_actual">
+                                <div class="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide shadow-xs border"
+                                          style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                        <svg class="w-3 h-3 shrink-0" style="color: #B08858;" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <span>Actual Product Image</span>
+                                    </span>
+                                </div>
+                            </template>
                         </div>
                     </li>
                 </template>
@@ -571,6 +624,17 @@
                     @forelse($initialImages as $position => $img)
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-white">
                             <img src="{{ $img['url'] }}" alt="{{ $img['alt'] }}" class="w-full h-full object-contain" loading="{{ $position === 0 ? 'eager' : 'lazy' }}">
+                            @if(!empty($img['is_actual']))
+                                <div class="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide shadow-xs border"
+                                          style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                        <svg class="w-3 h-3 shrink-0" style="color: #B08858;" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <span>Actual Product Image</span>
+                                    </span>
+                                </div>
+                            @endif
                         </div>
                     @empty
                         <div class="w-full lg:col-span-2 {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} rounded-2xl border border-light-gold/60 bg-warm-beige/30 grid place-items-center text-rich-black/40">
@@ -940,6 +1004,14 @@
                     class="absolute top-4 right-4 z-20 size-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition-all border border-white/20 cursor-pointer shadow-lg">
                 ✕
             </button>
+
+            <!-- Top Left AI Disclaimer Indicator -->
+            <div x-show="Boolean(currentVideo?.is_ai_generated)" class="absolute top-4 left-4 z-20">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-200 border border-amber-400/30 text-[10px] font-medium shadow-md"
+                      title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.">
+                    <span>ⓘ AI-generated video</span>
+                </span>
+            </div>
 
             <!-- Video Player in 9:16 vertical ratio -->
             <div class="w-full aspect-[9/16] relative bg-black">

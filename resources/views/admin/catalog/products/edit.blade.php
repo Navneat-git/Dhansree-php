@@ -561,7 +561,20 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Alt Text (Accessibility & Google Image Search)</label>
                         <input type="text" name="alt_text" value="{{ $product->name }}" maxlength="160"
                                class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
-                        <p class="text-[11px] text-slate-400 mt-1.5">Applied as default description for newly uploaded photos.</p>
+                        <div class="mt-2.5">
+                            <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                <input type="checkbox" name="is_actual_product_image" value="1"
+                                       class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                <span class="flex items-center gap-1.5">
+                                    <span>Mark as Actual Product Image</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border"
+                                          style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                        Trust Badge
+                                    </span>
+                                </span>
+                            </label>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Displays an authentic "Actual Product Image" trust badge on these photos in the storefront gallery.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1006,6 +1019,15 @@
                                         PRIMARY
                                     </span>
                                 @endif
+                                @if($img->is_actual_product_image)
+                                    <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-xs border flex items-center gap-1"
+                                          style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                        <svg class="size-2.5 shrink-0" style="color: #B08858;" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        ACTUAL PHOTO
+                                    </span>
+                                @endif
                                 <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/60 text-white">
                                     #{{ $img->position }}
                                 </span>
@@ -1019,6 +1041,13 @@
                             <div class="space-y-1">
                                 <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Current Assignment:</div>
                                 <div class="flex items-center gap-1 flex-wrap min-h-6">
+                                    @if($img->is_actual_product_image)
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border"
+                                              style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                            <span class="size-1.5 rounded-full" style="background-color: #580000;"></span>
+                                            Actual Product Image
+                                        </span>
+                                    @endif
                                     @if($pinnedVals->isNotEmpty() || $pinnedVars->isNotEmpty())
                                         @foreach($pinnedVals as $pv)
                                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
@@ -1162,6 +1191,23 @@
                                             </div>
                                         </details>
                                     @endif
+
+                                    <div class="pt-2 border-t border-slate-100">
+                                        <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                            <input type="checkbox" name="is_actual_product_image" value="1" {{ $img->is_actual_product_image ? 'checked' : '' }}
+                                                   class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                            <span class="flex items-center gap-1.5">
+                                                <span>Mark as Actual Product Image</span>
+                                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border"
+                                                      style="background-color: #FBFAF8; color: #580000; border-color: #B08858;">
+                                                    Trust Badge
+                                                </span>
+                                            </span>
+                                        </label>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">
+                                            Displays an authentic "Actual Product Image" trust badge on this photo in the storefront gallery.
+                                        </p>
+                                    </div>
 
                                     <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                                         <button type="button" @click="editModal = false" class="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-800">

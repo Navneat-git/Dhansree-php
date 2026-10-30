@@ -522,6 +522,7 @@ class AdminProductWebController extends Controller
             'variant_ids.*' => 'integer|exists:product_variants,id',
             'option_value_ids' => 'nullable|array',
             'option_value_ids.*' => 'integer|exists:product_option_values,id',
+            'is_actual_product_image' => 'nullable|boolean',
         ]);
 
         $files = [];
@@ -544,6 +545,7 @@ class AdminProductWebController extends Controller
         $altText = $request->input('alt_text', $product->name);
         $variantIds = $request->input('variant_ids', []);
         $optionValueIds = $request->input('option_value_ids', []);
+        $isActualProductImage = $request->boolean('is_actual_product_image');
 
         try {
             $uploadedCount = 0;
@@ -556,7 +558,8 @@ class AdminProductWebController extends Controller
                         $variantIds,
                         $optionValueIds,
                         $adminUser?->id,
-                        $request
+                        $request,
+                        $isActualProductImage
                     );
                     $uploadedCount++;
                 }
@@ -587,6 +590,7 @@ class AdminProductWebController extends Controller
             'variant_ids.*' => 'integer|exists:product_variants,id',
             'option_value_ids' => 'nullable|array',
             'option_value_ids.*' => 'integer|exists:product_option_values,id',
+            'is_actual_product_image' => 'nullable|boolean',
         ]);
 
         $adminUser = $request->attributes->get('admin_user');
@@ -595,6 +599,7 @@ class AdminProductWebController extends Controller
         try {
             $variantIds = array_map('intval', $request->input('variant_ids', []));
             $optionValueIds = array_map('intval', $request->input('option_value_ids', []));
+            $isActualProductImage = $request->boolean('is_actual_product_image');
 
             $this->imageService->updateImage(
                 $image,
@@ -602,7 +607,8 @@ class AdminProductWebController extends Controller
                 $variantIds,
                 $optionValueIds,
                 $adminUser?->id,
-                $request
+                $request,
+                $isActualProductImage
             );
 
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])

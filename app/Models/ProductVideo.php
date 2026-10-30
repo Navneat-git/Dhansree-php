@@ -134,6 +134,23 @@ class ProductVideo extends Model
         return in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion', 'imported_branded'], true);
     }
 
+    /**
+     * Determines whether the video was AI-generated (e.g. AI Fashion Shoot, AI Motion)
+     * as opposed to a standard FFmpeg slideshow of actual product photos or direct video uploads.
+     */
+    public function isAiGenerated(): bool
+    {
+        if (in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion'], true)) {
+            return true;
+        }
+
+        if (!empty($this->ai_provider) || !empty($this->ai_model)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function isPendingApproval(): bool
     {
         return $this->approval_status === 'pending_review';

@@ -37,9 +37,10 @@ class ProductImageService
         array $variantIds = [],
         array $optionValueIds = [],
         ?int $adminUserId = null,
-        ?Request $request = null
+        ?Request $request = null,
+        bool $isActualProductImage = false
     ): ProductImage {
-        return DB::transaction(function () use ($product, $file, $altText, $variantIds, $optionValueIds, $adminUserId, $request) {
+        return DB::transaction(function () use ($product, $file, $altText, $variantIds, $optionValueIds, $adminUserId, $request, $isActualProductImage) {
             $processed = $this->processor->process($file);
             $storageKey = sprintf('products/%d/%s.webp', $product->id, (string) Str::uuid());
 
@@ -80,6 +81,7 @@ class ProductImageService
                 'width' => $processed['width'],
                 'height' => $processed['height'],
                 'byte_size' => $processed['byteSize'],
+                'is_actual_product_image' => $isActualProductImage,
             ]);
 
             // Link to variants
@@ -110,6 +112,7 @@ class ProductImageService
                         'width' => $processed['width'],
                         'height' => $processed['height'],
                         'byte_size' => $processed['byteSize'],
+                        'is_actual_product_image' => $isActualProductImage,
                     ],
                     request: $request
                 );
@@ -255,11 +258,13 @@ class ProductImageService
         array $variantIds = [],
         array $optionValueIds = [],
         ?int $adminUserId = null,
-        ?Request $request = null
+        ?Request $request = null,
+        bool $isActualProductImage = false
     ): ProductImage {
-        return DB::transaction(function () use ($image, $altText, $variantIds, $optionValueIds, $adminUserId, $request) {
+        return DB::transaction(function () use ($image, $altText, $variantIds, $optionValueIds, $adminUserId, $request, $isActualProductImage) {
             $image->update([
                 'alt_text' => Str::limit(trim($altText), 160),
+                'is_actual_product_image' => $isActualProductImage,
             ]);
 
             ProductImageVariant::where('image_id', $image->id)->delete();
@@ -285,7 +290,11 @@ class ProductImageService
                     actorAdminUserId: $adminUserId,
                     entityType: 'product_image',
                     entityId: $image->id,
-                    metadata: ['variants' => $variantIds, 'option_values' => $optionValueIds],
+                    metadata: [
+                        'variants' => $variantIds,
+                        'option_values' => $optionValueIds,
+                        'is_actual_product_image' => $isActualProductImage,
+                    ],
                     request: $request
                 );
             }

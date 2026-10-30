@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -20,9 +21,15 @@ class ProductImage extends Model
         'width' => 'integer',
         'height' => 'integer',
         'byte_size' => 'integer',
+        'is_actual_product_image' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function scopeActualProductImage(Builder $query): Builder
+    {
+        return $query->where('is_actual_product_image', true);
+    }
 
     protected $appends = [
         'url',
