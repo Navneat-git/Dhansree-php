@@ -114,7 +114,9 @@
                 :class="activeTab === 'media' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 transition-all flex items-center gap-2 rounded-t-md">
             Media & Images
-            <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">{{ $product->images->count() }}</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-slate-200 text-[10px] text-slate-700">
+                {{ $product->images->count() }}@if($product->videos->count() > 0) + {{ $product->videos->count() }}v @endif
+            </span>
         </button>
         <button type="button" @click="setTab('attributes')"
                 :class="activeTab === 'attributes' ? 'border-amber-600 text-amber-700 bg-amber-50/60' : 'border-transparent text-slate-600 hover:text-slate-900'"
@@ -629,6 +631,352 @@
                     <span x-text="fileCount > 1 ? 'Upload & Process ' + fileCount + ' Images (WebP)' : 'Upload & Process Image (WebP)'">Upload & Process Image (WebP)</span>
                 </button>
             </form>
+        </div>
+
+        <!-- Video Upload Box -->
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
+            <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-slate-900">Upload Product Video</h2>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Plays on Hover &amp; Storefront Gallery
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500">Upload a model reel or showcase video (MP4 or WebM &bull; Max 60MB). Pinned videos automatically play on hover across listings and on product pages.</p>
+                </div>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Tag to a specific color so shoppers see the matching dress in motion</span>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('admin.products.upload-video', $product) }}" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                <input type="hidden" name="tab" value="media">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Select Video File (MP4, WebM, MOV &bull; Max 60MB) <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="file" name="video" required accept="video/mp4,video/webm,video/quicktime,video/mov"
+                               class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100 border border-slate-300 rounded-lg cursor-pointer">
+                        <p class="text-[11px] text-slate-400 mt-1.5">
+                            High-efficiency WebM streaming and poster thumbnails are automatically generated.
+                        </p>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Video Title / Description</label>
+                            <input type="text" name="title" value="{{ $product->name }} Showcase Video" maxlength="150"
+                                   class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
+                        </div>
+                        <div>
+                            <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                <input type="checkbox" name="is_primary" value="1" {{ $product->videos->isEmpty() ? 'checked' : '' }}
+                                       class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                <span>Set as Primary Storefront Video</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pin Video by Color (Optional on Upload) -->
+                @if($colorOptions->isNotEmpty())
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-700">
+                            Tag new video to Color (Optional):
+                            <span class="text-slate-400 font-normal">Check which color is showcased in this video</span>
+                        </label>
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            @foreach($colorOptions as $opt)
+                                @foreach($opt->values as $oval)
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-800 bg-amber-50/50 hover:bg-amber-100/70 px-3 py-1.5 rounded-lg border border-amber-200 cursor-pointer transition-colors font-medium">
+                                        <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}" class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                        <span>Color: <strong class="text-amber-900">{{ $oval->value }}</strong></span>
+                                    </label>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                @if($otherOptions->isNotEmpty() || $product->variants->count() > 1)
+                    <details class="text-xs text-slate-600 border-t border-slate-100 pt-2 group">
+                        <summary class="cursor-pointer font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 select-none">
+                            <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            <span>Advanced: Tag video to specific sizes or variant SKUs (Optional)</span>
+                        </summary>
+                        <div class="space-y-3 mt-3 pl-4">
+                            @if($product->variants->count() > 1)
+                                <div class="space-y-1.5">
+                                    <span class="block text-[11px] font-semibold text-slate-600">Specific Variant SKUs:</span>
+                                    <div class="flex items-center gap-2 flex-wrap max-h-32 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        @foreach($product->variants as $var)
+                                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                                <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                <span class="font-mono text-[11px]">{{ $var->sku }}</span>
+                                                <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </details>
+                @endif
+
+                <button type="submit" class="px-5 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                    <span>Upload &amp; Pin Product Video</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Product Videos Grid -->
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
+            <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-slate-900">Product Videos ({{ $product->videos->count() }})</h2>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            Plays on Hover &amp; Storefront Gallery
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500">Pin a video to a color so shoppers see the matching dress in motion &bull; Click "Pin to Color / Edit" on any video to change assignments.</p>
+                </div>
+                <a href="{{ route('admin.video-studio.create') }}?product_id={{ $product->id }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors">
+                    <svg class="size-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    <span>Open Video Studio</span>
+                </a>
+            </div>
+
+            @if($product->videos->isNotEmpty())
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    @foreach($product->videos as $vid)
+                        @php
+                            $pinnedOptionValueIds = $vid->pinned_option_value_ids ?? [];
+                            $pinnedVariantIds = $vid->pinned_variant_ids ?? [];
+                            $pinnedVals = $product->options->flatMap->values->whereIn('id', $pinnedOptionValueIds);
+                            $pinnedVars = $product->variants->whereIn('id', $pinnedVariantIds);
+                        @endphp
+                        <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2.5 relative flex flex-col justify-between shadow-2xs hover:shadow-xs transition-shadow"
+                             x-data="{ editVideoModal: false, isPlaying: false }">
+                            <div class="space-y-2">
+                                <!-- Video Preview Player -->
+                                <div class="aspect-square rounded-lg overflow-hidden bg-black relative border border-slate-200 group">
+                                    <video x-ref="player"
+                                           src="{{ $vid->video_url }}"
+                                           poster="{{ $vid->thumbnail_url }}"
+                                           playsinline loop muted
+                                           class="w-full h-full object-cover cursor-pointer"
+                                           @play="isPlaying = true"
+                                           @pause="isPlaying = false"
+                                           @click="isPlaying ? $refs.player.pause() : $refs.player.play()">
+                                    </video>
+
+                                    <!-- Overlay badges -->
+                                    <div class="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
+                                        @if($vid->is_primary)
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 shadow-xs">
+                                                PRIMARY VIDEO
+                                            </span>
+                                        @endif
+                                        @if($vid->webm_url)
+                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/90 text-white shadow-xs">
+                                                WebM Fast Stream
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <!-- Play / Pause Icon Button -->
+                                    <button type="button"
+                                            @click="isPlaying ? $refs.player.pause() : $refs.player.play()"
+                                            class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors cursor-pointer"
+                                            :class="isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'">
+                                        <span class="w-10 h-10 rounded-full bg-black/70 backdrop-blur-md text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                                            <svg x-show="!isPlaying" class="size-5 fill-white translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            <svg x-show="isPlaying" class="size-5 fill-white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                        </span>
+                                    </button>
+
+                                    <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/70 text-white z-10 pointer-events-none">
+                                        {{ $vid->formatted_duration }} &bull; {{ $vid->formatted_file_size }}
+                                    </span>
+                                </div>
+
+                                <div class="text-xs font-semibold text-slate-800 truncate" title="{{ $vid->title }}">
+                                    {{ $vid->title }}
+                                </div>
+
+                                <!-- Current Pin Assignments -->
+                                <div class="space-y-1">
+                                    <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Current Assignment:</div>
+                                    <div class="flex items-center gap-1 flex-wrap min-h-6">
+                                        @if($pinnedVals->isNotEmpty() || $pinnedVars->isNotEmpty())
+                                            @foreach($pinnedVals as $pv)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                                    Color: {{ $pv->value }}
+                                                </span>
+                                            @endforeach
+                                            @foreach($pinnedVars as $pVar)
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 font-mono" title="{{ $pVar->sku }}">
+                                                    {{ $pVar->display_option_label }}
+                                                </span>
+                                            @endforeach
+                                        @else
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-slate-500 bg-slate-100">
+                                                All Colors (General Video)
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 pt-2 border-t border-slate-100">
+                                <!-- Pin to Color / Edit Button -->
+                                <button type="button" @click="editVideoModal = true"
+                                        class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                    <span>Pin to Color / Edit Video</span>
+                                </button>
+
+                                <div class="flex items-center justify-between gap-1 text-[11px]">
+                                    @if(!$vid->is_primary)
+                                        <form method="POST" action="{{ route('admin.videos.set-primary', $vid) }}">
+                                            @csrf
+                                            <button type="submit" class="font-semibold text-amber-700 hover:underline">
+                                                Make Primary
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-amber-800 font-bold flex items-center gap-0.5">
+                                            <span>★</span> Main video
+                                        </span>
+                                    @endif
+
+                                    @if($vid->video_url)
+                                        <a href="{{ $vid->video_url }}" target="_blank" download class="font-semibold text-slate-600 hover:underline">
+                                            Download
+                                        </a>
+                                    @endif
+
+                                    <form method="POST" action="{{ route('admin.videos.delete', $vid) }}" onsubmit="return confirm('Delete this video? Source product images will not be affected.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="font-semibold text-rose-600 hover:underline">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Pin Video to Color Modal -->
+                            <div x-show="editVideoModal" x-cloak
+                                 class="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+                                 @keydown.escape.window="editVideoModal = false">
+                                <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 text-left"
+                                     @click.outside="editVideoModal = false">
+                                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-900">Pin Video to Color &amp; Variations</h3>
+                                            <p class="text-[11px] text-slate-500">Choose which color is shown in this video, then click Save Changes.</p>
+                                        </div>
+                                        <button type="button" @click="editVideoModal = false" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+                                    </div>
+
+                                    <form method="POST" action="{{ route('admin.videos.update', $vid) }}" class="space-y-4">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="tab" value="media">
+
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">Video Title</label>
+                                            <input type="text" name="title" value="{{ $vid->title }}" maxlength="150"
+                                                   class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:ring-2 focus:ring-amber-500">
+                                        </div>
+
+                                        @if($colorOptions->isNotEmpty())
+                                            <div class="space-y-2">
+                                                <label class="block text-xs font-bold text-slate-800">Pin to Color:</label>
+                                                <p class="text-[11px] text-slate-500">When shoppers select this color on your storefront or hover over this color card, this video will play automatically.</p>
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    @foreach($colorOptions as $opt)
+                                                        @foreach($opt->values as $oval)
+                                                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300 cursor-pointer font-medium">
+                                                                <input type="checkbox" name="option_value_ids[]" value="{{ $oval->id }}"
+                                                                       {{ in_array($oval->id, $pinnedOptionValueIds, true) ? 'checked' : '' }}
+                                                                       class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                                                <span>Color: <strong class="text-amber-900">{{ $oval->value }}</strong></span>
+                                                            </label>
+                                                        @endforeach
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                        @if($otherOptions->isNotEmpty() || $product->variants->count() > 1)
+                                            <details class="text-xs text-slate-600 border-t border-slate-100 pt-2 group">
+                                                <summary class="cursor-pointer font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 select-none">
+                                                    <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                    <span>Specific Sizes or Variant SKUs (Optional)</span>
+                                                </summary>
+                                                <div class="space-y-2 mt-2 max-h-32 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                                    @foreach($product->variants as $var)
+                                                        <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                                            <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}"
+                                                                   {{ in_array($var->id, $pinnedVariantIds, true) ? 'checked' : '' }}
+                                                                   class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                                            <span class="font-mono text-[11px]">{{ $var->sku }}</span>
+                                                            <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </details>
+                                        @endif
+
+                                        <div class="pt-2 border-t border-slate-100">
+                                            <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                                <input type="checkbox" name="is_primary" value="1" {{ $vid->is_primary ? 'checked' : '' }}
+                                                       class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                                <span>Primary Video for Storefront</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                                            <button type="button" @click="editVideoModal = false"
+                                                    class="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700">
+                                                Cancel
+                                            </button>
+                                            <button type="submit"
+                                                    class="px-5 py-2 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white shadow-xs">
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="p-8 text-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-700">No product videos uploaded yet</p>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto">
+                        Upload a model video clip above to enable motion hover on listings and in the product gallery, or use Video Studio to generate branded slideshows and AI fashion reels.
+                    </p>
+                </div>
+            @endif
         </div>
 
         <!-- Images Grid -->

@@ -9,14 +9,20 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
+use App\Models\ProductVideo;
 use App\Models\StoreSettings;
 use App\Services\Catalog\CategoryTreeService;
 use App\Services\Catalog\ProductImageService;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductVariantService;
+use App\Services\VideoStudio\FfmpegService;
+use App\Services\VideoStudio\VideoStudioService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -747,6 +753,221 @@ class AdminProductWebController extends Controller
         } catch (Throwable $e) {
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'quick-links'])
                 ->with('active_tab', 'quick-links')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Upload product video (MP4/WebM) and optionally pin to color/variant.
+     */
+    public function uploadVideo(Request $request, Product $product): RedirectResponse
+    {
+        if (empty($_POST) && empty($_FILES) && (int) ($request->server('CONTENT_LENGTH') ?? 0) > 0) {
+            $postMax = ini_get('post_max_size') ?: '8M';
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', "The uploaded video exceeds server's post_max_size ({$postMax}).");
+        }
+
+        if (isset($_FILES['video']['error']) && $_FILES['video']['error'] === UPLOAD_ERR_INI_SIZE) {
+            $uploadMax = ini_get('upload_max_filesize') ?: '2M';
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', "The video exceeds upload_max_filesize ({$uploadMax}).");
+        }
+
+        $request->validate([
+            'video' => 'required|file|mimes:mp4,mov,webm,quicktime|max:61440',
+            'title' => 'nullable|string|max:150',
+            'is_primary' => 'nullable|boolean',
+            'option_value_ids' => 'nullable|array',
+            'option_value_ids.*' => 'integer|exists:product_option_values,id',
+            'variant_ids' => 'nullable|array',
+            'variant_ids.*' => 'integer|exists:product_variants,id',
+        ], [
+            'video.required' => 'Please select a video file (MP4 or WebM).',
+            'video.mimes' => 'The video must be a file of type: mp4, mov, webm, quicktime.',
+            'video.max' => 'The video file size cannot exceed 60MB.',
+        ]);
+
+        try {
+            $file = $request->file('video');
+            $adminUser = $request->attributes->get('admin_user');
+            $optionValueIds = array_map('intval', (array) $request->input('option_value_ids', []));
+            $variantIds = array_map('intval', (array) $request->input('variant_ids', []));
+
+            $storageDir = config('video_studio.storage_dir', 'video-studio');
+            $disk = config('video_studio.disk', 'public');
+
+            $ext = strtolower($file->getClientOriginalExtension() ?: 'mp4');
+            $filename = 'videos/prod_' . $product->id . '_' . Str::random(12) . '.' . $ext;
+            $videoPath = "{$storageDir}/{$filename}";
+
+            Storage::disk($disk)->put($videoPath, File::get($file->getRealPath()));
+
+            $thumbRelativePath = null;
+            $webmRelativePath = null;
+            $ffmpeg = app(FfmpegService::class);
+
+            if ($ffmpeg->isAvailable()) {
+                $localVideo = Storage::disk($disk)->path($videoPath);
+                $tempThumb = storage_path('app/temp/thumb_' . Str::uuid() . '.jpg');
+                File::ensureDirectoryExists(dirname($tempThumb));
+                try {
+                    $ffmpeg->extractThumbnail($localVideo, $tempThumb);
+                    if (file_exists($tempThumb)) {
+                        $thumbRelativePath = "{$storageDir}/thumbnails/thumb_" . Str::uuid() . '.jpg';
+                        Storage::disk($disk)->put($thumbRelativePath, File::get($tempThumb));
+                        @unlink($tempThumb);
+                    }
+                } catch (\Throwable $e) {}
+
+                if ($ext === 'mp4') {
+                    $tempWebm = storage_path('app/temp/webm_' . Str::uuid() . '.webm');
+                    try {
+                        $ffmpeg->renderCleanWebm($localVideo, $tempWebm, 1080, 1920);
+                        if (file_exists($tempWebm)) {
+                            $webmRelativePath = "{$storageDir}/videos/clean_" . Str::uuid() . '.webm';
+                            Storage::disk($disk)->put($webmRelativePath, File::get($tempWebm));
+                            @unlink($tempWebm);
+                        }
+                    } catch (\Throwable $e) {}
+                }
+            }
+
+            if (!$thumbRelativePath) {
+                $thumbRelativePath = $product->primaryImage?->storage_key;
+            }
+
+            $isPrimary = $request->boolean('is_primary') || $product->videos()->count() === 0;
+
+            if ($isPrimary) {
+                ProductVideo::where('product_id', $product->id)->update(['is_primary' => false]);
+            }
+
+            $renderSettings = [
+                'export_preset' => 'clean_storefront',
+            ];
+            if ($webmRelativePath) {
+                $renderSettings['webm_path'] = $webmRelativePath;
+            }
+
+            ProductVideo::create([
+                'product_id' => $product->id,
+                'title' => $request->input('title') ?: ($product->name . ' Showcase Video'),
+                'video_type' => 'imported_branded',
+                'template' => 'clean_showcase',
+                'aspect_ratio' => '9:16',
+                'width' => 1080,
+                'height' => 1920,
+                'duration_seconds' => 10,
+                'status' => 'completed',
+                'approval_status' => 'approved',
+                'progress' => 100,
+                'video_path' => $videoPath,
+                'thumbnail_path' => $thumbRelativePath,
+                'file_size_bytes' => $file->getSize(),
+                'is_primary' => $isPrimary,
+                'pinned_option_value_ids' => $optionValueIds,
+                'pinned_variant_ids' => $variantIds,
+                'render_settings' => $renderSettings,
+                'created_by' => $adminUser?->id,
+                'completed_at' => now(),
+            ]);
+
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Product video uploaded and pinned successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', 'Video upload failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update product video pins (color assignments, variant SKUs, primary status).
+     */
+    public function updateVideo(Request $request, ProductVideo $video): RedirectResponse
+    {
+        $request->validate([
+            'title' => 'nullable|string|max:150',
+            'is_primary' => 'nullable|boolean',
+            'option_value_ids' => 'nullable|array',
+            'option_value_ids.*' => 'integer|exists:product_option_values,id',
+            'variant_ids' => 'nullable|array',
+            'variant_ids.*' => 'integer|exists:product_variants,id',
+        ]);
+
+        try {
+            $isPrimary = $request->boolean('is_primary');
+            if ($isPrimary) {
+                ProductVideo::where('product_id', $video->product_id)
+                    ->where('id', '!=', $video->id)
+                    ->update(['is_primary' => false]);
+            }
+
+            $optionValueIds = array_map('intval', (array) $request->input('option_value_ids', []));
+            $variantIds = array_map('intval', (array) $request->input('variant_ids', []));
+
+            $video->update([
+                'title' => $request->input('title', $video->title),
+                'is_primary' => $isPrimary,
+                'pinned_option_value_ids' => $optionValueIds,
+                'pinned_variant_ids' => $variantIds,
+            ]);
+
+            return redirect()->route('admin.products.edit', ['product' => $video->product_id, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Video color and variation pins saved successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $video->product_id, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Set a video as the primary storefront video for this product.
+     */
+    public function setPrimaryVideo(Request $request, ProductVideo $video): RedirectResponse
+    {
+        try {
+            ProductVideo::where('product_id', $video->product_id)->update(['is_primary' => false]);
+            $video->update(['is_primary' => true]);
+
+            return redirect()->route('admin.products.edit', ['product' => $video->product_id, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Primary video updated successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $video->product_id, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete product video.
+     */
+    public function deleteVideo(Request $request, ProductVideo $video): RedirectResponse
+    {
+        $productId = $video->product_id;
+        $wasPrimary = (bool) $video->is_primary;
+
+        try {
+            app(VideoStudioService::class)->delete($video);
+
+            if ($wasPrimary && $productId) {
+                $next = ProductVideo::where('product_id', $productId)->latest('id')->first();
+                $next?->update(['is_primary' => true]);
+            }
+
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Product video deleted successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
                 ->with('error', $e->getMessage());
         }
     }

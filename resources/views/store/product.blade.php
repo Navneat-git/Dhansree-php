@@ -258,7 +258,23 @@
         $firstImg = $product->primary_image_url ?? $product->images->first()?->url;
     }
 
-    $approvedVideo = $product->approved_video;
+    $approvedVideo = $product->getApprovedVideoForColor($firstColor) ?? $product->approved_video;
+    $allProductVideos = $product->videos->filter(fn($v) => $v->status === 'completed' && $v->isApproved());
+    $videosByColor = [];
+    if ($colorOption) {
+        foreach ($colorOption->values as $cVal) {
+            $cVid = $allProductVideos->first(fn($v) => $v->isPinnedToOptionValue($cVal->id)) ?? $product->approved_video;
+            if ($cVid) {
+                $videosByColor[strtolower(trim($cVal->value))] = [
+                    'id' => $cVid->id,
+                    'video_url' => $cVid->video_url,
+                    'webm_url' => $cVid->webm_url,
+                    'thumbnail_url' => $cVid->thumbnail_url,
+                    'duration' => $cVid->duration_seconds ?? 8,
+                ];
+            }
+        }
+    }
 @endphp
 
 @push('head')
@@ -273,6 +289,14 @@
 <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 md:py-12 w-full max-w-full overflow-hidden"
      x-data="{
         allImages: @js($preparedImages),
+        videosByColor: @js($videosByColor),
+        currentVideo: @js($approvedVideo ? [
+            'id' => $approvedVideo->id,
+            'video_url' => $approvedVideo->video_url,
+            'webm_url' => $approvedVideo->webm_url,
+            'thumbnail_url' => $approvedVideo->thumbnail_url,
+            'duration' => $approvedVideo->duration_seconds ?? 8,
+        ] : null),
         activeIdx: 0,
         expanded: false,
         activeImage: '{{ $firstImg }}',
@@ -341,6 +365,21 @@
                 const url = new URL(window.location.href);
                 url.searchParams.set('color', colorName);
                 window.history.replaceState({}, '', url.toString());
+            }
+
+            if (this.videosByColor && colorName) {
+                const key = colorName.toLowerCase().trim();
+                if (this.videosByColor[key]) {
+                    this.currentVideo = this.videosByColor[key];
+                } else {
+                    this.currentVideo = @js($product->approved_video ? [
+                        'id' => $product->approved_video->id,
+                        'video_url' => $product->approved_video->video_url,
+                        'webm_url' => $product->approved_video->webm_url,
+                        'thumbnail_url' => $product->approved_video->thumbnail_url,
+                        'duration' => $product->approved_video->duration_seconds ?? 8,
+                    ] : null);
+                }
             }
 
             this.$nextTick(() => {
@@ -416,10 +455,12 @@
                 class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth w-full max-w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:gap-3 lg:overflow-x-visible lg:scroll-auto">
                 
                 @if($approvedVideo)
-                    <li class="w-full shrink-0 snap-center">
+                    <li class="w-full shrink-0 snap-center" x-show="currentVideo">
                         <div class="relative {{ $isSmartLivingHub ? 'aspect-square' : 'aspect-[4/5]' }} overflow-hidden rounded-2xl border border-light-gold/60 bg-black group shadow-xs"
                              x-data="{ isPlaying: false, isMuted: true }">
                             <video x-ref="galleryVideo"
+                                   :poster="currentVideo?.thumbnail_url"
+                                   :src="currentVideo?.webm_url || currentVideo?.video_url"
                                    poster="{{ $approvedVideo->thumbnail_url }}"
                                    playsinline
                                    loop
@@ -440,7 +481,7 @@
                                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-400/40 text-[10px] font-bold shadow-xs">
                                     <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                     <span>Model Motion</span>
-                                    <span class="text-[9px] font-mono text-slate-300">({{ $approvedVideo->duration_seconds ?? 8 }}s)</span>
+                                    <span class="text-[9px] font-mono text-slate-300" x-text="'(' + (currentVideo?.duration || {{ $approvedVideo->duration_seconds ?? 8 }}) + 's)'">({{ $approvedVideo->duration_seconds ?? 8 }}s)</span>
                                 </span>
                             </div>
 
@@ -903,6 +944,8 @@
             <!-- Video Player in 9:16 vertical ratio -->
             <div class="w-full aspect-[9/16] relative bg-black">
                 <video x-ref="modalVideo"
+                       :poster="currentVideo?.thumbnail_url"
+                       :src="currentVideo?.webm_url || currentVideo?.video_url"
                        poster="{{ $approvedVideo->thumbnail_url }}"
                        playsinline
                        loop

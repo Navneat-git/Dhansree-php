@@ -106,6 +106,7 @@ class ProductService
             'options' => fn($q) => $q->orderBy('position')->with(['values' => fn($vq) => $vq->orderBy('position')]),
             'images' => fn($q) => $q->orderBy('position')->with(['productImageVariants', 'productImageOptionValues', 'variants', 'optionValues']),
             'productAttributes' => fn($q) => $q->orderBy('position'),
+            'videos' => fn($q) => $q->orderByDesc('is_primary')->orderBy('position')->latest('id'),
         ])->findOrFail($id);
 
         $product->setAttribute('publish_issues', $this->publishIssues($product));

@@ -146,6 +146,7 @@ class CatalogBrowsingService
                     $colorCode = WholesaleColorCode::resolveCode($colorName);
                     $colorHex = WholesaleColorCode::resolveHex($colorName);
                     $url = url('/product/' . $product->slug . '?color=' . urlencode($colorName));
+                    $colorVideo = $product->getApprovedVideoForColor($colorName);
 
                     $cards->push(new ProductListingCard(
                         product: $product,
@@ -164,6 +165,7 @@ class CatalogBrowsingService
                         variants: $varsForColor->values(),
                         hasMultipleVariants: $varsForColor->count() > 1,
                         inStock: $inStock,
+                        video: $colorVideo,
                     ));
 
                     $colorCardsGenerated++;

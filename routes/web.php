@@ -250,6 +250,11 @@ Route::prefix('admin')->group(function () {
         Route::put('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateImage'])->name('admin.images.update');
         Route::post('/catalog/images/{image}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryImage'])->name('admin.images.set-primary');
 
+        Route::post('/catalog/products/{product}/upload-video', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'uploadVideo'])->name('admin.products.upload-video');
+        Route::put('/catalog/videos/{video}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateVideo'])->name('admin.videos.update');
+        Route::post('/catalog/videos/{video}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryVideo'])->name('admin.videos.set-primary');
+        Route::delete('/catalog/videos/{video}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'deleteVideo'])->name('admin.videos.delete');
+
         // Marketplace Listings & Export (Meesho, Flipkart, Amazon, Myntra, Ajio)
         Route::prefix('marketplace')->name('admin.marketplace.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'listings'])->name('index');

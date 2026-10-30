@@ -24,6 +24,10 @@ class ProductVideo extends Model
         'render_settings' => 'array',
         'quality_checklist' => 'array',
         'file_size_bytes' => 'integer',
+        'is_primary' => 'boolean',
+        'position' => 'integer',
+        'pinned_option_value_ids' => 'array',
+        'pinned_variant_ids' => 'array',
         'estimated_cost' => 'float',
         'actual_cost' => 'float',
         'created_at' => 'datetime',
@@ -93,6 +97,31 @@ class ProductVideo extends Model
             $q->whereIn('video_type', ['slideshow', 'imported_branded'])
               ->orWhere('approval_status', 'approved');
         });
+    }
+
+    public function scopePrimary(Builder $query): Builder
+    {
+        return $query->where('is_primary', true);
+    }
+
+    public function getPinnedOptionValueIds(): array
+    {
+        return is_array($this->pinned_option_value_ids) ? $this->pinned_option_value_ids : [];
+    }
+
+    public function getPinnedVariantIds(): array
+    {
+        return is_array($this->pinned_variant_ids) ? $this->pinned_variant_ids : [];
+    }
+
+    public function isPinnedToOptionValue(int $optionValueId): bool
+    {
+        return in_array($optionValueId, $this->getPinnedOptionValueIds(), true);
+    }
+
+    public function isPinnedToVariant(int $variantId): bool
+    {
+        return in_array($variantId, $this->getPinnedVariantIds(), true);
     }
 
     public function scopeAiVideos(Builder $query): Builder

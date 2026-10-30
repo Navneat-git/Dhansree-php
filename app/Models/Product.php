@@ -97,9 +97,35 @@ class Product extends Model
     public function getApprovedVideoAttribute(): ?ProductVideo
     {
         if ($this->relationLoaded('videos')) {
-            return $this->videos->first(fn($v) => $v->status === 'completed' && $v->isApproved());
+            return $this->videos->first(fn($v) => $v->status === 'completed' && $v->isApproved() && $v->is_primary)
+                ?? $this->videos->first(fn($v) => $v->status === 'completed' && $v->isApproved());
         }
-        return $this->videos()->where('status', 'completed')->approved()->latest('id')->first();
+        return $this->videos()->where('status', 'completed')->approved()->where('is_primary', true)->latest('id')->first()
+            ?? $this->videos()->where('status', 'completed')->approved()->latest('id')->first();
+    }
+
+    public function getApprovedVideoForColor(?string $colorName = null): ?ProductVideo
+    {
+        $allVideos = $this->relationLoaded('videos') ? $this->videos : $this->videos()->where('status', 'completed')->approved()->get();
+        if ($allVideos->isEmpty()) {
+            return null;
+        }
+
+        if (!empty($colorName)) {
+            $colorOption = $this->options?->first(fn($o) => in_array(strtolower($o->name ?? ''), ['color', 'colour']));
+            $cVal = $colorOption?->values?->first(fn($v) => strcasecmp($v->value ?? '', $colorName) === 0);
+
+            if ($cVal) {
+                $colorVideo = $allVideos->first(function ($v) use ($cVal) {
+                    return $v->status === 'completed' && $v->isApproved() && $v->isPinnedToOptionValue($cVal->id);
+                });
+                if ($colorVideo) {
+                    return $colorVideo;
+                }
+            }
+        }
+
+        return $this->approved_video;
     }
 
     public function bestSellerPins(): HasMany

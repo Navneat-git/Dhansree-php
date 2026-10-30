@@ -31,7 +31,8 @@ class ProductListingCard implements Arrayable, JsonSerializable
         public ?ProductVariant $firstVariant,
         public Collection $variants,
         public bool $hasMultipleVariants,
-        public bool $inStock
+        public bool $inStock,
+        public ?\App\Models\ProductVideo $video = null
     ) {}
 
     public function __get(string $key): mixed
@@ -53,7 +54,7 @@ class ProductListingCard implements Arrayable, JsonSerializable
             'variants' => $this->variants,
             'has_multiple_variants', 'hasMultipleVariants' => $this->hasMultipleVariants,
             'in_stock', 'inStock' => $this->inStock,
-            'approved_video', 'approvedVideo' => $this->product->approved_video,
+            'approved_video', 'approvedVideo' => $this->video ?? $this->product->getApprovedVideoForColor($this->colorName),
             default => $this->product->getAttribute($key),
         };
     }
