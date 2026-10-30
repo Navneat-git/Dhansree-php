@@ -275,9 +275,14 @@
                             </label>
                             <p class="text-xs text-slate-500 mt-0.5">Select a raw MP4, MOV, or WebM video file (max 60MB). FFmpeg will automatically brand it with audio, logo, and price.</p>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                            MP4 / MOV (Max 60MB)
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                                MP4 / MOV / WebM (Max 60MB)
+                            </span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200" title="PHP upload_max_filesize limit on this server">
+                                Server limit: <span class="font-bold text-slate-900" x-text="phpUploadLimitText"></span>
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Dropzone Area -->
@@ -887,6 +892,8 @@ function videoStudioCreator() {
         availableImages: @json($availableImagesData ?? []),
         selectedImageIds: @json(array_column($availableImagesData ?? [], 'id')),
         primaryImageId: @json($availableImagesData[0]['id'] ?? null),
+        phpUploadLimitBytes: @json($phpUploadLimitBytes ?? 104857600),
+        phpUploadLimitText: @json($phpUploadLimitText ?? '100M'),
 
         exportPreset: 'clean_storefront',
         selectedTemplate: 'fashion_showcase',
@@ -1066,11 +1073,20 @@ function videoStudioCreator() {
         handleVideoFileChange(e) {
             const file = e.target.files?.[0];
             if (!file) return;
+
+            // Check hard max limit (60MB)
             if (file.size > 61440 * 1024) {
                 alert('Video file is larger than 60MB. Please choose a smaller video.');
                 e.target.value = '';
                 return;
             }
+
+            // Check if file exceeds the current server PHP upload_max_filesize limit
+            if (this.phpUploadLimitBytes && file.size > this.phpUploadLimitBytes) {
+                const fileSizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                alert(`⚠️ Server Upload Limit Warning:\n\nThis video is ${fileSizeMb} MB, which exceeds your server's current PHP upload_max_filesize limit (${this.phpUploadLimitText}).\n\nIf the upload fails, please run the fix command on your Lightsail server:\nsudo sed -i 's/^upload_max_filesize = .*/upload_max_filesize = 100M/' /etc/php/8.3/fpm/php.ini\nsudo sed -i 's/^post_max_size = .*/post_max_size = 100M/' /etc/php/8.3/fpm/php.ini\nsudo systemctl restart php8.3-fpm`);
+            }
+
             this.uploadedVideoFile = file;
             this.uploadedVideoName = file.name;
             this.uploadedVideoSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';

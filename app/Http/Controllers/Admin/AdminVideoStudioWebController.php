@@ -215,6 +215,8 @@ class AdminVideoStudioWebController extends Controller
             'googleVideoModel' => config('video_studio.google_video.model', 'veo-2.0-generate-001'),
             'estimatedCostPerClip' => (float) config('video_studio.google_video.estimated_cost_per_clip', 0.15),
             'defaultNegativePrompt' => $this->promptService->getNegativePrompt(),
+            'phpUploadLimitBytes' => $this->getUploadLimitBytes(),
+            'phpUploadLimitText' => ini_get('upload_max_filesize') ?: '2M',
         ]);
     }
 
@@ -322,6 +324,26 @@ class AdminVideoStudioWebController extends Controller
 
         $this->ensureTableExists();
 
+        // 1. Check if POST was truncated due to post_max_size
+        if (empty($_POST) && empty($_FILES) && (int) ($request->server('CONTENT_LENGTH') ?? 0) > 0) {
+            $postMax = ini_get('post_max_size') ?: '8M';
+            $msg = "The uploaded file exceeds the server's post_max_size limit ({$postMax}). Please increase post_max_size and upload_max_filesize to 100M in your PHP configuration (/etc/php/8.3/fpm/php.ini) and restart php8.3-fpm.";
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withInput()->with('error', $msg);
+        }
+
+        // 2. Check if uploaded_video hit PHP's upload_max_filesize limit
+        if (isset($_FILES['uploaded_video']['error']) && $_FILES['uploaded_video']['error'] === UPLOAD_ERR_INI_SIZE) {
+            $uploadMax = ini_get('upload_max_filesize') ?: '2M';
+            $msg = "The video file exceeds PHP's upload_max_filesize limit ({$uploadMax}). Please increase upload_max_filesize to 100M in /etc/php/8.3/fpm/php.ini and restart php8.3-fpm.";
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->withInput()->with('error', $msg);
+        }
+
         try {
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
@@ -348,6 +370,8 @@ class AdminVideoStudioWebController extends Controller
                 'product_id.required' => 'Please select a product.',
                 'image_ids.required_unless' => 'Please select at least one product image for the video.',
                 'uploaded_video.required_if' => 'Please upload a raw video file to brand with FFmpeg.',
+                'uploaded_video.uploaded' => 'The video file failed to upload because it exceeds the server upload limit (' . (ini_get('upload_max_filesize') ?: '2M') . '). Please update /etc/php/8.3/fpm/php.ini.',
+                'uploaded_video.max' => 'The video file size cannot exceed 60MB.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->wantsJson() || $request->ajax()) {
@@ -681,5 +705,24 @@ class AdminVideoStudioWebController extends Controller
         }
 
         abort(403, 'You do not have permission to access Dhansree Video Studio.');
+    }
+
+    /**
+     * Parse upload_max_filesize into bytes.
+     */
+    protected function getUploadLimitBytes(): int
+    {
+        $val = trim((string) ini_get('upload_max_filesize'));
+        if ($val === '') {
+            return 2 * 1024 * 1024;
+        }
+        $unit = strtolower(substr($val, -1));
+        $num = (float) $val;
+        return match ($unit) {
+            'g' => (int) ($num * 1024 * 1024 * 1024),
+            'm' => (int) ($num * 1024 * 1024),
+            'k' => (int) ($num * 1024),
+            default => (int) $num,
+        };
     }
 }
