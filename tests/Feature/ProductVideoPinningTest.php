@@ -15,6 +15,7 @@ use App\Models\ProductOption;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
 use App\Models\ProductVideo;
+use App\Services\VideoStudio\FfmpegService;
 use App\Support\Auth\AdminSessionManager;
 use App\Support\Catalog\ProductListingCard;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -332,5 +333,49 @@ class ProductVideoPinningTest extends TestCase
             'product_id' => $this->product->id,
             'title' => 'Ajax Showcase Video',
         ]);
+    }
+
+    public function test_transcode_webm_artisan_command_converts_mp4_and_generates_webp(): void
+    {
+        Storage::fake('public');
+
+        $dummyPath = 'video-studio/videos/test_source.mp4';
+        Storage::disk('public')->put($dummyPath, 'fake-mp4-data');
+
+        $video = ProductVideo::create([
+            'product_id' => $this->product->id,
+            'title' => 'Artisan Test Video',
+            'video_type' => 'imported_branded',
+            'aspect_ratio' => '9:16',
+            'status' => 'completed',
+            'approval_status' => 'approved',
+            'video_path' => $dummyPath,
+            'is_primary' => true,
+            'render_settings' => [
+                'export_preset' => 'clean_storefront',
+            ],
+        ]);
+
+        $this->assertNull($video->webm_url);
+
+        $ffmpegMock = $this->mock(FfmpegService::class);
+        $ffmpegMock->shouldReceive('isAvailable')->andReturn(true);
+        $ffmpegMock->shouldReceive('getFfmpegPath')->andReturn('/usr/bin/ffmpeg');
+        $ffmpegMock->shouldReceive('getFfprobePath')->andReturn('/usr/bin/ffprobe');
+        $ffmpegMock->shouldReceive('getVideoDimensions')->andReturn(['width' => 1080, 'height' => 1920, 'duration' => 5]);
+        $ffmpegMock->shouldReceive('renderCleanWebm')->andReturnUsing(function ($in, $out) {
+            file_put_contents($out, 'fake-webm-data');
+        });
+        $ffmpegMock->shouldReceive('extractThumbnail')->andReturnUsing(function ($in, $out) {
+            file_put_contents($out, 'fake-webp-data');
+        });
+
+        $this->artisan('video:transcode-webm', ['--product' => (string) $this->product->id])
+            ->assertExitCode(0);
+
+        $video->refresh();
+        $this->assertNotNull($video->webm_url);
+        $this->assertStringContainsString('.webm', $video->render_settings['webm_path']);
+        $this->assertStringContainsString('.webp', $video->thumbnail_path);
     }
 }

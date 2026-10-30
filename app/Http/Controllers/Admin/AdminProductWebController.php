@@ -826,31 +826,47 @@ class AdminProductWebController extends Controller
 
             $thumbRelativePath = null;
             $webmRelativePath = null;
+            $videoDimensions = ['width' => 1080, 'height' => 1920, 'duration' => 10];
             $ffmpeg = app(FfmpegService::class);
 
             if ($ffmpeg->isAvailable()) {
-                $localVideo = Storage::disk($disk)->path($videoPath);
-                $tempThumb = storage_path('app/temp/thumb_' . Str::uuid() . '.jpg');
+                $localVideo = file_exists(Storage::disk($disk)->path($videoPath))
+                    ? Storage::disk($disk)->path($videoPath)
+                    : $file->getRealPath();
+
+                $videoDimensions = $ffmpeg->getVideoDimensions($localVideo);
+
+                // Extract lightweight WebP poster thumbnail to save storage & speed up initial page load
+                $tempThumb = storage_path('app/temp/thumb_' . Str::uuid() . '.webp');
                 File::ensureDirectoryExists(dirname($tempThumb));
                 try {
                     $ffmpeg->extractThumbnail($localVideo, $tempThumb);
-                    if (file_exists($tempThumb)) {
-                        $thumbRelativePath = "{$storageDir}/thumbnails/thumb_" . Str::uuid() . '.jpg';
+                    if (file_exists($tempThumb) && filesize($tempThumb) > 0) {
+                        $thumbRelativePath = "{$storageDir}/thumbnails/thumb_" . Str::uuid() . '.webp';
                         Storage::disk($disk)->put($thumbRelativePath, File::get($tempThumb));
                         @unlink($tempThumb);
                     }
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Thumbnail extraction failed for {$videoPath}: " . $e->getMessage());
+                }
 
-                if ($ext === 'mp4') {
+                // Automatically transcode uploaded MP4/MOV into high-efficiency WebM (VP9)
+                if (in_array($ext, ['mp4', 'mov', 'quicktime', 'm4v'])) {
                     $tempWebm = storage_path('app/temp/webm_' . Str::uuid() . '.webm');
                     try {
-                        $ffmpeg->renderCleanWebm($localVideo, $tempWebm, 1080, 1920);
-                        if (file_exists($tempWebm)) {
+                        $w = $videoDimensions['width'] ?: 1080;
+                        $h = $videoDimensions['height'] ?: 1920;
+                        $ffmpeg->renderCleanWebm($localVideo, $tempWebm, $w, $h);
+                        if (file_exists($tempWebm) && filesize($tempWebm) > 0) {
                             $webmRelativePath = "{$storageDir}/videos/clean_" . Str::uuid() . '.webm';
                             Storage::disk($disk)->put($webmRelativePath, File::get($tempWebm));
                             @unlink($tempWebm);
                         }
-                    } catch (\Throwable $e) {}
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("WebM transcoding failed for {$videoPath}: " . $e->getMessage());
+                    }
+                } elseif ($ext === 'webm') {
+                    $webmRelativePath = $videoPath;
                 }
             }
 
@@ -879,10 +895,10 @@ class AdminProductWebController extends Controller
                 'title' => $request->input('title') ?: ($product->name . ' Showcase Video'),
                 'video_type' => 'imported_branded',
                 'template' => 'clean_showcase',
-                'aspect_ratio' => '9:16',
-                'width' => 1080,
-                'height' => 1920,
-                'duration_seconds' => 10,
+                'aspect_ratio' => ($videoDimensions['width'] > $videoDimensions['height']) ? '16:9' : (($videoDimensions['width'] === $videoDimensions['height']) ? '1:1' : '9:16'),
+                'width' => $videoDimensions['width'] ?: 1080,
+                'height' => $videoDimensions['height'] ?: 1920,
+                'duration_seconds' => $videoDimensions['duration'] ?: 10,
                 'status' => 'completed',
                 'approval_status' => 'approved',
                 'progress' => 100,

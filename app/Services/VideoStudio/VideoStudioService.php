@@ -495,7 +495,8 @@ class VideoStudioService
             }
 
             // Store thumbnail
-            $thumbFilename = 'thumb_' . Str::uuid() . '.jpg';
+            $thumbExt = pathinfo($brandedResult['thumbnail_file'], PATHINFO_EXTENSION) ?: 'webp';
+            $thumbFilename = 'thumb_' . Str::uuid() . '.' . $thumbExt;
             $thumbRelativePath = "{$storageDir}/{$thumbFilename}";
             Storage::disk($disk)->put(
                 $thumbRelativePath,

@@ -179,7 +179,7 @@ class FfmpegService
             'bg_tone' => '#140808',
         ]);
 
-        $thumbnailFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_poster_thumbnail.jpg';
+        $thumbnailFile = $tempDir . DIRECTORY_SEPARATOR . 'ai_poster_thumbnail.webp';
         $result = [];
 
         // 1. Clean Storefront (WebM + MP4) - Optimized for website PDP and listings with zero distracting overlays or audio
@@ -274,9 +274,54 @@ class FfmpegService
         $this->generateThumbnail($videoPath, $thumbPath);
     }
 
+    /**
+     * Inspect video metadata (width, height, duration) using ffprobe.
+     *
+     * @return array{width: int, height: int, duration: int}
+     */
+    public function getVideoDimensions(string $videoPath): array
+    {
+        try {
+            $cmd = [
+                $this->ffprobePath,
+                '-v', 'error',
+                '-select_streams', 'v:0',
+                '-show_entries', 'stream=width,height,duration',
+                '-of', 'json',
+                $videoPath,
+            ];
+            $process = new Process($cmd);
+            $process->setTimeout(10);
+            $process->run();
+            if ($process->isSuccessful()) {
+                $data = json_decode($process->getOutput(), true);
+                $stream = $data['streams'][0] ?? [];
+                $w = (int) ($stream['width'] ?? 0);
+                $h = (int) ($stream['height'] ?? 0);
+                $dur = (int) round((float) ($stream['duration'] ?? 10));
+                if ($w > 0 && $h > 0) {
+                    return [
+                        'width' => $w,
+                        'height' => $h,
+                        'duration' => max(1, $dur),
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("FFprobe metadata inspection failed: " . $e->getMessage());
+        }
+
+        return ['width' => 1080, 'height' => 1920, 'duration' => 10];
+    }
+
     public function getFfmpegPath(): string
     {
         return $this->ffmpegPath;
+    }
+
+    public function getFfprobePath(): string
+    {
+        return $this->ffprobePath;
     }
 
     /**
