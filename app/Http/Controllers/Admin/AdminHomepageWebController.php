@@ -90,6 +90,10 @@ class AdminHomepageWebController extends Controller
         $block->version = ($block->version ?? 0) + 1;
         $block->save();
 
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+        } catch (\Throwable $e) {}
+
         $statusText = $block->is_visible ? 'visible on storefront' : 'hidden from storefront';
         return back()->with('success', "Section '{$block->type->value}' is now {$statusText}.");
     }
@@ -189,6 +193,10 @@ class AdminHomepageWebController extends Controller
             }
         }
 
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+        } catch (\Throwable $e) {}
+
         return back()->with('success', "Section #{$block->id} ({$block->type->value}) updated successfully.");
     }
 
@@ -204,28 +212,42 @@ class AdminHomepageWebController extends Controller
         }
 
         $block = HomeBlock::findOrFail($id);
-        $blocks = HomeBlock::orderBy('position')->get();
+        $blocksList = HomeBlock::orderBy('position')->orderBy('id')->get()->all();
 
-        $index = $blocks->search(fn($b) => $b->id === $block->id);
-        if ($index === false) {
+        $index = null;
+        foreach ($blocksList as $i => $b) {
+            if ($b->id === $block->id) {
+                $index = $i;
+                break;
+            }
+        }
+
+        if ($index === null) {
             return back();
         }
 
         $targetIndex = $direction === 'up' ? $index - 1 : $index + 1;
-        if ($targetIndex < 0 || $targetIndex >= $blocks->count()) {
+        if ($targetIndex < 0 || $targetIndex >= count($blocksList)) {
             return back();
         }
 
-        $swapBlock = $blocks[$targetIndex];
+        // Swap the two items in the array
+        $temp = $blocksList[$index];
+        $blocksList[$index] = $blocksList[$targetIndex];
+        $blocksList[$targetIndex] = $temp;
 
-        DB::transaction(function () use ($block, $swapBlock) {
-            $tmpPos = $block->position;
-            $block->position = $swapBlock->position;
-            $swapBlock->position = $tmpPos;
-
-            $block->save();
-            $swapBlock->save();
+        DB::transaction(function () use ($blocksList) {
+            foreach ($blocksList as $pos => $b) {
+                if ($b->position !== $pos) {
+                    $b->position = $pos;
+                    $b->save();
+                }
+            }
         });
+
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+        } catch (\Throwable $e) {}
 
         return back()->with('success', 'Homepage sections reordered successfully.');
     }

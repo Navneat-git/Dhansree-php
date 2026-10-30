@@ -47,11 +47,13 @@ class StorefrontController extends Controller
                     'quickLinksData' => null,
                     'instagramBlock' => null,
                     'instagramFeed' => collect(),
+                    'homeBlocks' => collect(),
                 ];
             }
         }
 
         return view('store.home', [
+            'homeBlocks' => $data['homeBlocks'] ?? collect(),
             'categories' => $data['categories'],
             'featuredProducts' => $data['featuredProducts'],
             'featuredBlock' => $data['featuredBlock'] ?? null,

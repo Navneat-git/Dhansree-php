@@ -331,7 +331,21 @@ class CatalogBrowsingService
             $instagramFeed = collect();
         }
 
+        $homeBlocks = collect();
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('home_blocks')) {
+                $homeBlocks = \App\Models\HomeBlock::with(['railCategory', 'homeBlockItems'])
+                    ->where('is_visible', true)
+                    ->orderBy('position')
+                    ->orderBy('id')
+                    ->get();
+            }
+        } catch (\Throwable $e) {
+            $homeBlocks = collect();
+        }
+
         return [
+            'homeBlocks' => $homeBlocks,
             'categories' => $womenCategories,
             'featuredProducts' => $featuredCards,
             'featuredBlock' => $featuredBlock,
