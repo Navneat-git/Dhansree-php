@@ -345,4 +345,85 @@ class ActualProductImageAndAiDisclaimerTest extends TestCase
         // Verify is_ai_generated is false for standard slideshows
         $response->assertSee('\u0022is_ai_generated\u0022:false', false);
     }
+
+    public function test_imported_branded_video_defaults_to_ai_generated_and_can_be_customized(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category->id,
+            'name' => 'Imported Video Dress ' . uniqid(),
+            'slug' => 'imported-dress-' . uniqid(),
+            'status' => ProductStatus::ACTIVE,
+            'published_at' => now(),
+        ]);
+
+        $importedVideo = ProductVideo::create([
+            'product_id' => $product->id,
+            'video_type' => 'imported_branded',
+            'title' => 'Uploaded Model Motion',
+            'video_path' => 'videos/uploaded_motion.mp4',
+            'duration_seconds' => 10,
+            'status' => 'completed',
+            'approval_status' => 'approved',
+            'is_primary' => true,
+        ]);
+
+        // By default imported_branded is treated as AI generated
+        $this->assertTrue($importedVideo->isAiGenerated());
+
+        // When explicitly set to false in render_settings, it reflects false
+        $importedVideo->render_settings = ['is_ai_generated' => false];
+        $importedVideo->save();
+        $this->assertFalse($importedVideo->fresh()->isAiGenerated());
+    }
+
+    public function test_storefront_reel_modal_renders_wrapped_title_and_price_line(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category->id,
+            'name' => 'Super Long Luxury Royal Silk Anarkali Kurta Set with Heavy Embroidery Dupatta and Matching Pants',
+            'slug' => 'super-long-silk-anarkali-' . uniqid(),
+            'status' => ProductStatus::ACTIVE,
+            'published_at' => now(),
+        ]);
+
+        $variantService = app(ProductVariantService::class);
+        $variantService->syncOptions($product, [
+            ['name' => 'Size', 'values' => ['M']],
+        ]);
+        $product->refresh();
+        $sizeOption = $product->options->firstWhere('name', 'Size');
+        $sizeValue = $sizeOption->values->firstWhere('value', 'M');
+
+        $variantService->createVariant($product, [
+            'sku' => 'SILK-M-' . uniqid(),
+            'price_rupees' => 2499.00,
+            'mrp_rupees' => 4999.00,
+            'option_value_ids' => [$sizeValue->id],
+            'stock_quantity' => 15,
+        ]);
+
+        ProductVideo::create([
+            'product_id' => $product->id,
+            'video_type' => 'imported_branded',
+            'title' => 'Silk Anarkali Reel',
+            'video_path' => 'videos/silk_anarkali.mp4',
+            'duration_seconds' => 12,
+            'status' => 'completed',
+            'approval_status' => 'approved',
+            'is_primary' => true,
+        ]);
+
+        $response = $this->get(route('store.product', $product->slug));
+        $response->assertOk();
+
+        // Verify title wrapping class
+        $response->assertSee('line-clamp-2 break-words');
+        // Verify Shop Now button with full text
+        $response->assertSee('Shop Now');
+        // Verify Featured in Reel tag
+        $response->assertSee('Featured in Reel');
+        // Verify AI disclaimer badge in reel modal
+        $response->assertSee('ⓘ AI-generated video');
+    }
 }
+

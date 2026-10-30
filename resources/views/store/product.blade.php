@@ -381,6 +381,7 @@
                         'webm_url' => $product->approved_video->webm_url,
                         'thumbnail_url' => $product->approved_video->thumbnail_url,
                         'duration' => $product->approved_video->duration_seconds ?? 8,
+                        'is_ai_generated' => (bool) $product->approved_video->isAiGenerated(),
                     ] : null);
                 }
             }
@@ -489,7 +490,7 @@
                             </div>
 
                             <!-- Top-Right: AI Video Disclaimer (ⓘ) -->
-                            <div x-show="Boolean(currentVideo?.is_ai_generated)"
+                            <div x-show="Boolean(currentVideo ? currentVideo.is_ai_generated : {{ $approvedVideo?->isAiGenerated() ? 'true' : 'false' }})"
                                  class="absolute top-2.5 right-2.5 z-20 pointer-events-auto"
                                  @click.outside="showDisclaimer = false">
                                 <div class="relative flex items-center justify-end">
@@ -498,8 +499,10 @@
                                             @mouseleave="showDisclaimer = false"
                                             @click.stop="showDisclaimer = !showDisclaimer"
                                             aria-label="AI Video Disclaimer"
-                                            class="size-6 rounded-full bg-slate-900/85 hover:bg-slate-900 text-amber-200 hover:text-amber-300 border border-amber-400/30 flex items-center justify-center text-xs font-serif italic shadow-md transition-all cursor-pointer backdrop-blur-md">
-                                        <span>ⓘ</span>
+                                            class="size-7 rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md">
+                                        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                     </button>
 
                                     <!-- Disclaimer Tooltip / Mobile Popup -->
@@ -516,7 +519,7 @@
                                          style="display: none;"
                                          class="absolute right-0 top-full mt-2 w-64 sm:w-72 p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/40 text-[11px] leading-relaxed shadow-2xl z-30 pointer-events-auto">
                                         <div class="flex items-start gap-2">
-                                            <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">ⓘ</span>
+                                            <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
                                             <p class="text-slate-200 font-normal">
                                                 AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
                                             </p>
@@ -997,17 +1000,18 @@
          x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md"
          @keydown.escape.window="videoModalOpen = false; $refs.modalVideo?.pause()">
-        <div class="relative max-w-sm w-full max-h-[92vh] flex flex-col items-center justify-center bg-black rounded-3xl overflow-hidden shadow-2xl border border-amber-400/50">
+        <div class="relative max-w-sm sm:max-w-md w-full max-h-[92vh] flex flex-col items-center justify-center bg-black rounded-3xl overflow-hidden shadow-2xl border border-amber-400/50">
             <!-- Close Button -->
             <button type="button"
                     @click="videoModalOpen = false; $refs.modalVideo?.pause()"
-                    class="absolute top-4 right-4 z-20 size-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition-all border border-white/20 cursor-pointer shadow-lg">
+                    class="absolute top-4 right-4 z-30 size-9 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-all border border-white/20 cursor-pointer shadow-lg"
+                    aria-label="Close video reel">
                 ✕
             </button>
 
             <!-- Top Left AI Disclaimer Indicator -->
-            <div x-show="Boolean(currentVideo?.is_ai_generated)" class="absolute top-4 left-4 z-20">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-md text-amber-200 border border-amber-400/30 text-[10px] font-medium shadow-md"
+            <div x-show="Boolean(currentVideo ? currentVideo.is_ai_generated : {{ $approvedVideo?->isAiGenerated() ? 'true' : 'false' }})" class="absolute top-4 left-4 z-30">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-md text-amber-200 border border-amber-400/40 text-[10px] font-medium shadow-md"
                       title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.">
                     <span>ⓘ AI-generated video</span>
                 </span>
@@ -1029,20 +1033,42 @@
                     @endif
                     <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
                 </video>
-            </div>
 
-            <!-- Bottom Floating Tagged Product Details -->
-            <div class="absolute bottom-4 inset-x-4 p-3 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-white/10 text-white flex items-center justify-between gap-3 z-20">
-                <div class="min-w-0">
-                    <p class="text-[10px] uppercase tracking-wider text-amber-300 font-bold">Featured in Reel</p>
-                    <p class="text-xs font-bold text-white truncate">{{ $product->name }}</p>
-                    <p class="text-xs font-bold text-amber-400 mt-0.5" x-text="selectedVariantPrice"></p>
+                <!-- Floating Tagged Product Details (Placed safely above native video scrubber bar) -->
+                <div class="absolute bottom-14 sm:bottom-16 inset-x-3 sm:inset-x-4 p-3 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-white/15 text-white shadow-2xl z-20 pointer-events-auto">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <span class="inline-block text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-0.5">
+                                Featured in Reel
+                            </span>
+                            <p class="text-xs font-semibold text-white leading-snug line-clamp-2 break-words">
+                                {{ $product->name }}
+                            </p>
+                            <div class="flex items-baseline gap-2 mt-1 flex-wrap">
+                                <span class="text-sm font-black text-amber-400" x-text="selectedVariantPrice">
+                                    {{ $firstMatch['price'] ?? $product->formatted_price }}
+                                </span>
+                                <span class="text-[11px] text-slate-400 line-through"
+                                      x-text="selectedVariantMrp"
+                                      x-show="selectedVariantMrp">
+                                    {{ $firstMatch['mrp'] ?? ($product->formatted_mrp ?? '') }}
+                                </span>
+                                <span class="text-[10px] font-bold text-emerald-400"
+                                      x-text="selectedVariantDiscount"
+                                      x-show="selectedVariantDiscount">
+                                    {{ $firstMatch['discount'] ?? ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                @click="videoModalOpen = false; $refs.modalVideo?.pause()"
+                                class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 self-center">
+                            <span>Shop Now</span>
+                            <span class="text-[11px]">➔</span>
+                        </button>
+                    </div>
                 </div>
-                <button type="button"
-                        @click="videoModalOpen = false; $refs.modalVideo?.pause()"
-                        class="shrink-0 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black shadow-md transition-colors cursor-pointer">
-                    Shop Now
-                </button>
             </div>
         </div>
     </div>

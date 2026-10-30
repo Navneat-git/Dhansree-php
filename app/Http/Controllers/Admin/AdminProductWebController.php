@@ -786,6 +786,7 @@ class AdminProductWebController extends Controller
             'video' => 'required|file|mimes:mp4,mov,webm,quicktime|max:61440',
             'title' => 'nullable|string|max:150',
             'is_primary' => 'nullable|boolean',
+            'is_ai_generated' => 'nullable|boolean',
             'option_value_ids' => 'nullable|array',
             'option_value_ids.*' => 'integer|exists:product_option_values,id',
             'variant_ids' => 'nullable|array',
@@ -851,8 +852,11 @@ class AdminProductWebController extends Controller
                 ProductVideo::where('product_id', $product->id)->update(['is_primary' => false]);
             }
 
+            $isAiGenerated = $request->has('is_ai_generated') ? $request->boolean('is_ai_generated') : true;
+
             $renderSettings = [
                 'export_preset' => 'clean_storefront',
+                'is_ai_generated' => $isAiGenerated,
             ];
             if ($webmRelativePath) {
                 $renderSettings['webm_path'] = $webmRelativePath;
@@ -899,6 +903,7 @@ class AdminProductWebController extends Controller
         $request->validate([
             'title' => 'nullable|string|max:150',
             'is_primary' => 'nullable|boolean',
+            'is_ai_generated' => 'nullable|boolean',
             'option_value_ids' => 'nullable|array',
             'option_value_ids.*' => 'integer|exists:product_option_values,id',
             'variant_ids' => 'nullable|array',
@@ -916,11 +921,17 @@ class AdminProductWebController extends Controller
             $optionValueIds = array_map('intval', (array) $request->input('option_value_ids', []));
             $variantIds = array_map('intval', (array) $request->input('variant_ids', []));
 
+            $renderSettings = $video->render_settings ?? [];
+            if ($request->has('is_ai_generated')) {
+                $renderSettings['is_ai_generated'] = $request->boolean('is_ai_generated');
+            }
+
             $video->update([
                 'title' => $request->input('title', $video->title),
                 'is_primary' => $isPrimary,
                 'pinned_option_value_ids' => $optionValueIds,
                 'pinned_variant_ids' => $variantIds,
+                'render_settings' => $renderSettings,
             ]);
 
             return redirect()->route('admin.products.edit', ['product' => $video->product_id, 'tab' => 'media'])

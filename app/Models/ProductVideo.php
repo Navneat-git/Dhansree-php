@@ -140,7 +140,18 @@ class ProductVideo extends Model
      */
     public function isAiGenerated(): bool
     {
-        if (in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion'], true)) {
+        $settings = $this->render_settings ?? [];
+        if (isset($settings['is_ai_generated'])) {
+            return (bool) $settings['is_ai_generated'];
+        }
+
+        // Standard FFmpeg slideshows made exclusively from actual product photos are NOT AI
+        if ($this->video_type === 'slideshow') {
+            return false;
+        }
+
+        // Pure AI shoots, AI motion, AI branded, and uploaded showcase reels
+        if (in_array($this->video_type, ['ai_fashion', 'ai_fashion_branded', 'ai_motion', 'imported_branded'], true)) {
             return true;
         }
 

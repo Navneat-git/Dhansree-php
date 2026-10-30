@@ -685,12 +685,27 @@
                             <input type="text" name="title" value="{{ $product->name }} Showcase Video" maxlength="150"
                                    class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 shadow-2xs">
                         </div>
-                        <div>
+                        <div class="space-y-2 pt-1">
                             <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
                                 <input type="checkbox" name="is_primary" value="1" {{ $product->videos->isEmpty() ? 'checked' : '' }}
                                        class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
                                 <span>Set as Primary Storefront Video</span>
                             </label>
+                            <div>
+                                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                    <input type="checkbox" name="is_ai_generated" value="1" checked
+                                           class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                    <span class="flex items-center gap-1.5">
+                                        <span>Mark as AI-Generated Video</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            Shows ⓘ Disclaimer
+                                        </span>
+                                    </span>
+                                </label>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    Displays customer trust disclaimer: "AI-generated video for illustration purposes only. Actual product details may vary..."
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -952,12 +967,27 @@
                                             </details>
                                         @endif
 
-                                        <div class="pt-2 border-t border-slate-100">
+                                        <div class="pt-2 border-t border-slate-100 space-y-2">
                                             <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
                                                 <input type="checkbox" name="is_primary" value="1" {{ $vid->is_primary ? 'checked' : '' }}
                                                        class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
                                                 <span>Primary Video for Storefront</span>
                                             </label>
+                                            <div>
+                                                <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-800 cursor-pointer">
+                                                    <input type="checkbox" name="is_ai_generated" value="1" {{ $vid->isAiGenerated() ? 'checked' : '' }}
+                                                           class="rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+                                                    <span class="flex items-center gap-1.5">
+                                                        <span>Mark as AI-Generated Video</span>
+                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                            Shows ⓘ Disclaimer
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                                    Displays customer trust disclaimer: "AI-generated video for illustration purposes only. Actual product details may vary..."
+                                                </p>
+                                            </div>
                                         </div>
 
                                         <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
