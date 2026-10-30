@@ -647,7 +647,176 @@
         </div>
 
         <!-- Video Upload Box -->
-        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4 relative"
+             x-data="{
+                 isUploading: false,
+                 uploadProgress: 0,
+                 uploadSuccess: false,
+                 statusText: '',
+                 subText: '',
+                 fileName: '',
+                 fileSize: '',
+                 errorMessage: '',
+
+                 handleFileSelect(e) {
+                     const file = e.target.files[0];
+                     if (!file) {
+                         this.fileName = '';
+                         this.fileSize = '';
+                         return;
+                     }
+                     this.fileName = file.name;
+                     this.fileSize = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+                     this.errorMessage = '';
+
+                     if (file.size > 60 * 1024 * 1024) {
+                         this.errorMessage = '⚠️ Selected video is ' + this.fileSize + ', which exceeds the 60MB limit. Please compress or select a smaller file.';
+                         e.target.value = '';
+                         this.fileName = '';
+                         this.fileSize = '';
+                     }
+                 },
+
+                 submitVideo(formEl) {
+                     const fileInput = formEl.querySelector('input[type=file]');
+                     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                         this.errorMessage = 'Please select a video file (MP4, WebM, MOV) first.';
+                         return;
+                     }
+
+                     const file = fileInput.files[0];
+                     if (file.size > 60 * 1024 * 1024) {
+                         this.errorMessage = 'Video file size cannot exceed 60MB.';
+                         return;
+                     }
+
+                     this.isUploading = true;
+                     this.uploadSuccess = false;
+                     this.uploadProgress = 0;
+                     this.statusText = 'Uploading video file to server...';
+                     this.subText = 'Please keep this window open.';
+                     this.errorMessage = '';
+
+                     const formData = new FormData(formEl);
+                     const xhr = new XMLHttpRequest();
+
+                     xhr.upload.addEventListener('progress', (e) => {
+                         if (e.lengthComputable) {
+                             const pct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                             this.uploadProgress = pct;
+                             const loadedMb = (e.loaded / (1024 * 1024)).toFixed(1);
+                             const totalMb = (e.total / (1024 * 1024)).toFixed(1);
+                             if (pct < 100) {
+                                 this.statusText = 'Uploading: ' + loadedMb + ' MB / ' + totalMb + ' MB (' + pct + '%)';
+                                 this.subText = 'Transferring video data to Dhansree server...';
+                             }
+                         }
+                     });
+
+                     xhr.upload.addEventListener('load', () => {
+                         this.uploadProgress = 100;
+                         this.statusText = 'Processing video & generating WebM...';
+                         this.subText = 'FFmpeg is generating high-efficiency WebM streaming and poster thumbnail. This takes 5-15 seconds...';
+                     });
+
+                     xhr.addEventListener('load', () => {
+                         if (xhr.status >= 200 && xhr.status < 300) {
+                             let res = {};
+                             try { res = JSON.parse(xhr.responseText); } catch (e) {}
+                             this.uploadSuccess = true;
+                             this.statusText = '✓ Video uploaded successfully!';
+                             this.subText = 'Refreshing catalog page...';
+                             setTimeout(() => {
+                                 window.location.href = res.redirect || '{{ route('admin.products.edit', ['product' => $product, 'tab' => 'media']) }}';
+                             }, 700);
+                         } else {
+                             let msg = 'Video upload failed. Please try again.';
+                             try {
+                                 const res = JSON.parse(xhr.responseText);
+                                 msg = res.message || (res.errors ? Object.values(res.errors).flat().join(' ') : msg);
+                             } catch (e) {}
+                             this.isUploading = false;
+                             this.uploadProgress = 0;
+                             this.errorMessage = msg;
+                         }
+                     });
+
+                     xhr.addEventListener('error', () => {
+                         this.isUploading = false;
+                         this.uploadProgress = 0;
+                         this.errorMessage = 'Network connection interrupted during video upload. Please check connection and try again.';
+                     });
+
+                     xhr.open('POST', formEl.action);
+                     xhr.setRequestHeader('Accept', 'application/json');
+                     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                     xhr.send(formData);
+                 }
+             }">
+
+            <!-- Fullscreen Video Uploading & Processing Modal Loader Overlay -->
+            <div x-show="isUploading"
+                 x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                <div class="relative max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 text-center space-y-5">
+                    <!-- Animated Icon -->
+                    <div class="flex items-center justify-center">
+                        <template x-if="!uploadSuccess">
+                            <div class="relative size-20 flex items-center justify-center">
+                                <div class="absolute inset-0 rounded-full border-4 border-amber-200 border-t-amber-600 animate-spin"></div>
+                                <div class="size-14 rounded-full bg-amber-50 flex items-center justify-center">
+                                    <svg class="size-7 text-amber-700 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="uploadSuccess">
+                            <div class="size-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+                                <svg class="size-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Titles -->
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-black text-slate-900" x-text="uploadSuccess ? 'Upload Completed Successfully!' : 'Uploading Product Video...'"></h3>
+                        <p class="text-xs text-slate-500 font-mono" x-show="fileName" x-text="fileName + (fileSize ? ' (' + fileSize + ')' : '')"></p>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div class="h-full rounded-full transition-all duration-300"
+                                 :class="uploadSuccess ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700'"
+                                 :style="'width: ' + uploadProgress + '%'"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs font-semibold">
+                            <span class="text-slate-700 truncate max-w-[240px]" x-text="statusText"></span>
+                            <span :class="uploadSuccess ? 'text-emerald-600 font-black' : 'text-amber-800 font-black'" x-text="uploadProgress + '%'"></span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 text-left" x-text="subText"></p>
+                    </div>
+
+                    <!-- Informational Note -->
+                    <div class="pt-1 text-[11px] text-slate-400 flex items-center justify-center gap-1.5" x-show="!uploadSuccess">
+                        <svg class="size-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <span>Please do not refresh or close this tab while the video is uploading.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div x-show="errorMessage" x-cloak class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <svg class="size-4 shrink-0 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span x-text="errorMessage"></span>
+                </div>
+                <button type="button" @click="errorMessage = ''" class="text-rose-500 hover:text-rose-800 font-bold text-sm">&times;</button>
+            </div>
+
             <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <div class="flex items-center gap-2">
@@ -664,7 +833,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.products.upload-video', $product) }}" enctype="multipart/form-data" class="space-y-4">
+            <form method="POST" action="{{ route('admin.products.upload-video', $product) }}" enctype="multipart/form-data" class="space-y-4" @submit.prevent="submitVideo($el)">
                 @csrf
                 <input type="hidden" name="tab" value="media">
 
@@ -674,10 +843,14 @@
                             Select Video File (MP4, WebM, MOV &bull; Max 60MB) <span class="text-rose-500">*</span>
                         </label>
                         <input type="file" name="video" required accept="video/mp4,video/webm,video/quicktime,video/mov"
+                               @change="handleFileSelect($event)"
                                class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100 border border-slate-300 rounded-lg cursor-pointer">
-                        <p class="text-[11px] text-slate-400 mt-1.5">
-                            High-efficiency WebM streaming and poster thumbnails are automatically generated.
-                        </p>
+                        <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1">
+                            <p class="text-[11px] text-slate-400">
+                                High-efficiency WebM streaming and poster thumbnails are automatically generated.
+                            </p>
+                            <span x-show="fileName" class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200" x-text="fileName + (fileSize ? ' (' + fileSize + ')' : '')"></span>
+                        </div>
                     </div>
                     <div class="space-y-3">
                         <div>
@@ -742,7 +915,7 @@
                                     <span class="block text-[11px] font-semibold text-slate-600">Specific Variant SKUs:</span>
                                     <div class="flex items-center gap-2 flex-wrap max-h-32 overflow-y-auto p-2 bg-slate-50 rounded-lg border border-slate-200">
                                         @foreach($product->variants as $var)
-                                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
+                                             <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 bg-white px-2 py-1 rounded border border-slate-200 hover:border-amber-400 cursor-pointer">
                                                 <input type="checkbox" name="variant_ids[]" value="{{ $var->id }}" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
                                                 <span class="font-mono text-[11px]">{{ $var->sku }}</span>
                                                 <span class="text-slate-400 text-[10px]">({{ $var->display_option_label }})</span>
@@ -755,9 +928,24 @@
                     </details>
                 @endif
 
-                <button type="submit" class="px-5 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
-                    <span>Upload &amp; Pin Product Video</span>
+                <button type="submit"
+                        :disabled="isUploading"
+                        class="px-5 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer">
+                    <template x-if="!isUploading">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                            <span>Upload &amp; Pin Product Video</span>
+                        </span>
+                    </template>
+                    <template x-if="isUploading">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span x-text="uploadProgress < 100 ? 'Uploading (' + uploadProgress + '%)...' : 'Processing Video...'"></span>
+                        </span>
+                    </template>
                 </button>
             </form>
         </div>

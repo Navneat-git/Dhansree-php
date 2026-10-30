@@ -305,5 +305,32 @@ class ProductVideoPinningTest extends TestCase
         $response->assertSee('PRIMARY VIDEO');
         $response->assertSee('Color: Yellow');
         $response->assertSee('Pin to Color / Edit Video');
+        $response->assertSee('Uploading Product Video...');
+        $response->assertSee('submitVideo');
+    }
+
+    public function test_admin_can_upload_video_via_ajax_with_progress_support(): void
+    {
+        $file = UploadedFile::fake()->create('ajax_model_video.mp4', 3000, 'video/mp4');
+
+        $response = $this->withUnencryptedCookie('dhansree_admin_session', $this->rawSessionToken)
+            ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post("/admin/catalog/products/{$this->product->id}/upload-video", [
+                'video' => $file,
+                'title' => 'Ajax Showcase Video',
+                'is_primary' => '1',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success' => true,
+            'message' => 'Product video uploaded and pinned successfully.',
+        ]);
+        $response->assertJsonStructure(['success', 'message', 'redirect']);
+
+        $this->assertDatabaseHas('product_videos', [
+            'product_id' => $this->product->id,
+            'title' => 'Ajax Showcase Video',
+        ]);
     }
 }

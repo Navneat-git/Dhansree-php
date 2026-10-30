@@ -766,10 +766,16 @@ class AdminProductWebController extends Controller
     /**
      * Upload product video (MP4/WebM) and optionally pin to color/variant.
      */
-    public function uploadVideo(Request $request, Product $product): RedirectResponse
+    public function uploadVideo(Request $request, Product $product): RedirectResponse|JsonResponse
     {
         if (empty($_POST) && empty($_FILES) && (int) ($request->server('CONTENT_LENGTH') ?? 0) > 0) {
             $postMax = ini_get('post_max_size') ?: '8M';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The uploaded video exceeds server's post_max_size ({$postMax}).",
+                ], 422);
+            }
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
                 ->with('error', "The uploaded video exceeds server's post_max_size ({$postMax}).");
@@ -777,6 +783,12 @@ class AdminProductWebController extends Controller
 
         if (isset($_FILES['video']['error']) && $_FILES['video']['error'] === UPLOAD_ERR_INI_SIZE) {
             $uploadMax = ini_get('upload_max_filesize') ?: '2M';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The video exceeds upload_max_filesize ({$uploadMax}).",
+                ], 422);
+            }
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
                 ->with('error', "The video exceeds upload_max_filesize ({$uploadMax}).");
@@ -885,10 +897,27 @@ class AdminProductWebController extends Controller
                 'completed_at' => now(),
             ]);
 
+            session()->flash('success', 'Product video uploaded and pinned successfully.');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product video uploaded and pinned successfully.',
+                    'redirect' => route('admin.products.edit', ['product' => $product, 'tab' => 'media']),
+                ]);
+            }
+
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
                 ->with('success', 'Product video uploaded and pinned successfully.');
         } catch (Throwable $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Video upload failed: ' . $e->getMessage(),
+                ], 422);
+            }
+
             return redirect()->route('admin.products.edit', ['product' => $product, 'tab' => 'media'])
                 ->with('active_tab', 'media')
                 ->with('error', 'Video upload failed: ' . $e->getMessage());
