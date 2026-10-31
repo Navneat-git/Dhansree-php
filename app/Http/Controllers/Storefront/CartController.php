@@ -22,8 +22,42 @@ class CartController extends Controller
     /**
      * Show full cart page.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        // 1. Explicit query parameter if passed (?return_url=...)
+        $explicitReturnUrl = $request->query('return_url');
+        if ($explicitReturnUrl) {
+            $parsedReturn = parse_url($explicitReturnUrl);
+            $parsedHost = $parsedReturn['host'] ?? null;
+            $currentHost = $request->getHost();
+
+            if (!$parsedHost || $parsedHost === $currentHost) {
+                $path = $parsedReturn['path'] ?? '/';
+                if (!str_starts_with($path, '/cart') && !str_starts_with($path, '/checkout')) {
+                    session(['continue_shopping_url' => $explicitReturnUrl]);
+                }
+            }
+        }
+
+        // 2. Capture last visited internal shopping page from HTTP referer header
+        $referer = $request->headers->get('referer');
+        if ($referer) {
+            $parsedReferer = parse_url($referer);
+            $parsedHost = $parsedReferer['host'] ?? null;
+            $currentHost = $request->getHost();
+
+            // Only capture internal referrals from the same application host
+            if (!$parsedHost || $parsedHost === $currentHost) {
+                $path = $parsedReferer['path'] ?? '/';
+
+                // Do not overwrite if referer is the cart or checkout itself
+                if (!str_starts_with($path, '/cart') && !str_starts_with($path, '/checkout')) {
+                    session(['continue_shopping_url' => $referer]);
+                }
+            }
+        }
+
+        $continueShoppingUrl = session('continue_shopping_url') ?: url('/');
         $cart = $this->cartService->getCart();
 
         return view('store.cart', [
@@ -31,6 +65,7 @@ class CartController extends Controller
             'store' => StoreSettings::current(),
             'isSmartLivingHub' => false,
             'seoTitle' => 'Your Shopping Bag | Dhansree',
+            'continueShoppingUrl' => $continueShoppingUrl,
         ]);
     }
 

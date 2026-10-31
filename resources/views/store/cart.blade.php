@@ -25,8 +25,22 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <a href="{{ $continueShoppingUrl ?? url('/') }}"
+                   @click="
+                       const ref = document.referrer;
+                       const isSameOrigin = ref && ref.startsWith(window.location.origin);
+                       const isCartOrCheckout = ref && (ref.includes('/cart') || ref.includes('/checkout'));
+                       if (window.history.length > 1 && isSameOrigin && !isCartOrCheckout) {
+                           $event.preventDefault();
+                           window.history.back();
+                       }
+                   "
+                   class="w-full sm:w-auto px-6 py-3 rounded-lg bg-maroon-800 text-white text-xs font-semibold uppercase tracking-wider hover:bg-maroon-900 transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                    <span>←</span>
+                    <span>Continue Shopping</span>
+                </a>
                 <a href="{{ url('/') }}"
-                   class="w-full sm:w-auto px-6 py-3 rounded-lg bg-maroon-800 text-white text-xs font-semibold uppercase tracking-wider hover:bg-maroon-900 transition-colors shadow-sm">
+                   class="w-full sm:w-auto px-6 py-3 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold uppercase tracking-wider hover:bg-maroon-50 transition-colors">
                     🌸 Shop Women's Fashion
                 </a>
                 <a href="{{ url('/smart-living') }}"
@@ -138,7 +152,17 @@
                 </div>
 
                 <div class="flex items-center justify-between text-xs text-rich-black/60 pt-2">
-                    <a href="{{ url('/') }}" class="hover:text-maroon-800 transition-colors flex items-center gap-1 font-semibold">
+                    <a href="{{ $continueShoppingUrl ?? url('/') }}"
+                       @click="
+                           const ref = document.referrer;
+                           const isSameOrigin = ref && ref.startsWith(window.location.origin);
+                           const isCartOrCheckout = ref && (ref.includes('/cart') || ref.includes('/checkout'));
+                           if (window.history.length > 1 && isSameOrigin && !isCartOrCheckout) {
+                               $event.preventDefault();
+                               window.history.back();
+                           }
+                       "
+                       class="hover:text-maroon-800 transition-colors flex items-center gap-1 font-semibold">
                         <span>←</span>
                         <span>Continue Shopping</span>
                     </a>
