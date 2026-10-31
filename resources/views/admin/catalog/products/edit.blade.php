@@ -952,96 +952,7 @@
 
         <!-- Product Videos Grid -->
         <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4"
-             x-data="{
-                 isDownloadingReel: false,
-                 downloadingVideoId: null,
-                 downloadSuccess: false,
-                 downloadError: '',
-                 downloadStatus: 'Initializing video generator...',
-                 downloadSubtext: 'Composing vertical 9:16 video with floating product details card...',
-                 currentStep: 1,
-
-                 async downloadVideoReel(videoId, url, fallbackFilename) {
-                     if (this.isDownloadingReel) return;
-                     this.isDownloadingReel = true;
-                     this.downloadingVideoId = videoId;
-                     this.downloadSuccess = false;
-                     this.downloadError = '';
-                     this.currentStep = 1;
-                     this.downloadStatus = 'Processing source video & overlay graphic...';
-                     this.downloadSubtext = 'Using FFmpeg to compose Watch in Motion floating card, pricing, and Buy Now CTA...';
-
-                     const stepTimer = setInterval(() => {
-                         if (this.currentStep === 1) {
-                             this.currentStep = 2;
-                             this.downloadStatus = 'Rendering 9:16 vertical video...';
-                             this.downloadSubtext = 'Composing translucent card, price tags, and high-definition h.264 stream...';
-                         } else if (this.currentStep === 2) {
-                             this.currentStep = 3;
-                             this.downloadStatus = 'Finalizing video stream & preparing download...';
-                             this.downloadSubtext = 'Almost ready! Saving MP4 for instant browser download...';
-                         }
-                     }, 3500);
-
-                     try {
-                         const res = await fetch(url, {
-                             headers: {
-                                 'X-Requested-With': 'XMLHttpRequest',
-                                 'Accept': 'video/mp4, application/json'
-                             }
-                         });
-
-                         clearInterval(stepTimer);
-
-                         if (!res.ok) {
-                             let errText = 'Server returned error ' + res.status;
-                             try {
-                                 const errJson = await res.json();
-                                 errText = errJson.message || errText;
-                             } catch(e) {}
-                             throw new Error(errText);
-                         }
-
-                         this.currentStep = 4;
-                         this.downloadSuccess = true;
-                         this.downloadStatus = 'Reel Ready! Downloading now...';
-                         this.downloadSubtext = 'Your browser download will begin in a moment.';
-
-                         const blob = await res.blob();
-                         let filename = fallbackFilename || 'Dhansree-Watch-in-Motion-Reel.mp4';
-                         const disposition = res.headers.get('Content-Disposition');
-                         if (disposition && disposition.indexOf('filename=') !== -1) {
-                             const matches = /filename[^;=\n]*=(([\'\"]).*?\2|[^;\n]*)/.exec(disposition);
-                             if (matches != null && matches[1]) {
-                                 filename = matches[1].replace(/[\'\"]/g, '');
-                             }
-                         }
-
-                         const blobUrl = window.URL.createObjectURL(blob);
-                         const a = document.createElement('a');
-                         a.style.display = 'none';
-                         a.href = blobUrl;
-                         a.download = filename;
-                         document.body.appendChild(a);
-                         a.click();
-                         setTimeout(() => {
-                             document.body.removeChild(a);
-                             window.URL.revokeObjectURL(blobUrl);
-                         }, 2000);
-
-                         setTimeout(() => {
-                             this.isDownloadingReel = false;
-                             this.downloadingVideoId = null;
-                             this.downloadSuccess = false;
-                         }, 2500);
-                     } catch (err) {
-                         clearInterval(stepTimer);
-                         this.downloadError = err.message || 'Failed to download Watch in Motion Reel. Please try again.';
-                         this.downloadStatus = 'Download Failed';
-                         this.downloadSubtext = this.downloadError;
-                     }
-                 }
-             }">
+             x-data="productVideosManager()">
             <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <div class="flex items-center gap-2">
@@ -2039,4 +1950,99 @@
         </div>
     </div>
 </div>
+
+<script>
+function productVideosManager() {
+    return {
+        isDownloadingReel: false,
+        downloadingVideoId: null,
+        downloadSuccess: false,
+        downloadError: '',
+        downloadStatus: 'Initializing video generator...',
+        downloadSubtext: 'Composing vertical 9:16 video with floating product details card...',
+        currentStep: 1,
+
+        async downloadVideoReel(videoId, url, fallbackFilename) {
+            if (this.isDownloadingReel) return;
+            this.isDownloadingReel = true;
+            this.downloadingVideoId = videoId;
+            this.downloadSuccess = false;
+            this.downloadError = '';
+            this.currentStep = 1;
+            this.downloadStatus = 'Processing source video & overlay graphic...';
+            this.downloadSubtext = 'Using FFmpeg to compose Watch in Motion floating card, pricing, and Buy Now CTA...';
+
+            const stepTimer = setInterval(() => {
+                if (this.currentStep === 1) {
+                    this.currentStep = 2;
+                    this.downloadStatus = 'Rendering 9:16 vertical video...';
+                    this.downloadSubtext = 'Composing translucent card, price tags, and high-definition h.264 stream...';
+                } else if (this.currentStep === 2) {
+                    this.currentStep = 3;
+                    this.downloadStatus = 'Finalizing video stream & preparing download...';
+                    this.downloadSubtext = 'Almost ready! Saving MP4 for instant browser download...';
+                }
+            }, 3500);
+
+            try {
+                const res = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'video/mp4, application/json'
+                    }
+                });
+
+                clearInterval(stepTimer);
+
+                if (!res.ok) {
+                    let errText = 'Server returned error ' + res.status;
+                    try {
+                        const errJson = await res.json();
+                        errText = errJson.message || errText;
+                    } catch(e) {}
+                    throw new Error(errText);
+                }
+
+                this.currentStep = 4;
+                this.downloadSuccess = true;
+                this.downloadStatus = 'Reel Ready! Downloading now...';
+                this.downloadSubtext = 'Your browser download will begin in a moment.';
+
+                const blob = await res.blob();
+                let filename = fallbackFilename || 'Dhansree-Watch-in-Motion-Reel.mp4';
+                const disposition = res.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 2000);
+
+                setTimeout(() => {
+                    this.isDownloadingReel = false;
+                    this.downloadingVideoId = null;
+                    this.downloadSuccess = false;
+                }, 2500);
+            } catch (err) {
+                clearInterval(stepTimer);
+                this.downloadError = err.message || 'Failed to download Watch in Motion Reel. Please try again.';
+                this.downloadStatus = 'Download Failed';
+                this.downloadSubtext = this.downloadError;
+            }
+        }
+    };
+}
+</script>
 @endsection
