@@ -497,15 +497,15 @@
                                  style="top: 10px; left: 10px; right: 10px;"
                                  @mouseleave="showDisclaimer = false">
                                 
-                                <!-- Info (ⓘ) Button -->
+                                <!-- Info (ⓘ) Button (Subtle, compact & transparent) -->
                                 <button type="button"
                                         @mouseenter="showDisclaimer = true"
                                         @click.stop="showDisclaimer = !showDisclaimer"
                                         title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details."
                                         aria-label="AI Video Disclaimer"
-                                        class="pointer-events-auto rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md focus:outline-none"
-                                        style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
-                                    <span class="font-bold text-sm leading-none select-none">ⓘ</span>
+                                        class="pointer-events-auto rounded-full text-amber-300 hover:text-amber-200 hover:bg-black/60 flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs focus:outline-none"
+                                        style="width: 20px; height: 20px; min-width: 20px; min-height: 20px; background-color: rgba(0, 0, 0, 0.35); border: 1px solid rgba(251, 191, 36, 0.4); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);">
+                                    <span class="font-bold text-[11px] leading-none select-none">ⓘ</span>
                                 </button>
 
                                 <!-- AI Video Disclaimer Tooltip Banner (Directly below button, spanning card width safely with padding) -->
