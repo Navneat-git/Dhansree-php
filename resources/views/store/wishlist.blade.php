@@ -91,7 +91,9 @@
                             <p class="text-[0.625rem] uppercase tracking-wider text-rich-black/50 font-semibold truncate">
                                 {{ $product->brand ?? 'DHANSREE' }}
                             </p>
-                            <h3 class="text-xs sm:text-sm font-medium text-rich-black line-clamp-2 h-10 leading-snug">
+                            <h3 class="text-xs sm:text-sm font-medium text-rich-black line-clamp-2 min-h-[2.5rem] leading-snug"
+                                style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                                title="{{ $product->name }}">
                                 <a href="{{ url('/product/' . $product->slug) }}" class="hover:text-maroon-800 transition-colors">
                                     {{ $product->name }}
                                 </a>

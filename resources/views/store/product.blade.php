@@ -1290,6 +1290,7 @@
                 @foreach($relatedProducts as $rel)
                     @php
                         $relVideo = $rel->approved_video;
+                        $relFirstVariant = $rel->firstVariant ?? $rel->variants->whereNull('archived_at')->first();
                     @endphp
                     <div class="group bg-white rounded-xl p-3 border border-light-gold/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                          x-data="{ isHovered: false }"
@@ -1316,12 +1317,33 @@
                                     @endif
                                 </a>
 
-                                @if($relVideo)
-                                    <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[9px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
-                                          title="Watch fashion reel in motion">
-                                        <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                        <span>▶ Reel</span>
+                                @if($rel->discount_percentage)
+                                    <span class="absolute top-1.5 left-1.5 px-1 sm:px-1.5 py-0.5 rounded-xs bg-maroon-800 text-white text-[8px] sm:text-[9px] font-bold tracking-tight uppercase pointer-events-none z-10 shadow-xs leading-none">
+                                        {{ $rel->discount_percentage }}% OFF
                                     </span>
+                                @endif
+
+                                @if($relVideo)
+                                    <button type="button"
+                                            @click.stop.prevent="window.dhansreeOpenReel({
+                                                videoUrl: '{{ addslashes($relVideo->video_url) }}',
+                                                webmUrl: '{{ addslashes($relVideo->webm_url ?? '') }}',
+                                                poster: '{{ addslashes($relVideo->thumbnail_url ?? $rel->primary_image_url) }}',
+                                                productName: '{{ addslashes($rel->name) }}',
+                                                productUrl: '{{ addslashes(url('/product/' . $rel->slug)) }}',
+                                                price: '{{ addslashes($rel->formatted_price) }}',
+                                                mrp: '{{ addslashes($rel->formatted_mrp ?? '') }}',
+                                                discount: '{{ $rel->discount_percentage ? $rel->discount_percentage . '% OFF' : '' }}',
+                                                isAi: {{ $relVideo->isAiGenerated() ? 'true' : 'false' }},
+                                                variantId: {{ $relFirstVariant?->id ?? 'null' }}
+                                            })"
+                                            class="absolute bottom-2 right-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+                                            title="Watch video reel in motion"
+                                            aria-label="Play product video">
+                                        <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                        <svg class="size-3 sm:size-3.5 fill-amber-300 translate-x-[0.5px]" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                        <span class="hidden sm:inline">Reel</span>
+                                    </button>
                                 @endif
 
                                 <button type="button"
@@ -1338,7 +1360,9 @@
                                     </svg>
                                 </button>
                             </div>
-                            <h4 class="text-xs font-medium text-rich-black leading-snug min-h-[2.25rem]">
+                            <h4 class="text-xs font-medium text-rich-black leading-snug line-clamp-2 min-h-[2.25rem]"
+                                style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                                title="{{ $rel->name }}">
                                 <a href="{{ url('/product/' . $rel->slug) }}" class="hover:text-maroon-800">
                                     {{ $rel->name }}
                                 </a>

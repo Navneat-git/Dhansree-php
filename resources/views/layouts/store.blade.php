@@ -539,7 +539,7 @@
              @click="cartDrawerOpen = false"
              class="fixed inset-0 bg-rich-black/50 backdrop-blur-xs transition-opacity"></div>
 
-        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div class="fixed inset-y-0 right-0 max-w-full flex">
             <div x-show="cartDrawerOpen"
                  x-transition:enter="transform transition ease-in-out duration-300"
                  x-transition:enter-start="translate-x-full"
@@ -547,21 +547,22 @@
                  x-transition:leave="transform transition ease-in-out duration-300"
                  x-transition:leave-start="translate-x-0"
                  x-transition:leave-end="translate-x-full"
-                 class="w-screen max-w-md bg-ivory shadow-2xl flex flex-col">
+                 class="w-full sm:w-[420px] max-w-full bg-ivory shadow-2xl flex flex-col h-full">
                 
                 <!-- Drawer Header -->
-                <div class="p-4 sm:p-6 border-b border-light-gold flex items-center justify-between">
+                <div class="p-4 sm:p-5 border-b border-light-gold flex items-center justify-between bg-white shrink-0">
                     <div class="flex items-center gap-2">
-                        <h2 class="font-serif text-xl font-semibold text-rich-black">Shopping Bag</h2>
+                        <h2 class="font-serif text-lg sm:text-xl font-semibold text-rich-black">Shopping Bag</h2>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-maroon-800/10 text-maroon-800 font-semibold"
                               x-text="'(' + cart.total_quantity + ')'"></span>
                     </div>
                     <button type="button"
                             @click="cartDrawerOpen = false"
-                            class="p-2 text-rich-black/60 hover:text-rich-black rounded-lg"
-                            aria-label="Close bag">
+                            class="p-2 -mr-1 text-rich-black/70 hover:text-maroon-800 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
+                            aria-label="Close bag"
+                            title="Close Shopping Bag">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
@@ -637,7 +638,7 @@
 
                                     <!-- Price -->
                                     <div class="text-right">
-                                        <span class="text-xs font-bold text-maroon-800" x-text="'₹' + item.line_total_rupees"></span>
+                                        <span class="text-xs sm:text-sm font-bold text-maroon-800 whitespace-nowrap" x-text="'₹' + item.line_total_rupees"></span>
                                     </div>
                                 </div>
                             </div>
@@ -645,7 +646,7 @@
                             <!-- Delete button -->
                             <button type="button"
                                     @click="removeCartItem(item.variant_id)"
-                                    class="p-1 text-rich-black/30 hover:text-rose-600 transition-colors self-start"
+                                    class="p-1 text-rich-black/30 hover:text-rose-600 transition-colors self-start cursor-pointer"
                                     aria-label="Remove item">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
@@ -656,26 +657,33 @@
                 </div>
 
                 <!-- Drawer Footer & Checkout CTA -->
-                <div x-show="cart.items.length > 0" class="p-4 sm:p-6 bg-white border-t border-light-gold space-y-3">
+                <div x-show="cart.items.length > 0" class="p-4 sm:p-5 bg-white border-t border-light-gold space-y-3 shrink-0">
                     <div class="flex items-center justify-between text-sm">
-                        <span class="text-rich-black/70">Subtotal</span>
-                        <strong class="text-base text-rich-black" x-text="'₹' + cart.subtotal_rupees"></strong>
+                        <span class="text-rich-black/70 font-medium">Subtotal</span>
+                        <strong class="text-base text-rich-black whitespace-nowrap" x-text="'₹' + cart.subtotal_rupees"></strong>
                     </div>
                     <div class="flex items-center justify-between text-xs text-rich-black/60">
-                        <span>Shipping</span>
-                        <span x-text="cart.is_free_shipping ? 'FREE' : '₹' + cart.shipping_rupees"></span>
+                        <span class="font-medium">Shipping</span>
+                        <span class="font-semibold text-emerald-700 whitespace-nowrap" x-text="cart.is_free_shipping ? 'FREE' : '₹' + cart.shipping_rupees"></span>
                     </div>
                     <p class="text-[0.6875rem] text-rich-black/50 text-center">Taxes included. Discounts applied at checkout.</p>
                     
-                    <div class="grid grid-cols-2 gap-2 pt-2">
+                    <div class="grid grid-cols-2 gap-2 pt-1">
                         <a href="{{ url('/cart') }}"
                            class="py-3 text-center rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold tracking-wide hover:bg-maroon-50 transition-colors">
                             View Bag
                         </a>
-                        <a href="{{ url('/cart') }}"
+                        <a href="{{ url('/checkout') }}"
                            class="py-3 text-center rounded-lg bg-maroon-800 text-white text-xs font-semibold tracking-wide hover:bg-maroon-900 transition-colors shadow-sm">
                             Checkout
                         </a>
+                    </div>
+                    <div class="text-center pt-0.5">
+                        <button type="button"
+                                @click="cartDrawerOpen = false"
+                                class="text-xs text-rich-black/60 hover:text-maroon-800 transition-colors cursor-pointer">
+                            ← Continue Shopping
+                        </button>
                     </div>
                 </div>
             </div>
@@ -784,6 +792,119 @@
                     </div>
                 </form>
             </template>
+        </div>
+    </div>
+
+    <!-- Fullscreen Watch in Motion Fashion Reel Lightbox Modal -->
+    <div x-show="globalReelModalOpen"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md"
+         role="dialog"
+         aria-modal="true"
+         @keydown.escape.window="closeReel()">
+        
+        <!-- Backdrop click closes modal -->
+        <div class="fixed inset-0 cursor-pointer" @click="closeReel()"></div>
+
+        <div class="relative max-w-sm sm:max-w-md w-full max-h-[92vh] flex flex-col items-center justify-center bg-black rounded-3xl overflow-hidden shadow-2xl border border-amber-400/50 z-10"
+             @click.stop>
+            
+            <!-- Close Button -->
+            <button type="button"
+                    @click="closeReel()"
+                    class="absolute top-4 right-4 z-30 size-9 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition-all border border-white/20 cursor-pointer shadow-lg"
+                    aria-label="Close video reel"
+                    title="Close Reel (Esc)">
+                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <!-- Top Left AI Disclaimer Indicator with Tooltip -->
+            <div x-show="Boolean(activeReel.isAi)"
+                 class="absolute top-4 left-4 z-30 pointer-events-auto"
+                 x-data="{ showModalDisclaimer: false }"
+                 @click.outside="showModalDisclaimer = false">
+                <div class="relative inline-flex"
+                     @mouseenter="showModalDisclaimer = true"
+                     @mouseleave="showModalDisclaimer = false">
+                    <button type="button"
+                            @click.stop="showModalDisclaimer = !showModalDisclaimer"
+                            title="AI-generated video for illustration purposes only."
+                            aria-label="AI Video Disclaimer"
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/85 hover:bg-black text-amber-300 border border-amber-400/70 text-xs font-bold shadow-xl cursor-pointer transition-all backdrop-blur-md">
+                        <span class="size-3.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/60 flex items-center justify-center text-[9px] font-serif italic">i</span>
+                        <span class="text-[11px]">AI Video</span>
+                    </button>
+
+                    <div :class="showModalDisclaimer ? 'opacity-100 visible' : 'opacity-0 invisible'"
+                         @click.stop
+                         class="transition-all duration-200 ease-out absolute left-0 top-full pt-2 w-72 sm:w-80 z-40">
+                        <div class="p-3 rounded-xl bg-slate-950/98 text-slate-100 backdrop-blur-md border border-amber-500/60 text-xs leading-relaxed shadow-2xl">
+                            AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Player in 9:16 vertical ratio -->
+            <div class="w-full h-full max-h-[92vh] aspect-[9/16] relative bg-black flex items-center justify-center overflow-hidden">
+                <video x-ref="globalReelVideo"
+                       :poster="activeReel.poster"
+                       :src="activeReel.videoUrl"
+                       playsinline
+                       loop
+                       controls
+                       autoplay
+                       class="w-full h-full object-contain">
+                </video>
+            </div>
+
+            <!-- Bottom Floating Tagged Product Details Glass Card -->
+            <div class="absolute p-3 sm:p-3.5 rounded-2xl z-30 pointer-events-auto"
+                 style="bottom: 12px; left: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.45); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <span class="inline-block text-[10px] uppercase tracking-wider font-bold mb-0.5"
+                              style="color: #fbbf24 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);">
+                            Featured in Reel
+                        </span>
+                        <a :href="activeReel.productUrl"
+                           class="block text-xs sm:text-sm font-bold leading-snug line-clamp-2 break-words hover:underline"
+                           style="color: #ffffff !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);"
+                           x-text="activeReel.productName">
+                        </a>
+                        <div class="flex items-baseline gap-2 mt-1 flex-wrap">
+                            <span class="text-sm sm:text-base font-black"
+                                  style="color: #fbbf24 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);"
+                                  x-text="activeReel.price">
+                            </span>
+                            <span class="text-xs line-through"
+                                  style="color: #cbd5e1 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);"
+                                  x-text="activeReel.mrp"
+                                  x-show="activeReel.mrp">
+                            </span>
+                            <span class="text-[11px] font-bold"
+                                  style="color: #34d399 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);"
+                                  x-text="activeReel.discount"
+                                  x-show="activeReel.discount">
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Buy Now Button -->
+                    <div class="flex flex-col gap-1 shrink-0 self-center">
+                        <button type="button"
+                                @click="buyNowFromGlobalReel()"
+                                class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 text-xs font-black shadow-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 justify-center">
+                            <span>Buy Now</span>
+                            <span class="text-xs">➔</span>
+                        </button>
+                        <a :href="activeReel.productUrl"
+                           class="text-[10px] text-center text-white/80 hover:text-white underline">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -950,6 +1071,21 @@
                 cartDrawerOpen: false,
                 promoModalOpen: false,
 
+                // Global Watch in Motion Reel modal state
+                globalReelModalOpen: false,
+                activeReel: {
+                    videoUrl: '',
+                    webmUrl: '',
+                    poster: '',
+                    productName: '',
+                    productUrl: '#',
+                    price: '',
+                    mrp: '',
+                    discount: '',
+                    isAi: false,
+                    variantId: null
+                },
+
                 // Newsletter state
                 newsletterEmail: '',
                 newsletterConsent: false,
@@ -980,6 +1116,11 @@
                     this.fetchCart();
                     this.fetchWishlist();
 
+                    // Listen for global reel modal requests
+                    window.addEventListener('open-dhansree-reel', (e) => {
+                        this.openReel(e.detail);
+                    });
+
                     // Scroll listener for sticky header styling
                     window.addEventListener('scroll', () => {
                         this.scrolled = window.scrollY > 20;
@@ -993,6 +1134,52 @@
                             }
                         }, 5000);
                     @endif
+                },
+
+                openReel(data) {
+                    this.activeReel = Object.assign({
+                        videoUrl: '',
+                        webmUrl: '',
+                        poster: '',
+                        productName: '',
+                        productUrl: '#',
+                        price: '',
+                        mrp: '',
+                        discount: '',
+                        isAi: false,
+                        variantId: null
+                    }, data || {});
+                    this.globalReelModalOpen = true;
+                    this.$nextTick(() => {
+                        const v = this.$refs.globalReelVideo;
+                        if (v) {
+                            v.currentTime = 0;
+                            v.muted = false;
+                            const playPromise = v.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(() => {
+                                    v.muted = true;
+                                    v.play().catch(e => console.log('Reel autoplay fallback', e));
+                                });
+                            }
+                        }
+                    });
+                },
+
+                closeReel() {
+                    this.globalReelModalOpen = false;
+                    const v = this.$refs.globalReelVideo;
+                    if (v) {
+                        v.pause();
+                    }
+                },
+
+                async buyNowFromGlobalReel() {
+                    if (this.activeReel.variantId) {
+                        await this.addToCart(this.activeReel.variantId, 1, true);
+                    } else if (this.activeReel.productUrl && this.activeReel.productUrl !== '#') {
+                        window.location.href = this.activeReel.productUrl;
+                    }
                 },
 
                 async fetchCart() {
@@ -1171,6 +1358,10 @@
                 }
             };
         }
+
+        window.dhansreeOpenReel = function(data) {
+            window.dispatchEvent(new CustomEvent('open-dhansree-reel', { detail: data }));
+        };
     </script>
 </body>
 </html>

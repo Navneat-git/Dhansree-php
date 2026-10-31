@@ -95,7 +95,7 @@
                             </a>
 
                             @if($product->discount_percentage)
-                                <span class="absolute top-2 left-2 px-1.5 sm:px-2 py-0.5 rounded bg-maroon-800 text-white text-[9px] sm:text-[10px] font-bold tracking-wide uppercase pointer-events-none z-10 shadow-xs">
+                                <span class="absolute top-1.5 left-1.5 px-1 sm:px-1.5 py-0.5 rounded-xs bg-maroon-800 text-white text-[8px] sm:text-[9px] font-bold tracking-tight uppercase pointer-events-none z-10 shadow-xs leading-none">
                                     {{ $product->discount_percentage }}% OFF
                                 </span>
                             @endif
@@ -108,11 +108,26 @@
                             @endif
 
                             @if($prodVideo)
-                                <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[9px] sm:text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
-                                      title="Watch fashion reel in motion">
+                                <button type="button"
+                                        @click.stop.prevent="window.dhansreeOpenReel({
+                                            videoUrl: '{{ addslashes($prodVideo->video_url) }}',
+                                            webmUrl: '{{ addslashes($prodVideo->webm_url ?? '') }}',
+                                            poster: '{{ addslashes($prodVideo->thumbnail_url ?? $product->primary_image_url) }}',
+                                            productName: '{{ addslashes($product->name) }}',
+                                            productUrl: '{{ addslashes($product->url ?? url('/product/' . $product->slug)) }}',
+                                            price: '{{ addslashes($product->formatted_price) }}',
+                                            mrp: '{{ addslashes($product->formatted_mrp ?? '') }}',
+                                            discount: '{{ $product->discount_percentage ? $product->discount_percentage . '% OFF' : '' }}',
+                                            isAi: {{ $prodVideo->isAiGenerated() ? 'true' : 'false' }},
+                                            variantId: {{ $firstVariant?->id ?? 'null' }}
+                                        })"
+                                        class="absolute bottom-2 right-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+                                        title="Watch video reel in motion"
+                                        aria-label="Play product video">
                                     <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                    <span>▶ Reel</span>
-                                </span>
+                                    <svg class="size-3 sm:size-3.5 fill-amber-300 translate-x-[0.5px]" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <span class="hidden sm:inline">Reel</span>
+                                </button>
                             @endif
 
                             <!-- Wishlist Heart Button -->
@@ -144,7 +159,9 @@
                                     </span>
                                 @endif
                             </div>
-                            <h3 class="text-xs sm:text-sm font-medium text-rich-black leading-snug min-h-[2.5rem]">
+                            <h3 class="text-xs sm:text-sm font-medium text-rich-black leading-snug line-clamp-2 min-h-[2.5rem]"
+                                style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                                title="{{ $product->name }}">
                                 <a href="{{ $product->url ?? url('/product/' . $product->slug) }}" class="hover:text-maroon-800 transition-colors">
                                     {{ $product->name }}
                                 </a>
