@@ -563,16 +563,8 @@
                                     </a>
 
                                     @if($product->discount_percentage)
-                                        <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-maroon-800 text-white text-[0.625rem] font-bold tracking-wide uppercase pointer-events-none z-10">
+                                        <span class="absolute top-2 left-2 px-1.5 sm:px-2 py-0.5 rounded bg-maroon-800 text-white text-[9px] sm:text-[10px] font-bold tracking-wide uppercase pointer-events-none z-10 shadow-xs">
                                             {{ $product->discount_percentage }}% OFF
-                                        </span>
-                                    @endif
-
-                                    @if($prodVideo)
-                                        <span class="absolute top-2 right-12 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
-                                              title="Watch fashion reel in motion">
-                                            <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                            <span>▶ Reel</span>
                                         </span>
                                     @endif
 
@@ -580,6 +572,14 @@
                                         <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60 pointer-events-none z-10">
                                             <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
                                             <span>{{ $product->color_name }}</span>
+                                        </span>
+                                    @endif
+
+                                    @if($prodVideo)
+                                        <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[9px] sm:text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
+                                              title="Watch fashion reel in motion">
+                                            <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                            <span>▶ Reel</span>
                                         </span>
                                     @endif
 
@@ -612,7 +612,7 @@
                                             </span>
                                         @endif
                                     </div>
-                                    <h3 class="text-xs sm:text-sm font-medium text-rich-black line-clamp-2 h-10 leading-snug">
+                                    <h3 class="text-xs sm:text-sm font-medium text-rich-black leading-snug min-h-[2.5rem]">
                                         <a href="{{ $product->url ?? url('/product/' . $product->slug) }}" class="hover:text-maroon-800 transition-colors">
                                             {{ $product->name }}
                                         </a>

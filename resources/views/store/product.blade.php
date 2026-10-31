@@ -898,6 +898,16 @@
                     </button>
                 </div>
 
+                <!-- Buy Now Express Checkout CTA -->
+                <button type="button"
+                        @click="buyNow(selectedVariantId, quantity)"
+                        :disabled="!inStock"
+                        :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 font-extrabold shadow-md hover:shadow-lg'"
+                        class="w-full py-3.5 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-amber-500/30">
+                    <svg class="w-4 h-4 text-slate-950" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                    <span x-text="inStock ? 'Buy Now — Express Checkout' : 'Out of Stock'"></span>
+                </button>
+
                 <!-- Express Delivery info banner -->
                 <div class="p-3.5 rounded-xl bg-warm-beige/40 border border-light-gold flex items-center gap-3 text-xs text-rich-black/80">
                     <span class="text-xl">🚚</span>
@@ -1307,7 +1317,7 @@
                                 </a>
 
                                 @if($relVideo)
-                                    <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[10px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
+                                    <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-full bg-slate-900/85 backdrop-blur-xs text-amber-300 text-[9px] font-bold tracking-wide flex items-center gap-1 border border-amber-400/40 shadow-xs z-10 pointer-events-none"
                                           title="Watch fashion reel in motion">
                                         <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                         <span>▶ Reel</span>
@@ -1328,7 +1338,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <h4 class="text-xs font-medium text-rich-black line-clamp-2 h-9">
+                            <h4 class="text-xs font-medium text-rich-black leading-snug min-h-[2.25rem]">
                                 <a href="{{ url('/product/' . $rel->slug) }}" class="hover:text-maroon-800">
                                     {{ $rel->name }}
                                 </a>

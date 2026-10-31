@@ -1006,7 +1006,7 @@
                     }
                 },
 
-                async addToCart(variantId, quantity = 1) {
+                async addToCart(variantId, quantity = 1, redirectToCheckout = false) {
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         const res = await fetch('{{ url('/cart/add') }}', {
@@ -1021,6 +1021,10 @@
                         const data = await res.json();
                         if (res.ok && data.success) {
                             this.cart = data.cart;
+                            if (redirectToCheckout) {
+                                window.location.href = '{{ url('/checkout') }}';
+                                return;
+                            }
                             this.cartDrawerOpen = true;
                             if (typeof window.dhansreeTrack === 'function') {
                                 const addedItem = (this.cart && this.cart.items ? this.cart.items : []).find(i => i.variant_id === variantId);
@@ -1046,6 +1050,10 @@
                     } catch (e) {
                         console.error('Add to cart failed', e);
                     }
+                },
+
+                async buyNow(variantId, quantity = 1) {
+                    await this.addToCart(variantId, quantity, true);
                 },
 
                 async updateCartQty(variantId, qty) {

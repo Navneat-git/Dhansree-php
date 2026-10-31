@@ -14,7 +14,7 @@
             'type' => $p->type,
             'caption' => $p->caption ?: '',
             'media_url' => $p->display_media_url,
-            'video_url' => $p->video_url,
+            'video_url' => $p->real_video_url,
             'instagram_url' => $p->display_instagram_url,
             'likes' => (int) $p->likes_count,
             'formatted_likes' => $p->formatted_likes,
@@ -336,7 +336,7 @@
             <span class="text-xs uppercase tracking-widest text-gold-600 font-bold">Join Our Family • #DhansreeStyle</span>
             <h3 class="font-serif text-2xl sm:text-3xl text-maroon-800 font-normal">Want to Be Featured on Our Feed?</h3>
             <p class="text-xs sm:text-sm text-rich-black/70 max-w-xl mx-auto leading-relaxed">
-                Post your Dhansree outfit reel or photo, tag <strong>@{{ $instagramHandle }}</strong> and use <strong>#DhansreeStyle</strong> to get featured on our official Instagram page &amp; website.
+                Post your Dhansree outfit reel or photo, tag <strong>{{ '@' . $instagramHandle }}</strong> and use <strong>#DhansreeStyle</strong> to get featured on our official Instagram page &amp; website.
             </p>
             <div class="pt-2">
                 <a href="{{ $instagramProfileUrl }}" target="_blank" rel="noopener noreferrer"
