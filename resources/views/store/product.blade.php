@@ -1378,15 +1378,7 @@
                                     @endif
                                 </a>
 
-                                @if($rel->discount_percentage)
-                                    <div class="absolute bottom-2 left-2 z-10 pointer-events-none max-w-[calc(100%-48px)]">
-                                        <span class="px-1.5 py-0.5 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0 inline-block"
-                                              style="font-size: 8.5px; line-height: 1.2;">
-                                            {{ $rel->discount_percentage }}% OFF
-                                        </span>
-                                    </div>
-                                @endif
-
+                                <!-- Top Left: Reel Video Button -->
                                 @if($relVideo)
                                     <button type="button"
                                             @click.stop.prevent="window.dhansreeOpenReel({
@@ -1401,7 +1393,7 @@
                                                 isAi: {{ $relVideo->isAiGenerated() ? 'true' : 'false' }},
                                                 variantId: {{ $relFirstVariant?->id ?? 'null' }}
                                             })"
-                                            class="absolute bottom-2 right-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+                                            class="absolute top-2 left-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
                                             title="Watch video reel in motion"
                                             aria-label="Play product video">
                                         <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
@@ -1423,6 +1415,16 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
                                     </svg>
                                 </button>
+
+                                <!-- Bottom Right: % OFF Badge -->
+                                @if($rel->discount_percentage)
+                                    <div class="absolute bottom-2 right-2 z-10 pointer-events-none">
+                                        <span class="px-3 py-0.9 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0 inline-block"
+                                              style="font-size: 8.5px; line-height: 1.2; padding-top: 2px; padding-bottom: 2px;">
+                                            {{ $rel->discount_percentage }}% OFF
+                                        </span>
+                                    </div>
+                                @endif
                             </div>
                             <h4 class="text-xs font-medium text-rich-black leading-snug line-clamp-2 min-h-[2.25rem]"
                                 style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"

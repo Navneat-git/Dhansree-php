@@ -320,26 +320,7 @@
                                             @endif
                                         </a>
 
-                                        <!-- Bottom Left Badges: Color & % OFF (Kept at bottom to avoid overlapping model face) -->
-                                        @if(!empty($product->color_name) || $product->discount_percentage)
-                                            <div class="absolute bottom-2 left-2 flex items-center gap-1 z-10 pointer-events-none max-w-[calc(100%-48px)]">
-                                                @if(!empty($product->color_name))
-                                                    <span class="px-1.5 py-0.5 rounded-full bg-white/95 backdrop-blur-xs font-bold text-rich-black shadow-xs flex items-center gap-1 border border-light-gold/60 shrink-0"
-                                                          style="font-size: 9px; line-height: 1.2;">
-                                                        <span class="w-1.5 h-1.5 rounded-full border border-black/10 inline-block shrink-0" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
-                                                        <span class="truncate max-w-[50px]">{{ $product->color_name }}</span>
-                                                    </span>
-                                                @endif
-
-                                                @if($product->discount_percentage)
-                                                    <span class="px-1.5 py-0.5 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0"
-                                                          style="font-size: 8.5px; line-height: 1.2;">
-                                                        {{ $product->discount_percentage }}% OFF
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        @endif
-
+                                        <!-- Top Left: Reel Video Button -->
                                         @if($prodVideo)
                                             <button type="button"
                                                     @click.stop.prevent="window.dhansreeOpenReel({
@@ -354,7 +335,7 @@
                                                         isAi: {{ $prodVideo->isAiGenerated() ? 'true' : 'false' }},
                                                         variantId: {{ $firstVariant?->id ?? 'null' }}
                                                     })"
-                                                    class="absolute bottom-2 right-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+                                                    class="absolute top-2 left-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
                                                     title="Watch video reel in motion"
                                                     aria-label="Play product video">
                                                 <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
@@ -363,7 +344,7 @@
                                             </button>
                                         @endif
 
-                                        <!-- Wishlist Heart Button -->
+                                        <!-- Top Right: Wishlist Heart Button -->
                                         <button type="button"
                                                 @click.stop.prevent="toggleWishlist({{ $product->id }})"
                                                 class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs hover:scale-110 transition-transform z-10"
@@ -378,19 +359,35 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
                                             </svg>
                                         </button>
+
+                                        <!-- Bottom Left: Color Badge -->
+                                        @if(!empty($product->color_name))
+                                            <div class="absolute bottom-2 left-2 z-10 pointer-events-none max-w-[calc(100%-80px)]">
+                                                <span class="px-1.5 py-0.5 rounded-full bg-white/95 backdrop-blur-xs font-bold text-rich-black shadow-xs flex items-center gap-1 border border-light-gold/60 shrink-0"
+                                                      style="font-size: 9px; line-height: 1.2;">
+                                                    <span class="w-1.5 h-1.5 rounded-full border border-black/10 inline-block shrink-0" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
+                                                    <span class="truncate max-w-[50px]">{{ $product->color_name }}</span>
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <!-- Bottom Right: % OFF Badge -->
+                                        @if($product->discount_percentage)
+                                            <div class="absolute bottom-2 right-2 z-10 pointer-events-none">
+                                                <span class="px-3 py-0.9 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0 inline-block"
+                                                      style="font-size: 8.5px; line-height: 1.2; padding-top: 2px; padding-bottom: 2px;">
+                                                    {{ $product->discount_percentage }}% OFF
+                                                </span>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <!-- Product Info -->
                                     <div class="space-y-1">
                                         <div class="flex items-center justify-between gap-1">
                                             <p class="text-[0.625rem] uppercase tracking-wider text-rich-black/50 font-semibold truncate">
-                                                {{ $product->brand ?? 'DHANSREE ETHNIC' }}
+                                                {{ $product->brand ?? 'DHANSREE TRENDS' }}
                                             </p>
-                                            @if(!empty($product->color_name))
-                                                <span class="text-[0.625rem] font-medium text-maroon-800 truncate">
-                                                    {{ $product->color_name }}
-                                                </span>
-                                            @endif
                                         </div>
                                         <h3 class="text-xs sm:text-sm font-medium text-rich-black leading-snug line-clamp-2 min-h-[2.5rem]"
                                             style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
