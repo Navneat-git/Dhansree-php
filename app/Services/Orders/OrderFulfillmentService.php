@@ -16,6 +16,7 @@ use App\Models\InventoryLocation;
 use App\Models\InventoryMovement;
 use App\Models\InventoryReservation;
 use App\Models\Order;
+use App\Models\OrderNote;
 use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\Shipment;
@@ -165,6 +166,212 @@ class OrderFulfillmentService
     }
 
     /**
+     * Create local / by-hand delivery shipment and fulfill order.
+     */
+    public function createLocalDeliveryShipment(
+        Order $order,
+        string $deliveryPerson = 'Self Delivery',
+        ?string $deliveryPhone = null,
+        ?string $note = null,
+        ?int $adminUserId = null,
+        bool $markDeliveredImmediately = false
+    ): Shipment {
+        $shipment = DB::transaction(function () use ($order, $deliveryPerson, $deliveryPhone, $note, $adminUserId, $markDeliveredImmediately) {
+            if (!in_array($order->status, [OrderStatus::CONFIRMED, OrderStatus::PROCESSING], true)) {
+                throw new InvalidArgumentException("Order {$order->order_number} must be in CONFIRMED or PROCESSING status for local delivery.");
+            }
+
+            // Check if active shipment already exists
+            $existing = Shipment::where('order_id', $order->id)
+                ->where('active_order_id', $order->id)
+                ->first();
+
+            if ($existing) {
+                throw new InvalidArgumentException("Order {$order->order_number} already has an active shipment ({$existing->courier_name} - {$existing->reference}).");
+            }
+
+            $store = StoreSettings::current();
+            $locationId = InventoryLocation::where('is_active', true)->orderBy('id')->value('id') ?? 1;
+            $shippingAddress = $order->shippingAddress ?? $order->addresses()->where('type', 'SHIPPING')->first();
+
+            $destPostalCode = '302001';
+            if ($shippingAddress && preg_match('/^[1-9][0-9]{5}$/', (string) $shippingAddress->postal_code)) {
+                $destPostalCode = (string) $shippingAddress->postal_code;
+            }
+
+            $isCod = $order->payment_method->value === 'COD';
+            $paymentMode = $isCod ? ShipmentPaymentMode::COD : ShipmentPaymentMode::PREPAID;
+            $codAmountPaise = $isCod ? $order->total_paise : null;
+
+            $now = now();
+            $status = $markDeliveredImmediately ? ShipmentStatus::DELIVERED : ShipmentStatus::SHIPPED;
+            $shippedAt = $now;
+            $deliveredAt = $markDeliveredImmediately ? $now : null;
+
+            // Generate unique reference & AWB compliant with DB checks (^[A-Z0-9-]{3,50}$)
+            $refSuffix = strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+            $shipmentRef = $order->order_number . '-HAND-' . $refSuffix;
+            $awbCode = 'HAND-' . strtoupper(substr($order->order_number, -6)) . '-' . $refSuffix;
+            $providerShipmentId = 'LOCAL-' . $order->order_number . '-' . $refSuffix;
+            $courierTitle = 'By-Hand (' . mb_substr($deliveryPerson, 0, 45) . ')';
+
+            // 1. Create Shipment Record
+            $shipment = Shipment::create([
+                'order_id' => $order->id,
+                'active_order_id' => $order->id,
+                'provider' => 'by_hand',
+                'reference' => $shipmentRef,
+                'status' => $status,
+                'provider_shipment_id' => $providerShipmentId,
+                'awb' => $awbCode,
+                'courier_name' => $courierTitle,
+                'payment_mode' => $paymentMode,
+                'cod_amount_paise' => $codAmountPaise,
+                'declared_value_paise' => $order->total_paise,
+                'shipping_cost_paise' => 0,
+                'weight_grams' => 250,
+                'length_cm' => 15,
+                'breadth_cm' => 10,
+                'height_cm' => 5,
+                'location_id' => $locationId,
+                'pickup_location' => 'Store / By Hand',
+                'destination_postal_code' => $destPostalCode,
+                'shipped_at' => $shippedAt,
+                'delivered_at' => $deliveredAt,
+                'stock_deducted_at' => $now,
+                'provider_status' => $markDeliveredImmediately ? 'DELIVERED_BY_HAND' : 'OUT_FOR_LOCAL_DELIVERY',
+                'created_by_admin_user_id' => $adminUserId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            // 2. Create Shipment Items
+            foreach ($order->items as $item) {
+                ShipmentItem::create([
+                    'shipment_id' => $shipment->id,
+                    'order_item_id' => $item->id,
+                    'variant_id' => $item->variant_id,
+                    'sku' => $item->sku,
+                    'product_name' => $item->product_name,
+                    'variant_title' => $item->variant_title,
+                    'quantity' => $item->quantity,
+                    'unit_weight_grams' => $item->variant?->weight_grams ?? 250,
+                ]);
+            }
+
+            // 3. Deduct inventory under locks and record movements
+            foreach ($order->items as $item) {
+                $level = InventoryLevel::where('variant_id', $item->variant_id)
+                    ->where('location_id', $locationId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($level) {
+                    $qty = $item->quantity;
+                    $onHandAfter = max(0, $level->on_hand - $qty);
+                    $reservedAfter = max(0, $level->reserved - $qty);
+
+                    $level->update([
+                        'on_hand' => $onHandAfter,
+                        'reserved' => $reservedAfter,
+                    ]);
+
+                    $reservation = InventoryReservation::where('variant_id', $item->variant_id)
+                        ->where('source_type', 'ORDER')
+                        ->where('source_id', (string) $order->id)
+                        ->where('status', InventoryReservationStatus::ACTIVE)
+                        ->first();
+
+                    if ($reservation) {
+                        $reservation->update([
+                            'status' => InventoryReservationStatus::DEDUCTED,
+                            'resolved_at' => $now,
+                        ]);
+                    }
+
+                    InventoryMovement::create([
+                        'variant_id' => $item->variant_id,
+                        'location_id' => $locationId,
+                        'type' => 'DEDUCTION',
+                        'reason' => null,
+                        'on_hand_delta' => -$qty,
+                        'reserved_delta' => -$qty,
+                        'on_hand_after' => $onHandAfter,
+                        'reserved_after' => $reservedAfter,
+                        'reservation_id' => $reservation?->id,
+                        'reference' => $shipment->reference,
+                        'note' => "By-Hand Delivery ({$deliveryPerson})" . ($note ? ": {$note}" : ''),
+                        'actor_type' => $adminUserId ? 'ADMIN' : 'SYSTEM',
+                        'actor_admin_user_id' => $adminUserId,
+                        'created_at' => $now,
+                    ]);
+                }
+            }
+
+            // 4. Update Order Status
+            $prevStatus = $order->status;
+            $newOrderStatus = $markDeliveredImmediately ? OrderStatus::DELIVERED : OrderStatus::SHIPPED;
+
+            $orderUpdates = ['status' => $newOrderStatus];
+
+            if ($markDeliveredImmediately && $isCod && $order->payment_status !== PaymentStatus::PAID) {
+                $orderUpdates['payment_status'] = PaymentStatus::PAID;
+
+                Payment::where('order_id', $order->id)->update([
+                    'status' => PaymentStatus::PAID,
+                    'paid_at' => $now,
+                    'confirmed_via' => PaymentConfirmationSource::STAFF,
+                    'recorded_by_admin_user_id' => $adminUserId,
+                ]);
+            }
+
+            $order->update($orderUpdates);
+
+            // 5. Record Order Status History
+            $historyNote = $markDeliveredImmediately
+                ? "Order delivered directly by hand by {$deliveryPerson}." . ($note ? " Note: {$note}" : '')
+                : "Order dispatched for local by-hand delivery with {$deliveryPerson}." . ($note ? " Note: {$note}" : '');
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'from_status' => $prevStatus,
+                'to_status' => $newOrderStatus,
+                'actor_type' => $adminUserId ? OrderActorType::ADMIN : OrderActorType::SYSTEM,
+                'actor_admin_user_id' => $adminUserId,
+                'note' => $historyNote,
+                'created_at' => $now,
+            ]);
+
+            // 6. Record staff note if contact phone or remarks were provided
+            if (!empty($deliveryPhone) || !empty($note)) {
+                OrderNote::create([
+                    'order_id' => $order->id,
+                    'author_admin_user_id' => $adminUserId,
+                    'body' => "Local By-Hand Delivery Details:\nDelivered By: {$deliveryPerson}" .
+                              ($deliveryPhone ? "\nContact Phone: {$deliveryPhone}" : '') .
+                              ($note ? "\nRemarks: {$note}" : ''),
+                    'created_at' => $now,
+                ]);
+            }
+
+            return $shipment;
+        });
+
+        // Send Shipment Dispatched / Delivered Email notification
+        try {
+            if ($markDeliveredImmediately) {
+                $this->emailService->sendShipmentDelivered($shipment);
+            } else {
+                $this->emailService->sendShipmentDispatched($shipment);
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Could not send local delivery email for order #{$order->order_number}: {$e->getMessage()}");
+        }
+
+        return $shipment;
+    }
+
+    /**
      * Dispatch shipment (handover to courier) and deduct inventory under locks.
      */
     public function dispatchShipment(Shipment $shipment, ?int $adminUserId = null): void
@@ -284,6 +491,12 @@ class OrderFulfillmentService
                     'paid_at' => $now,
                     'confirmed_via' => PaymentConfirmationSource::RECONCILIATION,
                 ]);
+            }
+
+            if (!$shipment) {
+                $shipment = Shipment::where('order_id', $order->id)
+                    ->where('active_order_id', $order->id)
+                    ->first();
             }
 
             if ($shipment) {

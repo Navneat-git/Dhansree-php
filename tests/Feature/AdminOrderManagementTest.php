@@ -119,7 +119,8 @@ class AdminOrderManagementTest extends TestCase
     private function createSampleOrder(array $overrides = []): Order
     {
         $orderNum = OrderNumber::generate();
-        $isOnline = ($overrides['payment_method'] ?? 'COD') === 'ONLINE';
+        $pm = $overrides['payment_method'] ?? 'COD';
+        $isOnline = ($pm === 'ONLINE' || $pm === PaymentMethod::ONLINE || (is_object($pm) && $pm->value === 'ONLINE'));
 
         $defaults = [
             'order_number' => $orderNum,
@@ -427,5 +428,124 @@ class AdminOrderManagementTest extends TestCase
         $order->refresh();
         $this->assertNotNull($order->invoice_number);
         $this->assertNotNull($order->invoice_issued_at);
+    }
+
+    public function test_admin_can_fulfill_order_via_by_hand_delivery_immediately(): void
+    {
+        $order = $this->createSampleOrder([
+            'status' => OrderStatus::CONFIRMED,
+            'payment_method' => PaymentMethod::COD,
+            'payment_status' => PaymentStatus::PENDING,
+        ]);
+
+        InventoryReservation::create([
+            'variant_id' => $this->variant->id,
+            'location_id' => $this->location->id,
+            'quantity' => 1,
+            'status' => InventoryReservationStatus::ACTIVE,
+            'source_type' => 'ORDER',
+            'source_id' => (string) $order->id,
+            'created_at' => now(),
+        ]);
+
+        $res = $this->asAdmin()->post("/admin/orders/{$order->id}/local-delivery", [
+            'delivery_person' => 'Navneet Bhardwaj',
+            'delivery_phone' => '9876543210',
+            'note' => 'Delivered to customer directly at shop',
+            'delivery_action' => 'deliver_now',
+        ]);
+
+        $res->assertRedirect();
+        $order->refresh();
+
+        $this->assertEquals(OrderStatus::DELIVERED, $order->status);
+        $this->assertEquals(PaymentStatus::PAID, $order->payment_status);
+
+        $this->assertDatabaseHas('shipments', [
+            'order_id' => $order->id,
+            'active_order_id' => $order->id,
+            'provider' => 'by_hand',
+            'status' => ShipmentStatus::DELIVERED->value,
+        ]);
+
+        $shipment = $order->shipments()->where('active_order_id', $order->id)->first();
+        $this->assertNotNull($shipment);
+        $this->assertStringContainsString('Navneet Bhardwaj', $shipment->courier_name);
+        $this->assertNotNull($shipment->stock_deducted_at);
+        $this->assertNotNull($shipment->delivered_at);
+
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'status' => PaymentStatus::PAID->value,
+            'confirmed_via' => PaymentConfirmationSource::STAFF->value,
+        ]);
+
+        $this->assertDatabaseHas('inventory_movements', [
+            'variant_id' => $this->variant->id,
+            'type' => 'DEDUCTION',
+            'reference' => $shipment->reference,
+        ]);
+
+        $this->assertDatabaseHas('order_notes', [
+            'order_id' => $order->id,
+        ]);
+    }
+
+    public function test_admin_can_fulfill_order_via_by_hand_delivery_out_for_delivery(): void
+    {
+        $order = $this->createSampleOrder([
+            'status' => OrderStatus::CONFIRMED,
+            'payment_method' => PaymentMethod::ONLINE,
+            'payment_status' => PaymentStatus::PAID,
+        ]);
+
+        InventoryReservation::create([
+            'variant_id' => $this->variant->id,
+            'location_id' => $this->location->id,
+            'quantity' => 1,
+            'status' => InventoryReservationStatus::ACTIVE,
+            'source_type' => 'ORDER',
+            'source_id' => (string) $order->id,
+            'created_at' => now(),
+        ]);
+
+        $res = $this->asAdmin()->post("/admin/orders/{$order->id}/local-delivery", [
+            'delivery_person' => 'Store Staff',
+            'delivery_action' => 'dispatch',
+        ]);
+
+        $res->assertRedirect();
+        $order->refresh();
+
+        $this->assertEquals(OrderStatus::SHIPPED, $order->status);
+
+        $this->assertDatabaseHas('shipments', [
+            'order_id' => $order->id,
+            'active_order_id' => $order->id,
+            'provider' => 'by_hand',
+            'status' => ShipmentStatus::SHIPPED->value,
+        ]);
+    }
+
+    public function test_admin_order_detail_view_shows_professional_whatsapp_message_and_by_hand_delivery_option(): void
+    {
+        $order = $this->createSampleOrder([
+            'status' => OrderStatus::CONFIRMED,
+            'payment_method' => PaymentMethod::ONLINE,
+            'payment_status' => PaymentStatus::PAID,
+            'customer_phone' => '+919876543210',
+        ]);
+
+        $res = $this->asAdmin()->get("/admin/orders/{$order->id}");
+        $res->assertStatus(200);
+
+        // Check By-Hand delivery button present
+        $res->assertSee('Deliver By-Hand (Self)');
+
+        // Check professional WhatsApp button and modal present
+        $res->assertSee('Choose & Edit WhatsApp Template');
+        $res->assertSee('Thank you for choosing *Dhansree*!');
+        $res->assertSee('919876543210');
+        $res->assertSee('Paid Online via Razorpay');
     }
 }

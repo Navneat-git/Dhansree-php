@@ -256,6 +256,46 @@ class AdminOrderWebController extends Controller
     }
 
     /**
+     * Fulfill order via local by-hand delivery.
+     */
+    public function createLocalDelivery(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'delivery_person' => 'required|string|max:100',
+            'delivery_phone' => 'nullable|string|max:20',
+            'note' => 'nullable|string|max:500',
+            'delivery_action' => 'required|string|in:dispatch,deliver_now',
+        ]);
+
+        $admin = auth('admin')->user();
+        $markDelivered = $validated['delivery_action'] === 'deliver_now';
+
+        try {
+            $shipment = $this->fulfillmentService->createLocalDeliveryShipment(
+                order: $order,
+                deliveryPerson: trim($validated['delivery_person']),
+                deliveryPhone: !empty($validated['delivery_phone']) ? trim($validated['delivery_phone']) : null,
+                note: !empty($validated['note']) ? trim($validated['note']) : null,
+                adminUserId: $admin?->id,
+                markDeliveredImmediately: $markDelivered
+            );
+
+            $msg = $markDelivered
+                ? "Order {$order->order_number} marked as DELIVERED by hand ({$validated['delivery_person']})."
+                : "Order {$order->order_number} marked as OUT FOR LOCAL DELIVERY by {$validated['delivery_person']}.";
+
+            return back()->with('success', $msg);
+        } catch (Throwable $e) {
+            Log::error('Local delivery failed', [
+                'order' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', "Local delivery failed: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * Cancel order with reason.
      */
     public function cancel(Request $request, Order $order): RedirectResponse
