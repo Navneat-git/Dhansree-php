@@ -230,6 +230,23 @@ class CheckoutController extends Controller
             }
 
             return back()->withInput()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Order placement failed: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $message = $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Unable to process payment or place your order. Please try again or select Cash on Delivery.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return back()->withInput()->with('error', $message);
         }
     }
 

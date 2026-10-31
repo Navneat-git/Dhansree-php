@@ -24,12 +24,39 @@ class RazorpayService
         $this->enabled = (bool) config('store.razorpay_enabled', env('RAZORPAY_ENABLED', false));
     }
 
-    public function isEnabled(): bool
+    /**
+     * Determine if real non-dummy Razorpay API keys are configured.
+     */
+    public function isRealKeyConfigured(): bool
     {
         $keyId = $this->getKeyId();
         $keySecret = $this->getKeySecret();
 
         if (empty($keyId) || empty($keySecret)) {
+            return false;
+        }
+
+        $lowerId = strtolower($keyId);
+        $lowerSec = strtolower($keySecret);
+
+        // Detect placeholder/dummy test keys that cannot authenticate with live Razorpay API
+        if (
+            str_contains($lowerId, 'fake') ||
+            str_contains($lowerSec, 'fake') ||
+            str_contains($lowerSec, 'not-real') ||
+            str_contains($lowerId, 'dummy') ||
+            str_contains($lowerId, 'example') ||
+            str_contains($lowerId, 'placeholder')
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function isEnabled(): bool
+    {
+        if (!$this->isRealKeyConfigured()) {
             return false;
         }
 
@@ -93,7 +120,12 @@ class RazorpayService
                 'body' => $response->body(),
             ]);
 
-            throw new RuntimeException('Unable to initialize online payment with Razorpay: ' . ($response->json('error.description') ?? 'Gateway error'));
+            if ($response->status() === 401) {
+                throw new RuntimeException('Razorpay initialization failed: Authentication failed. Please verify your Razorpay API Key ID and Key Secret.');
+            }
+
+            $description = $response->json('error.description');
+            throw new RuntimeException('Unable to initialize online payment with Razorpay: ' . ($description ?? ('Gateway HTTP ' . $response->status())));
         }
 
         $data = $response->json();

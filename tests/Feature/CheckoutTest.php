@@ -585,4 +585,57 @@ class CheckoutTest extends TestCase
         $response->assertSee($this->variant->product->name);
         $response->assertSee('450');
     }
+
+    public function test_dummy_placeholder_keys_are_detected_as_mock_mode(): void
+    {
+        config([
+            'store.razorpay_enabled' => true,
+            'store.razorpay.key_id' => 'rzp_test_E2EFakeKey0001',
+            'store.razorpay.key_secret' => 'e2e-fake-key-secret-not-real',
+        ]);
+
+        $service = app(\App\Services\Payments\RazorpayService::class);
+        $this->assertFalse($service->isRealKeyConfigured());
+        $this->assertFalse($service->isEnabled());
+
+        $mockOrder = $service->createOrder(5000, 'INR', 'receipt_123');
+        $this->assertStringStartsWith('order_mock_', $mockOrder['id']);
+        $this->assertEquals(5000, $mockOrder['amount']);
+    }
+
+    public function test_runtime_exception_during_order_placement_returns_descriptive_error_json(): void
+    {
+        $sessionCart = [
+            'dhansree_cart' => [$this->variant->id => 1],
+        ];
+
+        // Mock RazorpayService to throw a RuntimeException simulating gateway error
+        $mockRazorpay = \Mockery::mock(\App\Services\Payments\RazorpayService::class);
+        $mockRazorpay->shouldReceive('isEnabled')->andReturn(true);
+        $mockRazorpay->shouldReceive('getKeyId')->andReturn('rzp_test_real_key');
+        $mockRazorpay->shouldReceive('createOrder')->andThrow(
+            new \RuntimeException('Razorpay initialization failed: Authentication failed. Please verify your Razorpay API Key ID and Key Secret.')
+        );
+        $this->app->instance(\App\Services\Payments\RazorpayService::class, $mockRazorpay);
+
+        $payload = [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'phone' => '9899887766',
+            'line1' => 'Plot 55, Sector 12',
+            'city' => 'Jaipur',
+            'state_code' => '08',
+            'postal_code' => '302020',
+            'payment_method' => 'ONLINE',
+        ];
+
+        $response = $this->withSession($sessionCart)
+            ->postJson('/checkout/place', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+            'message' => 'Razorpay initialization failed: Authentication failed. Please verify your Razorpay API Key ID and Key Secret.',
+        ]);
+    }
 }

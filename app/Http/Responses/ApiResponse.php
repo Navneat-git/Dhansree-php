@@ -57,7 +57,11 @@ class ApiResponse
             $error['details'] = $details;
         }
 
-        return response()->json(['error' => $error], $status, [
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'error' => $error,
+        ], $status, [
             'Content-Type' => 'application/json',
         ]);
     }
