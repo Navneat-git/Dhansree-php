@@ -269,6 +269,47 @@ class CatalogBrowsingService
             ->orderBy('id')
             ->get();
 
+        // Safety fallback 1: If no currently scheduled banners match, fall back to any active banners
+        // so the storefront hero carousel never disappears when a schedule end date elapses.
+        if ($banners->isEmpty()) {
+            $banners = \App\Models\HomepageBanner::where('is_active', true)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->get();
+        }
+
+        // Safety fallback 2: If no active banners exist in database, display brand default banners
+        if ($banners->isEmpty()) {
+            $banners = collect([
+                new \App\Models\HomepageBanner([
+                    'id' => 1,
+                    'title' => '',
+                    'image_storage_key' => 'banners/hero_banner_festive_women_desktop.webp',
+                    'image_alt_text' => 'Festive Elegance, Everyday Grace - Luxury Ethnic Suits',
+                    'mobile_storage_key' => 'banners/hero_banner_festive_women_mobile.webp',
+                    'mobile_alt_text' => 'Festive Elegance, Everyday Grace - Luxury Ethnic Suits',
+                    'link_path' => '/collections/women-fashion',
+                    'cta_label' => 'Shop The Royal Look',
+                    'word_mode' => 'ON_PICTURE',
+                    'is_active' => true,
+                    'position' => 0,
+                ]),
+                new \App\Models\HomepageBanner([
+                    'id' => 2,
+                    'title' => '',
+                    'image_storage_key' => 'banners/hero_banner_coords_women_desktop.webp',
+                    'image_alt_text' => 'Contemporary Co-ords & Suit Sets - Modern Ethnic Fashion',
+                    'mobile_storage_key' => 'banners/hero_banner_coords_women_mobile.webp',
+                    'mobile_alt_text' => 'Contemporary Co-ords & Suit Sets - Modern Ethnic Fashion',
+                    'link_path' => '/women-two-piece-sets-co-ord',
+                    'cta_label' => 'Explore Collection',
+                    'word_mode' => 'ON_PICTURE',
+                    'is_active' => true,
+                    'position' => 1,
+                ]),
+            ]);
+        }
+
         $store = StoreSettings::current();
         $heroBlock = \App\Models\HomeBlock::where('type', \App\Enums\HomeBlockType::HERO)->where('is_visible', true)->first();
 

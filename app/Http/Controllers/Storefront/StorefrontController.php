@@ -41,7 +41,7 @@ class StorefrontController extends Controller
                     'featuredProducts' => \App\Models\Product::with(['primaryImage', 'defaultVariant'])->where('status', \App\Enums\ProductStatus::ACTIVE)->take(16)->get(),
                     'featuredBlock' => null,
                     'smartLivingCategories' => collect(),
-                    'banners' => collect(),
+                    'banners' => \App\Models\HomepageBanner::where('is_active', true)->orderBy('position')->get(),
                     'store' => $store,
                     'heroBlock' => null,
                     'quickLinksData' => null,
