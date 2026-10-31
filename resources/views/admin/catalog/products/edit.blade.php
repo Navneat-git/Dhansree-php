@@ -1215,7 +1215,7 @@
             <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Product Gallery ({{ $product->images->count() }})</h2>
-                    <p class="text-xs text-slate-500">Position #0 is the primary storefront photo &bull; Click "Pin to Color / Edit Alt" on any photo to choose which color it represents.</p>
+                    <p class="text-xs text-slate-500">Position #0 is the primary storefront photo &bull; Use ▲/▼ arrows to reorder photos on the storefront &bull; Click "Pin to Color / Edit Alt" to choose color assignment.</p>
                 </div>
             </div>
 
@@ -1246,6 +1246,36 @@
                                         ACTUAL PHOTO
                                     </span>
                                 @endif
+
+                                <!-- Quick Reorder Pill on Thumbnail -->
+                                <div class="absolute bottom-2 left-2 flex items-center bg-black/75 backdrop-blur-xs rounded-md shadow-xs overflow-hidden border border-white/20 text-white z-10">
+                                    @if(!$loop->first)
+                                        <form method="POST" action="{{ route('admin.images.move', ['image' => $img, 'direction' => 'up']) }}" class="inline">
+                                            @csrf
+                                            <button type="submit" title="Move Up / Earlier (▲)" class="px-2 py-1 hover:bg-white/30 text-white transition-colors flex items-center justify-center font-bold text-xs leading-none cursor-pointer">
+                                                ▲
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="px-2 py-1 text-white/30 cursor-not-allowed flex items-center justify-center text-xs leading-none" title="Already first">
+                                            ▲
+                                        </span>
+                                    @endif
+                                    <div class="w-px h-3.5 bg-white/20"></div>
+                                    @if(!$loop->last)
+                                        <form method="POST" action="{{ route('admin.images.move', ['image' => $img, 'direction' => 'down']) }}" class="inline">
+                                            @csrf
+                                            <button type="submit" title="Move Down / Later (▼)" class="px-2 py-1 hover:bg-white/30 text-white transition-colors flex items-center justify-center font-bold text-xs leading-none cursor-pointer">
+                                                ▼
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="px-2 py-1 text-white/30 cursor-not-allowed flex items-center justify-center text-xs leading-none" title="Already last">
+                                            ▼
+                                        </span>
+                                    @endif
+                                </div>
+
                                 <span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/60 text-white">
                                     #{{ $img->position }}
                                 </span>
@@ -1295,16 +1325,47 @@
                             </button>
 
                             <div class="flex items-center justify-between gap-1 text-[11px]">
-                                @if(!$img->is_primary)
-                                    <form method="POST" action="{{ route('admin.images.set-primary', $img) }}">
-                                        @csrf
-                                        <button type="submit" class="font-semibold text-amber-700 hover:underline">
-                                            Make Primary
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="text-slate-400">Main photo</span>
-                                @endif
+                                <div class="flex items-center gap-1.5">
+                                    <!-- Sequence Up/Down Arrows -->
+                                    <div class="inline-flex items-center rounded border border-slate-200 bg-slate-50 overflow-hidden shadow-2xs">
+                                        @if(!$loop->first)
+                                            <form method="POST" action="{{ route('admin.images.move', ['image' => $img, 'direction' => 'up']) }}" class="inline">
+                                                @csrf
+                                                <button type="submit" title="Move Image Up (#{{ $img->position }} &rarr; #{{ $img->position - 1 }})" class="px-1.5 py-0.5 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors font-bold text-xs leading-none cursor-pointer">
+                                                    ▲
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="px-1.5 py-0.5 text-slate-300 cursor-not-allowed font-bold text-xs leading-none">
+                                                ▲
+                                            </span>
+                                        @endif
+                                        <div class="w-px h-3 bg-slate-200"></div>
+                                        @if(!$loop->last)
+                                            <form method="POST" action="{{ route('admin.images.move', ['image' => $img, 'direction' => 'down']) }}" class="inline">
+                                                @csrf
+                                                <button type="submit" title="Move Image Down (#{{ $img->position }} &rarr; #{{ $img->position + 1 }})" class="px-1.5 py-0.5 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors font-bold text-xs leading-none cursor-pointer">
+                                                    ▼
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="px-1.5 py-0.5 text-slate-300 cursor-not-allowed font-bold text-xs leading-none">
+                                                ▼
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    @if(!$img->is_primary)
+                                        <form method="POST" action="{{ route('admin.images.set-primary', $img) }}">
+                                            @csrf
+                                            <button type="submit" class="font-semibold text-amber-700 hover:underline">
+                                                Make Primary
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-slate-400">Main photo</span>
+                                    @endif
+                                </div>
 
                                 <form method="POST" action="{{ route('admin.images.delete', $img) }}" onsubmit="return confirm('Delete this image?');">
                                     @csrf

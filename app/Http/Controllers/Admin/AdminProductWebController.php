@@ -662,6 +662,30 @@ class AdminProductWebController extends Controller
     }
 
     /**
+     * Move product image position up or down.
+     */
+    public function moveImage(Request $request, ProductImage $image, string $direction): RedirectResponse
+    {
+        if (!in_array($direction, ['up', 'down'], true)) {
+            abort(400, 'Invalid move direction.');
+        }
+
+        $adminUser = $request->attributes->get('admin_user');
+        $productId = $image->product_id;
+
+        try {
+            $this->imageService->movePosition($image, $direction, $adminUser?->id, $request);
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('success', 'Image order updated successfully.');
+        } catch (Throwable $e) {
+            return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
+                ->with('active_tab', 'media')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Update product attributes / specifications.
      */
     public function updateAttributes(Request $request, Product $product): RedirectResponse

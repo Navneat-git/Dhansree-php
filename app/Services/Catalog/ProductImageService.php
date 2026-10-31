@@ -219,6 +219,54 @@ class ProductImageService
     }
 
     /**
+     * Move an image up (earlier) or down (later) in the product gallery sequence.
+     */
+    public function movePosition(ProductImage $image, string $direction, ?int $adminUserId = null, ?Request $request = null): void
+    {
+        DB::transaction(function () use ($image, $direction, $adminUserId, $request) {
+            $images = ProductImage::where('product_id', $image->product_id)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->get();
+
+            $index = $images->search(fn ($img) => (int) $img->id === (int) $image->id);
+            if ($index === false) {
+                return;
+            }
+
+            $targetIndex = $direction === 'up' ? $index - 1 : $index + 1;
+            if ($targetIndex < 0 || $targetIndex >= $images->count()) {
+                return;
+            }
+
+            $imagesArray = $images->all();
+            $temp = $imagesArray[$index];
+            $imagesArray[$index] = $imagesArray[$targetIndex];
+            $imagesArray[$targetIndex] = $temp;
+
+            foreach ($imagesArray as $newPos => $item) {
+                ProductImage::where('id', $item->id)->update(['position' => $newPos]);
+            }
+
+            if ($adminUserId) {
+                AuditLogger::log(
+                    'catalog.image.reordered',
+                    AuditActorType::ADMIN,
+                    actorAdminUserId: $adminUserId,
+                    entityType: 'product_image',
+                    entityId: $image->id,
+                    metadata: [
+                        'direction' => $direction,
+                        'from_position' => $index,
+                        'to_position' => $targetIndex,
+                    ],
+                    request: $request
+                );
+            }
+        });
+    }
+
+    /**
      * Reorder list of images for a product.
      *
      * @param int[] $orderedIds

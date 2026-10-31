@@ -249,6 +249,7 @@ Route::prefix('admin')->group(function () {
         Route::delete('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'deleteImage'])->name('admin.images.delete');
         Route::put('/catalog/images/{image}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateImage'])->name('admin.images.update');
         Route::post('/catalog/images/{image}/set-primary', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'setPrimaryImage'])->name('admin.images.set-primary');
+        Route::post('/catalog/images/{image}/move/{direction}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'moveImage'])->name('admin.images.move');
 
         Route::post('/catalog/products/{product}/upload-video', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'uploadVideo'])->name('admin.products.upload-video');
         Route::put('/catalog/videos/{video}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateVideo'])->name('admin.videos.update');
