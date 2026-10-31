@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class AdminProductWebController extends Controller
@@ -1055,6 +1056,28 @@ class AdminProductWebController extends Controller
             return redirect()->route('admin.products.edit', ['product' => $productId, 'tab' => 'media'])
                 ->with('active_tab', 'media')
                 ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Download Watch in Motion vertical 9:16 Reel MP4 for Instagram/Facebook.
+     * Matches the frontend product detail page "Watch in Motion" popup exactly.
+     */
+    public function downloadReel(Request $request, ProductVideo $video): BinaryFileResponse|RedirectResponse
+    {
+        try {
+            $videoStudioService = app(VideoStudioService::class);
+            $absolutePath = $videoStudioService->getOrGenerateWatchInMotionReel($video);
+
+            $cleanTitle = Str::slug($video->product?->name ?: ($video->title ?: 'dhansree-reel'));
+            $downloadName = "Dhansree-{$cleanTitle}-watch-in-motion-reel.mp4";
+
+            return response()->download($absolutePath, $downloadName, [
+                'Content-Type' => 'video/mp4',
+            ]);
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to generate Watch in Motion Reel for ProductVideo #{$video->id}: " . $e->getMessage());
+            return back()->with('error', 'Could not generate Watch in Motion Reel: ' . $e->getMessage());
         }
     }
 }

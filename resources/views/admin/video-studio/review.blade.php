@@ -37,6 +37,14 @@
             </div>
 
             <div class="flex items-center gap-2.5 flex-wrap">
+                <a href="{{ route('admin.video-studio.download', [$video, 'format' => 'reel']) }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs transition-colors"
+                   title="Download Watch in Motion Reel (Storefront Style 9:16 MP4 for Instagram & Facebook Reels)">
+                    <svg class="size-4 text-slate-950" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    <span>Download Reel (Watch in Motion)</span>
+                </a>
                 @if($video->video_url)
                 <a href="{{ route('admin.video-studio.download', $video) }}"
                    style="background-color: #0f172a !important; color: #ffffff !important;"
@@ -44,7 +52,7 @@
                     <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
-                    <span>Download MP4</span>
+                    <span>Download Raw MP4</span>
                 </a>
                 @endif
                 <a href="{{ route('admin.video-studio.index') }}"

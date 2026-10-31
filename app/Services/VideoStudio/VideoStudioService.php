@@ -509,6 +509,7 @@ class VideoStudioService
             }
             if ($brandedRelativePath) {
                 $currentSettings['branded_video_path'] = $brandedRelativePath;
+                $currentSettings['reel_video_path'] = $brandedRelativePath;
             }
 
             $video->update([
@@ -571,6 +572,69 @@ class VideoStudioService
             return false;
         } finally {
             File::deleteDirectory($tempDir);
+        }
+    }
+
+    /**
+     * Get existing or render on-demand the Watch in Motion vertical 9:16 reel MP4.
+     * Matches the frontend product detail page "Watch in Motion" lightbox modal popup.
+     */
+    public function getOrGenerateWatchInMotionReel(ProductVideo $video): string
+    {
+        $disk = config('video_studio.disk', 'public');
+        $storageDir = config('video_studio.storage_dir', 'video-studio');
+        $settings = $video->render_settings ?? [];
+
+        // 1. If already generated and cached on disk, return existing file path
+        if (!empty($settings['reel_video_path']) && Storage::disk($disk)->exists($settings['reel_video_path'])) {
+            return Storage::disk($disk)->path($settings['reel_video_path']);
+        }
+
+        // 2. Resolve source video file
+        $sourcePath = null;
+        if (!empty($video->ai_master_video_path) && Storage::disk($disk)->exists($video->ai_master_video_path)) {
+            $sourcePath = Storage::disk($disk)->path($video->ai_master_video_path);
+        } elseif (!empty($video->video_path) && Storage::disk($disk)->exists($video->video_path)) {
+            $sourcePath = Storage::disk($disk)->path($video->video_path);
+        } elseif (!empty($settings['webm_path']) && Storage::disk($disk)->exists($settings['webm_path'])) {
+            $sourcePath = Storage::disk($disk)->path($settings['webm_path']);
+        } elseif (!empty($video->video_path) && file_exists(public_path($video->video_path))) {
+            $sourcePath = public_path($video->video_path);
+        }
+
+        if (!$sourcePath || !file_exists($sourcePath)) {
+            throw new \RuntimeException("Original video file could not be found to generate Watch in Motion Reel.");
+        }
+
+        // 3. Render reel to a temporary output path
+        $tempDir = storage_path('app/temp/video-studio-reel-' . Str::uuid());
+        File::ensureDirectoryExists($tempDir);
+        $tempOutput = $tempDir . DIRECTORY_SEPARATOR . 'reel_' . Str::uuid() . '.mp4';
+
+        try {
+            $targetW = $video->width ?: 1080;
+            $targetH = $video->height ?: 1920;
+            // Always ensure vertical 9:16 for Reels
+            if ($targetW > $targetH) {
+                $targetW = 1080;
+                $targetH = 1920;
+            }
+
+            $this->ffmpegService->renderWatchInMotionReel($video, $sourcePath, $tempOutput, $targetW, $targetH);
+
+            // 4. Save to persistent storage
+            $reelFilename = "{$storageDir}/reels/reel_{$video->id}_" . Str::random(10) . '.mp4';
+            Storage::disk($disk)->put($reelFilename, File::get($tempOutput));
+
+            // Update video render_settings with reel_video_path
+            $settings['reel_video_path'] = $reelFilename;
+            $video->update(['render_settings' => $settings]);
+
+            return Storage::disk($disk)->path($reelFilename);
+        } finally {
+            if (File::isDirectory($tempDir)) {
+                File::deleteDirectory($tempDir);
+            }
         }
     }
 }

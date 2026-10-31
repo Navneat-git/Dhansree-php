@@ -529,7 +529,18 @@ class AdminVideoStudioWebController extends Controller
         $downloadName = "Dhansree-{$cleanTitle}-{$aspect}.mp4";
         $contentType = 'video/mp4';
 
-        if ($format === 'webm' && !empty($settings['webm_path']) && Storage::disk($disk)->exists($settings['webm_path'])) {
+        if ($format === 'reel' || $format === 'watch_in_motion') {
+            try {
+                $reelAbsPath = $this->videoStudioService->getOrGenerateWatchInMotionReel($video);
+                $downloadName = "Dhansree-{$cleanTitle}-watch-in-motion-reel.mp4";
+                return response()->download($reelAbsPath, $downloadName, [
+                    'Content-Type' => 'video/mp4',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("Failed to generate Watch in Motion Reel for ProductVideo #{$video->id}: " . $e->getMessage());
+                return back()->with('error', 'Could not generate Watch in Motion Reel: ' . $e->getMessage());
+            }
+        } elseif ($format === 'webm' && !empty($settings['webm_path']) && Storage::disk($disk)->exists($settings['webm_path'])) {
             $relativePath = $settings['webm_path'];
             $downloadName = "Dhansree-{$cleanTitle}-clean-{$aspect}.webm";
             $contentType = 'video/webm';

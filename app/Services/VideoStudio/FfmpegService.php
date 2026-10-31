@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductVideo;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 
 class FfmpegService
@@ -449,7 +450,7 @@ class FfmpegService
     }
 
     /**
-     * Create transparent PNG overlay with Dhansree logo, template badge, and product card.
+     * Create transparent PNG overlay with Dhansree branding or modern Watch in Motion card.
      */
     protected function createOverlayGraphic(
         ProductVideo $video,
@@ -459,6 +460,12 @@ class FfmpegService
         array $templateConfig,
         array $settings
     ): void {
+        // When modern Watch in Motion style is requested or by default for social reels without brand header plate
+        if (($settings['show_brand_header'] ?? false) !== true) {
+            $this->createWatchInMotionOverlayGraphic($video, $destImagePath, $canvasW, $canvasH, $settings, $templateConfig);
+            return;
+        }
+
         $im = imagecreatetruecolor($canvasW, $canvasH);
         imagealphablending($im, false);
         imagesavealpha($im, true);
@@ -476,13 +483,13 @@ class FfmpegService
         $gold = imagecolorallocate($im, 176, 136, 88);
         $goldBright = imagecolorallocate($im, 212, 175, 55);
         $white = imagecolorallocate($im, 255, 255, 255);
-        $creamBg = imagecolorallocatealpha($im, 251, 250, 248, 8); // 94% opaque luxury cream plate for perfect contrast
-        $cardBg = imagecolorallocatealpha($im, 16, 6, 6, 25); // Deep translucent glassmorphism
+        $creamBg = imagecolorallocatealpha($im, 251, 250, 248, 8); // 94% opaque luxury cream plate
+        $cardBg = imagecolorallocatealpha($im, 16, 6, 6, 25);
         $badgeBg = imagecolorallocatealpha($im, 88, 0, 0, 25);
         $shadow = imagecolorallocatealpha($im, 0, 0, 0, 80);
 
-        // Top safe area: Dhansree Brand Header inside Luxury Contrast Plate (only when branding enabled)
-        $showBrandHeader = ($settings['export_preset'] ?? null) !== 'clean_storefront' && ($settings['text_overlay'] ?? true);
+        // Top safe area: Dhansree Brand Header inside Luxury Contrast Plate (only when explicitly requested)
+        $showBrandHeader = ($settings['show_brand_header'] ?? false) === true;
         if ($showBrandHeader) {
             $logoPath = config('video_studio.brand.logo_path');
             $tagY = (int) ($canvasH * 0.10);
@@ -491,7 +498,7 @@ class FfmpegService
                 if ($logo) {
                     $lw = imagesx($logo);
                     $lh = imagesy($logo);
-                    $targetLogoH = (int) ($canvasH * 0.040); // Proportional logo height
+                    $targetLogoH = (int) ($canvasH * 0.040);
                     $targetLogoW = (int) ($lw * ($targetLogoH / $lh));
 
                     $padX = 32;
@@ -499,9 +506,8 @@ class FfmpegService
                     $cardW = $targetLogoW + ($padX * 2);
                     $cardH = $targetLogoH + ($padY * 2);
                     $cardX = (int) (($canvasW - $cardW) / 2);
-                    $cardY = (int) ($canvasH * 0.045); // Top safe area
+                    $cardY = (int) ($canvasH * 0.045);
 
-                    // Draw pill shadow & luxury cream plate with gold border
                     imagefilledrectangle($im, $cardX + 3, $cardY + 3, $cardX + $cardW + 3, $cardY + $cardH + 3, $shadow);
                     imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $creamBg);
                     imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
@@ -513,12 +519,12 @@ class FfmpegService
                 }
             }
 
-            // Template Tag Badge (e.g. "NEW ARRIVAL", "FESTIVE SPECIAL", etc.)
+            // Template Tag Badge
             $tagText = strtoupper($templateConfig['tag'] ?? 'DHANSREE TRENDS');
             $this->drawBadge($im, $tagText, (int) ($canvasW / 2), $tagY, $white, $badgeBg, $fontBold, $goldBright);
         }
 
-        // Bottom Product Title & Price Card (if text overlays enabled)
+        // Bottom Product Title & Price Card
         $showOverlays = $settings['text_overlay'] ?? true;
         if ($showOverlays) {
             $product = $video->product;
@@ -531,14 +537,12 @@ class FfmpegService
             $cardW = (int) ($canvasW * 0.88);
             $cardH = (int) ($canvasH * 0.125);
             $cardX = (int) (($canvasW - $cardW) / 2);
-            $cardY = (int) ($canvasH * 0.82); // Above safe footer zone for Reels
+            $cardY = (int) ($canvasH * 0.82);
 
-            // Draw shadow & rounded card
             imagefilledrectangle($im, $cardX + 4, $cardY + 4, $cardX + $cardW + 4, $cardY + $cardH + 4, $shadow);
             imagefilledrectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $cardBg);
             imagerectangle($im, $cardX, $cardY, $cardX + $cardW, $cardY + $cardH, $gold);
 
-            // Title text (up to 44 chars)
             $displayTitle = mb_strimwidth($title, 0, 44, '...');
             if ($fontBold) {
                 $titleFontSize = (int) ($canvasW * 0.025);
@@ -552,7 +556,6 @@ class FfmpegService
                 imagestring($im, 5, $tX, $cardY + 16, $displayTitle, $white);
             }
 
-            // Price badge & Dhansree Trends note
             $subline = $priceText ? "{$priceText}  •  Dhansree Trends" : "Exclusively at dhansree.com";
             if ($fontBold) {
                 $subFontSize = (int) ($canvasW * 0.021);
@@ -569,6 +572,309 @@ class FfmpegService
 
         imagepng($im, $destImagePath, 6);
         imagedestroy($im);
+    }
+
+    /**
+     * Create transparent PNG overlay replicating the frontend "Watch in Motion" modal popup.
+     * Includes AI Video Disclaimer pill (if AI) and bottom floating frosted card with
+     * FEATURED IN REEL tag, wrapped product title, pricing (with slashed MRP and discount %),
+     * and bright amber "Buy Now →" button.
+     */
+    public function createWatchInMotionOverlayGraphic(
+        ProductVideo $video,
+        string $destImagePath,
+        int $canvasW = 1080,
+        int $canvasH = 1920,
+        array $settings = [],
+        array $templateConfig = []
+    ): void {
+        $im = imagecreatetruecolor($canvasW, $canvasH);
+        imagealphablending($im, false);
+        imagesavealpha($im, true);
+
+        // Transparent canvas
+        $trans = imagecolorallocatealpha($im, 0, 0, 0, 127);
+        imagefilledrectangle($im, 0, 0, $canvasW, $canvasH, $trans);
+        imagealphablending($im, true);
+
+        $fontBold = $this->resolveBoldFont();
+        $fontRegular = $this->resolveRegularFont() ?: $fontBold;
+
+        // Color palette matching Watch in Motion storefront modal
+        $amber = imagecolorallocate($im, 251, 191, 36); // #FBBF24
+        $orangeBtn = imagecolorallocate($im, 245, 158, 11); // #F59E0B Amber-500
+        $white = imagecolorallocate($im, 255, 255, 255);
+        $mrpGray = imagecolorallocate($im, 203, 213, 225); // #CBD5E1 Slate-300
+        $green = imagecolorallocate($im, 52, 211, 153); // #34D399 Emerald-400
+        $darkSlate = imagecolorallocate($im, 15, 23, 42); // #0F172A Slate-900
+        $cardBg = imagecolorallocatealpha($im, 10, 10, 10, 52); // Frosted dark glassmorphism (~60% opacity)
+        $cardBorder = imagecolorallocatealpha($im, 255, 255, 255, 80); // Subtle 30% white border
+        $shadow = imagecolorallocatealpha($im, 0, 0, 0, 95);
+
+        // Scale factors relative to 1080x1920 base
+        $scaleX = $canvasW / 1080.0;
+        $scaleY = $canvasH / 1920.0;
+
+        // 1. Top-Left: AI Disclaimer Pill (if video is AI generated)
+        if ($video->isAiGenerated()) {
+            $pillX1 = (int) (40 * $scaleX);
+            $pillY1 = (int) (50 * $scaleY);
+            $pillW = (int) (320 * $scaleX);
+            $pillH = (int) (60 * $scaleY);
+            $pillX2 = $pillX1 + $pillW;
+            $pillY2 = $pillY1 + $pillH;
+            $pillRad = (int) ($pillH / 2);
+
+            $this->drawRoundedRect($im, $pillX1, $pillY1, $pillX2, $pillY2, $pillRad, imagecolorallocatealpha($im, 0, 0, 0, 25));
+            $this->drawRoundedRectBorder($im, $pillX1, $pillY1, $pillX2, $pillY2, $pillRad, $amber);
+
+            // Icon circle with italic 'i'
+            $iconSize = (int) (32 * $scaleX);
+            $iconCenterX = $pillX1 + (int) (30 * $scaleX);
+            $iconCenterY = (int) (($pillY1 + $pillY2) / 2);
+            imagefilledellipse($im, $iconCenterX, $iconCenterY, $iconSize, $iconSize, imagecolorallocatealpha($im, 251, 191, 36, 100));
+            imagearc($im, $iconCenterX, $iconCenterY, $iconSize, $iconSize, 0, 360, $amber);
+
+            if ($fontBold) {
+                $iconFontSize = max(10, (int) (14 * $scaleX));
+                $ibox = imagettfbbox($iconFontSize, 0, $fontBold, 'i');
+                $iw = abs($ibox[2] - $ibox[0]);
+                $ih = abs($ibox[1] - $ibox[7]);
+                imagettftext($im, $iconFontSize, 0, $iconCenterX - (int) ($iw / 2), $iconCenterY + (int) ($ih / 2), $amber, $fontBold, 'i');
+
+                $pillFontSize = max(10, (int) (14 * $scaleX));
+                $pTextY = $iconCenterY + (int) ($pillFontSize / 2);
+                imagettftext($im, $pillFontSize, 0, $iconCenterX + (int) (26 * $scaleX), $pTextY, $amber, $fontBold, 'AI Video Disclaimer');
+            } else {
+                imagestring($im, 3, $iconCenterX - 3, $iconCenterY - 6, 'i', $amber);
+                imagestring($im, 3, $iconCenterX + 20, $iconCenterY - 6, 'AI Video Disclaimer', $amber);
+            }
+        }
+
+        // 2. Bottom: Floating Watch in Motion Card
+        $cardMarginH = (int) (40 * $scaleX);
+        $cardX1 = $cardMarginH;
+        $cardX2 = $canvasW - $cardMarginH;
+        $cardW = $cardX2 - $cardX1;
+
+        $cardH = (int) (260 * $scaleY);
+        $cardMarginB = (int) (60 * $scaleY);
+        $cardY2 = $canvasH - $cardMarginB;
+        $cardY1 = $cardY2 - $cardH;
+        $cardRad = (int) (30 * $scaleX);
+
+        // Draw soft drop shadow behind card
+        $this->drawRoundedRect($im, $cardX1 + 4, $cardY1 + 4, $cardX2 + 4, $cardY2 + 4, $cardRad, $shadow);
+        // Draw card frosted dark background
+        $this->drawRoundedRect($im, $cardX1, $cardY1, $cardX2, $cardY2, $cardRad, $cardBg);
+        // Draw card subtle border
+        $this->drawRoundedRectBorder($im, $cardX1, $cardY1, $cardX2, $cardY2, $cardRad, $cardBorder);
+
+        // Dimensions inside card
+        $innerPadX = (int) (34 * $scaleX);
+        $leftX = $cardX1 + $innerPadX;
+
+        // Button dimensions (right column)
+        $btnW = (int) (215 * $scaleX);
+        $btnH = (int) (76 * $scaleY);
+        $btnRad = (int) (20 * $scaleX);
+        $btnX2 = $cardX2 - $innerPadX;
+        $btnX1 = $btnX2 - $btnW;
+        $btnY1 = $cardY1 + (int) (($cardH - $btnH) / 2);
+        $btnY2 = $btnY1 + $btnH;
+
+        // Available width for text on left side
+        $availTextW = $btnX1 - $leftX - (int) (20 * $scaleX);
+
+        // Resolve Product Data
+        $product = $video->product;
+        $tagText = strtoupper($templateConfig['tag'] ?? 'FEATURED IN REEL');
+        $titleText = $video->title ?: ($product?->name ?? 'Dhansree Exclusive');
+
+        $priceStr = $product?->formatted_price ?: ($product && $product->min_price_rupees ? '₹' . number_format($product->min_price_rupees, 0) : '₹1,566');
+        $mrpStr = $product?->formatted_mrp ?: ($product && $product->mrp_rupees && $product->mrp_rupees > ($product->min_price_rupees ?? 0) ? '₹' . number_format($product->mrp_rupees, 0) : null);
+        $discountStr = $product?->discount_percentage ? ($product->discount_percentage . '% OFF') : ($mrpStr && $product && $product->min_price_rupees ? round((($product->mrp_rupees - $product->min_price_rupees) / $product->mrp_rupees) * 100) . '% OFF' : null);
+
+        // Pinned variant specific price override if applicable
+        if ($product && !empty($video->pinned_variant_ids)) {
+            $pinnedVar = $product->variants->whereIn('id', $video->pinned_variant_ids)->first();
+            if ($pinnedVar) {
+                if (!empty($pinnedVar->formatted_price)) $priceStr = $pinnedVar->formatted_price;
+                if (!empty($pinnedVar->formatted_mrp)) $mrpStr = $pinnedVar->formatted_mrp;
+                if (!empty($pinnedVar->discount_percentage)) $discountStr = $pinnedVar->discount_percentage . '% OFF';
+            }
+        }
+
+        if ($fontBold) {
+            // A. Tag: FEATURED IN REEL
+            $tagFontSize = max(10, (int) (13 * $scaleX));
+            $tagY = $cardY1 + (int) (44 * $scaleY);
+            imagettftext($im, $tagFontSize, 0, $leftX, $tagY, $amber, $fontBold, $tagText);
+
+            // B. Wrapped Product Title (1 or 2 lines)
+            $titleFontSize = max(14, (int) (20 * $scaleX));
+            $words = explode(' ', $titleText);
+            $lines = [];
+            $curLine = '';
+            foreach ($words as $word) {
+                $test = $curLine === '' ? $word : $curLine . ' ' . $word;
+                $box = imagettfbbox($titleFontSize, 0, $fontBold, $test);
+                $tw = abs($box[2] - $box[0]);
+                if ($tw > $availTextW && $curLine !== '') {
+                    $lines[] = $curLine;
+                    $curLine = $word;
+                } else {
+                    $curLine = $test;
+                }
+            }
+            if ($curLine !== '') {
+                $lines[] = $curLine;
+            }
+            $titleLines = array_slice($lines, 0, 2);
+
+            $lineHeight = (int) (32 * $scaleY);
+            $titleStartY = $tagY + (int) (34 * $scaleY);
+            foreach ($titleLines as $idx => $line) {
+                $y = $titleStartY + ($idx * $lineHeight);
+                // Subtle drop shadow for title legibility
+                imagettftext($im, $titleFontSize, 0, $leftX + 1, $y + 1, $shadow, $fontBold, $line);
+                imagettftext($im, $titleFontSize, 0, $leftX, $y, $white, $fontBold, $line);
+            }
+
+            // C. Pricing Row
+            $priceY = $cardY2 - (int) (30 * $scaleY);
+            $priceFontSize = max(16, (int) (24 * $scaleX));
+            $curPriceX = $leftX;
+
+            imagettftext($im, $priceFontSize, 0, $curPriceX + 1, $priceY + 1, $shadow, $fontBold, $priceStr);
+            imagettftext($im, $priceFontSize, 0, $curPriceX, $priceY, $amber, $fontBold, $priceStr);
+
+            $pBox = imagettfbbox($priceFontSize, 0, $fontBold, $priceStr);
+            $curPriceX += abs($pBox[2] - $pBox[0]) + (int) (18 * $scaleX);
+
+            // Slashed MRP
+            if ($mrpStr && $mrpStr !== $priceStr) {
+                $mrpFontSize = max(12, (int) (17 * $scaleX));
+                imagettftext($im, $mrpFontSize, 0, $curPriceX, $priceY, $mrpGray, $fontRegular, $mrpStr);
+
+                $mBox = imagettfbbox($mrpFontSize, 0, $fontRegular, $mrpStr);
+                $mW = abs($mBox[2] - $mBox[0]);
+                $strikeY = $priceY - (int) (6 * $scaleY);
+                imageline($im, $curPriceX - 2, $strikeY, $curPriceX + $mW + 2, $strikeY, $mrpGray);
+                imageline($im, $curPriceX - 2, $strikeY + 1, $curPriceX + $mW + 2, $strikeY + 1, $mrpGray);
+
+                $curPriceX += $mW + (int) (18 * $scaleX);
+            }
+
+            // Discount Badge
+            if ($discountStr) {
+                $discFontSize = max(11, (int) (16 * $scaleX));
+                imagettftext($im, $discFontSize, 0, $curPriceX, $priceY, $green, $fontBold, $discountStr);
+            }
+
+            // D. Buy Now Button (Right Column)
+            $this->drawRoundedRect($im, $btnX1 + 3, $btnY1 + 3, $btnX2 + 3, $btnY2 + 3, $btnRad, $shadow);
+            $this->drawRoundedRect($im, $btnX1, $btnY1, $btnX2, $btnY2, $btnRad, $orangeBtn);
+
+            $btnText = 'Buy Now →';
+            $btnFontSize = max(12, (int) (18 * $scaleX));
+            $bBox = imagettfbbox($btnFontSize, 0, $fontBold, $btnText);
+            $bW = abs($bBox[2] - $bBox[0]);
+            $bH = abs($bBox[1] - $bBox[7]);
+            $btnTextX = $btnX1 + (int) (($btnW - $bW) / 2);
+            $btnTextY = $btnY1 + (int) (($btnH + $bH) / 2);
+
+            imagettftext($im, $btnFontSize, 0, $btnTextX, $btnTextY, $darkSlate, $fontBold, $btnText);
+        } else {
+            // GD system font fallback
+            imagestring($im, 4, $leftX, $cardY1 + 16, $tagText, $amber);
+            imagestring($im, 5, $leftX, $cardY1 + 40, mb_strimwidth($titleText, 0, 40, '...'), $white);
+            imagestring($im, 5, $leftX, $cardY2 - 34, "{$priceStr} " . ($mrpStr ? "({$mrpStr})" : ''), $amber);
+            $this->drawRoundedRect($im, $btnX1, $btnY1, $btnX2, $btnY2, $btnRad, $orangeBtn);
+            imagestring($im, 4, $btnX1 + 40, $btnY1 + 25, 'Buy Now', $darkSlate);
+        }
+
+        imagepng($im, $destImagePath, 6);
+        imagedestroy($im);
+    }
+
+    /**
+     * Draw rounded rectangle filled in GD.
+     */
+    protected function drawRoundedRect($im, int $x1, int $y1, int $x2, int $y2, int $radius, int $color): void
+    {
+        $radius = max(1, min($radius, (int) (($x2 - $x1) / 2), (int) (($y2 - $y1) / 2)));
+        imagefilledellipse($im, $x1 + $radius, $y1 + $radius, $radius * 2, $radius * 2, $color);
+        imagefilledellipse($im, $x2 - $radius, $y1 + $radius, $radius * 2, $radius * 2, $color);
+        imagefilledellipse($im, $x1 + $radius, $y2 - $radius, $radius * 2, $radius * 2, $color);
+        imagefilledellipse($im, $x2 - $radius, $y2 - $radius, $radius * 2, $radius * 2, $color);
+        imagefilledrectangle($im, $x1 + $radius, $y1, $x2 - $radius, $y2, $color);
+        imagefilledrectangle($im, $x1, $y1 + $radius, $x2, $y2 - $radius, $color);
+    }
+
+    /**
+     * Draw rounded rectangle outline border in GD.
+     */
+    protected function drawRoundedRectBorder($im, int $x1, int $y1, int $x2, int $y2, int $radius, int $borderColor): void
+    {
+        $radius = max(1, min($radius, (int) (($x2 - $x1) / 2), (int) (($y2 - $y1) / 2)));
+        imagearc($im, $x1 + $radius, $y1 + $radius, $radius * 2, $radius * 2, 180, 270, $borderColor);
+        imagearc($im, $x2 - $radius, $y1 + $radius, $radius * 2, $radius * 2, 270, 360, $borderColor);
+        imagearc($im, $x2 - $radius, $y2 - $radius, $radius * 2, $radius * 2, 0, 90, $borderColor);
+        imagearc($im, $x1 + $radius, $y2 - $radius, $radius * 2, $radius * 2, 90, 180, $borderColor);
+        imageline($im, $x1 + $radius, $y1, $x2 - $radius, $y1, $borderColor);
+        imageline($im, $x2, $y1 + $radius, $x2, $y2 - $radius, $borderColor);
+        imageline($im, $x1 + $radius, $y2, $x2 - $radius, $y2, $borderColor);
+        imageline($im, $x1, $y1 + $radius, $x1, $y2 - $radius, $borderColor);
+    }
+
+    /**
+     * Render Watch in Motion Reel MP4 (vertical 9:16 with floating product details card and Buy Now CTA).
+     * Matches the frontend "Watch in Motion" lightbox popup exactly for Instagram & Facebook Reels.
+     */
+    public function renderWatchInMotionReel(
+        ProductVideo $video,
+        string $sourceVideoPath,
+        string $outputVideoPath,
+        int $targetW = 1080,
+        int $targetH = 1920
+    ): string {
+        $tempDir = dirname($outputVideoPath);
+        File::ensureDirectoryExists($tempDir);
+
+        $overlayPath = $tempDir . DIRECTORY_SEPARATOR . 'wim_overlay_' . Str::uuid() . '.png';
+        $this->createWatchInMotionOverlayGraphic($video, $overlayPath, $targetW, $targetH);
+
+        $scaleFilter = "[0:v]scale={$targetW}:{$targetH}:force_original_aspect_ratio=decrease,pad={$targetW}:{$targetH}:(ow-iw)/2:(oh-ih)/2,format=yuv420p[base]";
+        $overlayFilter = "[base][1:v]overlay=0:0:shortest=1[v_out]";
+
+        $cmd = [
+            $this->ffmpegPath, '-y',
+            '-i', $sourceVideoPath,
+            '-loop', '1', '-i', $overlayPath,
+            '-filter_complex', "{$scaleFilter};{$overlayFilter}",
+            '-map', '[v_out]',
+            '-map', '0:a?',
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '20',
+            '-pix_fmt', 'yuv420p',
+            '-movflags', '+faststart',
+            '-shortest',
+            $outputVideoPath,
+        ];
+
+        $this->runCommand($cmd, 120);
+
+        if (file_exists($overlayPath)) {
+            @unlink($overlayPath);
+        }
+
+        if (!file_exists($outputVideoPath) || filesize($outputVideoPath) === 0) {
+            throw new \RuntimeException('Failed to render Watch in Motion Reel video: output file is empty or missing.');
+        }
+
+        return $outputVideoPath;
     }
 
     /**
@@ -662,8 +968,7 @@ class FfmpegService
         $audioConfig = config("video_studio.audio_tracks.{$audioTrack}");
         $audioFile = ($audioConfig && file_exists($audioConfig['file'])) ? $audioConfig['file'] : null;
         $hasAudio = !empty($settings['enable_music']) && $audioFile !== null;
-
-        $hasCta = $settings['call_to_action'] ?? true;
+        $hasCta = ($settings['final_cta_screen'] ?? false) === true;
 
         // If CTA enabled, create closing card that fades in over the last 2.2 seconds
         $ctaFile = null;

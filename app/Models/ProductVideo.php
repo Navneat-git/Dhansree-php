@@ -40,6 +40,7 @@ class ProductVideo extends Model
         'video_url',
         'webm_url',
         'branded_video_url',
+        'reel_video_url',
         'thumbnail_url',
         'master_video_url',
         'status_badge',
@@ -250,6 +251,25 @@ class ProductVideo extends Model
         }
 
         return $this->video_url;
+    }
+
+    /**
+     * Resolves Watch in Motion Reel MP4 (vertical 9:16 with floating product details card and Buy Now CTA).
+     */
+    public function getReelVideoUrlAttribute(): ?string
+    {
+        $settings = $this->render_settings ?? [];
+        $reelPath = $settings['reel_video_path'] ?? null;
+
+        if ($reelPath) {
+            $disk = config('video_studio.disk', 'public');
+            if (Storage::disk($disk)->exists($reelPath)) {
+                return Storage::disk($disk)->url($reelPath);
+            }
+            return url('/storage/' . ltrim($reelPath, '/'));
+        }
+
+        return $this->branded_video_url ?: $this->video_url;
     }
 
     public function isCleanStorefront(): bool

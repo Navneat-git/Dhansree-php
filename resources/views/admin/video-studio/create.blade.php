@@ -626,7 +626,7 @@
                                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">Instagram / Ads</span>
                             </div>
                             <p class="text-[11px] text-slate-600 mt-1.5 leading-relaxed">
-                                Burns Dhansree royal logo, verified selling price, royal music, and closing "Shop Now" card for Instagram &amp; WhatsApp status.
+                                Formats vertical 9:16 video with floating Watch in Motion product details card (title, pricing, discount, and Buy Now CTA) matching storefront modal. Ready for Instagram &amp; Facebook Reels.
                             </p>
                         </label>
 
@@ -918,7 +918,7 @@ function videoStudioCreator() {
                 this.textOverlay = true;
                 this.showPrice = true;
                 this.enableMusic = true;
-                this.callToAction = true;
+                this.callToAction = false;
             }
         },
 

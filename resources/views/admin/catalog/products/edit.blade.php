@@ -1054,14 +1054,22 @@
                             </div>
 
                             <div class="space-y-2 pt-2 border-t border-slate-100">
+                                <!-- Download Reel (Watch in Motion MP4 for Instagram/Facebook) -->
+                                <a href="{{ route('admin.videos.download-reel', $vid) }}"
+                                   class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors flex items-center justify-center gap-1.5 shadow-2xs text-center"
+                                   title="Download vertical 9:16 video with floating Watch in Motion product details card for Instagram & Facebook Reels">
+                                    <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    <span>Download Reel (Watch in Motion)</span>
+                                </a>
+
                                 <!-- Pin to Color / Edit Button -->
                                 <button type="button" @click="editVideoModal = true"
-                                        class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
-                                    <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                        class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                                     <span>Pin to Color / Edit Video</span>
                                 </button>
 
-                                <div class="flex items-center justify-between gap-1 text-[11px]">
+                                <div class="flex items-center justify-between gap-1 text-[11px] pt-0.5">
                                     @if(!$vid->is_primary)
                                         <form method="POST" action="{{ route('admin.videos.set-primary', $vid) }}">
                                             @csrf
@@ -1071,13 +1079,19 @@
                                         </form>
                                     @else
                                         <span class="text-amber-800 font-bold flex items-center gap-0.5">
-                                            <span>★</span> Main video
+                                            <span>★</span> Main
                                         </span>
                                     @endif
 
                                     @if($vid->video_url)
-                                        <a href="{{ $vid->video_url }}" target="_blank" download class="font-semibold text-slate-600 hover:underline">
-                                            Download
+                                        <a href="{{ $vid->video_url }}" target="_blank" download class="font-semibold text-slate-500 hover:text-slate-800 hover:underline" title="Download raw uploaded MP4">
+                                            Raw MP4
+                                        </a>
+                                    @endif
+
+                                    @if($vid->webm_video_url)
+                                        <a href="{{ $vid->webm_video_url }}" target="_blank" download class="font-semibold text-emerald-700 hover:underline" title="Download optimized WebM">
+                                            WebM
                                         </a>
                                     @endif
 

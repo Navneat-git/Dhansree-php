@@ -133,6 +133,14 @@ return [
             'badge_color' => '#580000',
             'bg_tone' => '#FBFAF8',
         ],
+        'watch_in_motion' => [
+            'name' => 'Watch in Motion Reel (Storefront Style)',
+            'tag' => 'FEATURED IN REEL',
+            'description' => 'Exact floating Watch in Motion card with title, pricing, and Buy Now button as seen on the website. No top logo plate.',
+            'transition' => 'fade',
+            'badge_color' => '#F59E0B',
+            'bg_tone' => '#0F172A',
+        ],
     ],
 
     /*

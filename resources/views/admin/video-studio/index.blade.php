@@ -426,13 +426,11 @@
                                 WebM
                             </a>
                             @endif
-                            @if(!empty($video->render_settings['branded_video_path']))
-                            <a href="{{ route('admin.video-studio.download', [$video, 'format' => 'branded']) }}"
-                               class="px-1.5 py-0.5 text-[9px] font-bold text-amber-900 bg-amber-50 border border-amber-300 hover:bg-amber-100 rounded transition-colors"
-                               title="Download Social Media Reel (Branded MP4 with audio & logo)">
+                            <a href="{{ route('admin.video-studio.download', [$video, 'format' => 'reel']) }}"
+                               class="px-1.5 py-0.5 text-[9px] font-bold text-amber-950 bg-amber-400 hover:bg-amber-500 rounded transition-colors"
+                               title="Download Watch in Motion Reel (Storefront Style 9:16 MP4 for Instagram & Facebook Reels)">
                                 Reel
                             </a>
-                            @endif
                         </div>
                         @endif
 
