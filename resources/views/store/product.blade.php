@@ -438,6 +438,21 @@
 
             const vId = this.selectedVariantId || (this.variantsMatrix && this.variantsMatrix[0] ? this.variantsMatrix[0].id : null);
             await window.handleBuyNowFromReel(vId);
+        },
+        isBuyingNow: false,
+        async buyNowProduct(vId, qty) {
+            const targetId = vId || this.selectedVariantId || (this.variantsMatrix && this.variantsMatrix[0] ? this.variantsMatrix[0].id : null);
+            if (!targetId) {
+                alert('Please select an option before proceeding.');
+                return;
+            }
+            this.isBuyingNow = true;
+            try {
+                await this.addToCart(targetId, qty || this.quantity || 1, true);
+            } catch (e) {
+                console.error('Buy now error', e);
+                this.isBuyingNow = false;
+            }
         }
      }">
 
@@ -858,33 +873,30 @@
                 </div>
             @endif
 
-            <!-- Quantity Stepper & Add to Bag -->
-            <div class="space-y-4 pt-4 border-t border-light-gold/60">
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center border border-light-gold rounded-lg bg-white p-1">
-                        <button type="button"
-                                @click="quantity = Math.max(1, quantity - 1)"
-                                class="w-8 h-8 rounded text-sm font-bold text-rich-black/70 hover:bg-slate-100 flex items-center justify-center">−</button>
-                        <span class="w-10 text-center text-xs font-bold text-rich-black" x-text="quantity"></span>
-                        <button type="button"
-                                @click="quantity = quantity + 1"
-                                class="w-8 h-8 rounded text-sm font-bold text-rich-black/70 hover:bg-slate-100 flex items-center justify-center">+</button>
+            <!-- Quantity Stepper, Wishlist & Actions (Matching Snapshot 2) -->
+            <div class="space-y-3.5 pt-4 border-t border-light-gold/60">
+                <!-- Quantity & Wishlist Row -->
+                <div class="flex items-center justify-between gap-3 pb-0.5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xs font-semibold text-rich-black/70">Quantity:</span>
+                        <div class="inline-flex items-center border border-light-gold rounded-full bg-white px-2 py-0.5 shadow-xs">
+                            <button type="button"
+                                    @click="quantity = Math.max(1, quantity - 1)"
+                                    class="w-6 h-6 rounded-full text-base font-bold text-rich-black/70 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    aria-label="Decrease quantity">−</button>
+                            <span class="w-7 text-center text-xs font-bold text-rich-black" x-text="quantity"></span>
+                            <button type="button"
+                                    @click="quantity = quantity + 1"
+                                    class="w-6 h-6 rounded-full text-base font-bold text-rich-black/70 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                                    aria-label="Increase quantity">+</button>
+                        </div>
                     </div>
 
                     <button type="button"
-                            @click="addToCart(selectedVariantId, quantity)"
-                            :disabled="!inStock"
-                            :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-maroon-800 hover:bg-maroon-900'"
-                            class="flex-1 py-3.5 px-6 rounded-lg text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2">
-                        <span>🛍️</span>
-                        <span x-text="inStock ? 'Add to Bag' : 'Out of Stock'"></span>
-                    </button>
-
-                    <button type="button"
                             @click="toggleWishlist({{ $product->id }})"
-                            class="py-3.5 px-4 rounded-lg border border-light-gold bg-white hover:border-rose-400 text-rich-black transition-all shadow-xs flex items-center justify-center gap-2 shrink-0"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-light-gold bg-white hover:border-rose-400 text-xs font-semibold text-rich-black/80 shadow-xs transition-all cursor-pointer"
                             :title="isInWishlist({{ $product->id }}) ? 'Remove from Wishlist' : 'Add to Wishlist'">
-                        <svg class="w-5 h-5 transition-colors"
+                        <svg class="w-4 h-4 transition-colors"
                              :class="isInWishlist({{ $product->id }}) ? 'fill-rose-500 text-rose-500' : 'text-slate-400 hover:text-rose-500'"
                              viewBox="0 0 24 24"
                              fill="none"
@@ -892,21 +904,81 @@
                              stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
                         </svg>
-                        <span class="text-xs font-bold uppercase tracking-wider hidden sm:inline"
-                              x-text="isInWishlist({{ $product->id }}) ? 'Wishlisted' : 'Wishlist'">
-                        </span>
+                        <span x-text="isInWishlist({{ $product->id }}) ? 'Wishlisted' : 'Wishlist'"></span>
                     </button>
                 </div>
 
-                <!-- Buy Now Express Checkout CTA -->
-                <button type="button"
-                        @click="buyNow(selectedVariantId, quantity)"
-                        :disabled="!inStock"
-                        :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500' : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-slate-950 font-extrabold shadow-md hover:shadow-lg'"
-                        class="w-full py-3.5 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 border border-amber-500/30">
-                    <svg class="w-4 h-4 text-slate-950" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                    <span x-text="inStock ? 'Buy Now — Express Checkout' : 'Out of Stock'"></span>
-                </button>
+                <!-- Primary Action CTAs (Clean Full-Width Pills Stacked - Reference Snapshot 2) -->
+                <div class="space-y-3 pt-1">
+                    <!-- 1. Add to Cart (Pill Outline) -->
+                    <button type="button"
+                            @click="addToCart(selectedVariantId, quantity)"
+                            :disabled="!inStock"
+                            :class="!inStock ? 'opacity-50 cursor-not-allowed border-slate-300 text-slate-400 bg-slate-50' : 'border-2 border-[#163a35] hover:bg-[#163a35]/5 text-[#163a35] active:scale-[0.99] bg-white'"
+                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-medium tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+                        <span x-text="inStock ? 'Add to cart' : 'Sold Out'">Add to Bag</span>
+                    </button>
+
+                    <!-- 2. Buy It Now (Pill Solid) -->
+                    <button type="button"
+                            @click="buyNowProduct(selectedVariantId, quantity)"
+                            :disabled="!inStock || isBuyingNow"
+                            :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500' : 'bg-[#163a35] hover:bg-[#102d29] active:bg-[#0c221f] text-white active:scale-[0.99] shadow-md hover:shadow-lg'"
+                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-medium tracking-wide transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer">
+                        <span x-text="isBuyingNow ? 'Proceeding to checkout...' : (inStock ? 'Buy it now' : 'Out of Stock')">Buy it now</span>
+                    </button>
+
+                    <!-- Payment Trust Badges (Matching Snapshot 2) -->
+                    <div class="pt-2 flex items-center justify-center gap-2 sm:gap-2.5 flex-wrap opacity-90">
+                        <!-- Mastercard -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="Mastercard">
+                            <svg class="h-3.5 w-auto" viewBox="0 0 36 24" fill="none">
+                                <rect width="36" height="24" rx="2" fill="white"/>
+                                <circle cx="14" cy="12" r="7" fill="#EB001B"/>
+                                <circle cx="22" cy="12" r="7" fill="#F79E1B"/>
+                                <path d="M18 6.8a6.96 6.96 0 0 1 2.6 5.2 6.96 6.96 0 0 1-2.6 5.2 6.96 6.96 0 0 1-2.6-5.2c0-2.1 1-4 2.6-5.2z" fill="#FF5F00"/>
+                            </svg>
+                        </div>
+
+                        <!-- VISA -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="Visa">
+                            <svg class="h-3 w-auto" viewBox="0 0 36 12" fill="none">
+                                <path d="M14.5 1.2L12.3 11h-2.3L8.6 3.4C8.4 2.8 8.2 2.6 7.7 2.3c-.8-.5-2.1-.9-3.2-1.1l.1-.4h5.6c.7 0 1.4.5 1.5 1.3l1.4 7.2L14.5 1.2zm8.4 6.7c0-2.6-3.6-2.8-3.6-4 0-.4.4-.8 1.3-.9.4 0 1.7-.1 3.1.6l.6-2.5c-.7-.3-1.7-.5-2.9-.5-3.1 0-5.2 1.6-5.2 3.9 0 1.7 1.6 2.7 2.7 3.3 1.2.6 1.6 1 1.6 1.5 0 .8-1 1.2-1.9 1.2-1.6 0-2.5-.2-3.8-.8l-.5 2.6c.7.3 2 .6 3.4.6 3.3 0 5.3-1.6 5.3-4.1v-.4zm6.6 3.1h2.2L29.9 1.2h-2c-.5 0-.9.3-1.1.7L22.9 11h2.4l.5-1.3h3l.7 1.3zm-2.4-3.3l1.3-3.6.7 3.6h-2zM6.9 1.2L2.7 11H.4L4.6 1.2h2.3z" fill="#1A1F71"/>
+                            </svg>
+                        </div>
+
+                        <!-- Apple Pay -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="Apple Pay">
+                            <svg class="h-3 w-auto" viewBox="0 0 36 15" fill="none">
+                                <path d="M4.6 3.7c.4-.5.7-1.3.6-2-.7 0-1.5.5-2 .1-.4.5-.7 1.2-.6 2 .8.1 1.6-.4 2-.9zm.2 1.3c-1.1 0-2 .6-2.5.6s-1.3-.6-2.2-.6C0 5 0 6 .4 7.2c.7 1.8 1.9 4.3 3.3 4.3.7 0 1-.5 1.8-.5s1.1.5 1.8.5c1.4 0 2.4-2.1 3-3.7-.8-.4-1.4-1.3-1.4-2.4 0-1.8 1.4-2.7 1.5-2.8-.8-1.2-2.1-1.3-2.6-1.3-.9 0-1.6.5-2 .5v.1zm6.9-3.6h1.7v10h-1.7V1.4zm5.1 3.5h1.6v1.3h0c.4-.9 1.4-1.5 2.5-1.5 1.9 0 3.3 1.5 3.3 3.6s-1.4 3.7-3.3 3.7c-1 0-2.1-.6-2.5-1.5h0v3.6h-1.6V4.9zm4 5.7c1.1 0 1.9-.9 1.9-2.2s-.8-2.2-1.9-2.2c-1.1 0-2 .9-2 2.2s.9 2.2 2 2.2zm5.7-2.3c0-1.9 1.5-3.4 3.4-3.4 1 0 1.8.4 2.3 1.1l-1.1.8c-.3-.5-.7-.7-1.2-.7-1 0-1.8.8-1.8 2.2s.8 2.2 1.8 2.2c.6 0 1-.3 1.3-.7l1.1.8c-.6.8-1.4 1.2-2.4 1.2-1.9 0-3.4-1.6-3.4-3.5zm8.9-3.4h1.7l2.4 6.3h0l2.3-6.3h1.7l-3.3 7.9c-.6 1.4-1.2 1.9-2.4 1.9h-.8v-1.3h.6c.6 0 .9-.2 1.2-.8l.3-.8-3.7-6.9z" fill="#000000"/>
+                            </svg>
+                        </div>
+
+                        <!-- American Express -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-[#006FCF] flex items-center justify-center shadow-2xs" title="American Express">
+                            <span class="text-[7.5px] font-black text-white tracking-tighter uppercase leading-none">AMEX</span>
+                        </div>
+
+                        <!-- PayPal -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="PayPal">
+                            <svg class="h-3 w-auto" viewBox="0 0 36 12" fill="none">
+                                <path d="M4.7 1.3h4.3c2.2 0 3.6 1.1 3.2 3.2-.4 2.3-2.1 3.6-4.3 3.6H6.1l-.8 4.2H2.7L4.7 1.3z" fill="#003087"/>
+                                <path d="M7.7 4.5h3.2c1.6 0 2.7.8 2.4 2.4-.3 1.7-1.6 2.7-3.2 2.7H8.7l-.6 3H5.8L7.7 4.5z" fill="#0079C1"/>
+                                <text x="14" y="9.5" fill="#003087" font-size="8" font-family="sans-serif" font-weight="bold" font-style="italic">PayPal</text>
+                            </svg>
+                        </div>
+
+                        <!-- UPI -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="UPI (Google Pay, PhonePe, Paytm)">
+                            <span class="text-[8px] font-extrabold text-[#097939] tracking-tight leading-none">UPI</span>
+                        </div>
+
+                        <!-- RuPay -->
+                        <div class="h-6 w-10 rounded border border-slate-200 bg-white flex items-center justify-center shadow-2xs" title="RuPay">
+                            <span class="text-[8px] font-black tracking-tight leading-none"><span class="text-[#097939]">Ru</span><span class="text-[#EF7E22]">Pay</span></span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Express Delivery info banner -->
                 <div class="p-3.5 rounded-xl bg-warm-beige/40 border border-light-gold flex items-center gap-3 text-xs text-rich-black/80">
@@ -1318,9 +1390,12 @@
                                 </a>
 
                                 @if($rel->discount_percentage)
-                                    <span class="absolute top-1.5 left-1.5 px-1 sm:px-1.5 py-0.5 rounded-xs bg-maroon-800 text-white text-[8px] sm:text-[9px] font-bold tracking-tight uppercase pointer-events-none z-10 shadow-xs leading-none">
-                                        {{ $rel->discount_percentage }}% OFF
-                                    </span>
+                                    <div class="absolute bottom-2 left-2 z-10 pointer-events-none max-w-[calc(100%-48px)]">
+                                        <span class="px-1.5 py-0.5 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0 inline-block"
+                                              style="font-size: 8.5px; line-height: 1.2;">
+                                            {{ $rel->discount_percentage }}% OFF
+                                        </span>
+                                    </div>
                                 @endif
 
                                 @if($relVideo)

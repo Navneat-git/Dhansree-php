@@ -124,9 +124,12 @@
                             </a>
 
                             @if($product->discount_percentage)
-                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-gold-500 text-rich-black text-[0.625rem] font-bold tracking-wide uppercase">
-                                    {{ $product->discount_percentage }}% OFF
-                                </span>
+                                <div class="absolute bottom-2 left-2 z-10 pointer-events-none">
+                                    <span class="px-1.5 py-0.5 rounded-full bg-gold-500 text-rich-black font-bold tracking-tight uppercase shadow-xs inline-block"
+                                          style="font-size: 8.5px; line-height: 1.2;">
+                                        {{ $product->discount_percentage }}% OFF
+                                    </span>
+                                </div>
                             @endif
                         </div>
 
@@ -150,6 +153,11 @@
                                     <del class="text-xs text-white/40">
                                         {{ $product->formatted_mrp }}
                                     </del>
+                                @endif
+                                @if($product->discount_percentage)
+                                    <span class="font-bold text-amber-400" style="font-size: 11px;">
+                                        {{ $product->discount_percentage }}% OFF
+                                    </span>
                                 @endif
                             </div>
                         </div>

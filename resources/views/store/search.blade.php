@@ -94,17 +94,24 @@
                                 @endif
                             </a>
 
-                            @if($product->discount_percentage)
-                                <span class="absolute top-1.5 left-1.5 px-1 sm:px-1.5 py-0.5 rounded-xs bg-maroon-800 text-white text-[8px] sm:text-[9px] font-bold tracking-tight uppercase pointer-events-none z-10 shadow-xs leading-none">
-                                    {{ $product->discount_percentage }}% OFF
-                                </span>
-                            @endif
+                            <!-- Bottom Left Badges: Color & % OFF (Kept at bottom to avoid overlapping model face) -->
+                            @if(!empty($product->color_name) || $product->discount_percentage)
+                                <div class="absolute bottom-2 left-2 flex items-center gap-1 z-10 pointer-events-none max-w-[calc(100%-48px)]">
+                                    @if(!empty($product->color_name))
+                                        <span class="px-1.5 py-0.5 rounded-full bg-white/95 backdrop-blur-xs font-bold text-rich-black shadow-xs flex items-center gap-1 border border-light-gold/60 shrink-0"
+                                              style="font-size: 9px; line-height: 1.2;">
+                                            <span class="w-1.5 h-1.5 rounded-full border border-black/10 inline-block shrink-0" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
+                                            <span class="truncate max-w-[50px]">{{ $product->color_name }}</span>
+                                        </span>
+                                    @endif
 
-                            @if(!empty($product->color_name))
-                                <span class="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-[0.625rem] font-bold text-rich-black shadow-xs flex items-center gap-1.5 border border-light-gold/60 pointer-events-none z-10">
-                                    <span class="w-2 h-2 rounded-full border border-black/10 inline-block" style="background-color: {{ $product->color_hex ?? '#8b4513' }};"></span>
-                                    <span>{{ $product->color_name }}</span>
-                                </span>
+                                    @if($product->discount_percentage)
+                                        <span class="px-1.5 py-0.5 rounded-full bg-maroon-800 text-white font-bold tracking-tight uppercase shadow-xs shrink-0"
+                                              style="font-size: 8.5px; line-height: 1.2;">
+                                            {{ $product->discount_percentage }}% OFF
+                                        </span>
+                                    @endif
+                                </div>
                             @endif
 
                             @if($prodVideo)
@@ -176,6 +183,11 @@
                                     <del class="text-xs text-rich-black/40">
                                         {{ $product->formatted_mrp }}
                                     </del>
+                                @endif
+                                @if($product->discount_percentage)
+                                    <span class="font-bold text-emerald-700" style="font-size: 11px;">
+                                        {{ $product->discount_percentage }}% OFF
+                                    </span>
                                 @endif
                             </div>
                         </div>
