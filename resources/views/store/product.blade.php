@@ -491,37 +491,42 @@
                                 <source src="{{ $approvedVideo->video_url }}" type="video/mp4">
                             </video>
 
-                            <!-- Top-Right: AI Video Disclaimer (ⓘ) Button -->
+                            <!-- AI Video Disclaimer Component (Top-Left: ⓘ Button + Full Width Safe Tooltip Banner) -->
                             <div x-show="Boolean(currentVideo ? currentVideo.is_ai_generated : {{ $approvedVideo?->isAiGenerated() ? 'true' : 'false' }})"
-                                 class="absolute top-2.5 right-2.5 z-20 pointer-events-auto">
+                                 class="absolute z-30 pointer-events-none flex flex-col items-start"
+                                 style="top: 10px; left: 10px; right: 10px;"
+                                 @mouseleave="showDisclaimer = false">
+                                
+                                <!-- Info (ⓘ) Button -->
                                 <button type="button"
                                         @mouseenter="showDisclaimer = true"
                                         @click.stop="showDisclaimer = !showDisclaimer"
                                         title="AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details."
                                         aria-label="AI Video Disclaimer"
-                                        class="size-7 rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md focus:outline-none">
+                                        class="pointer-events-auto rounded-full bg-slate-900/90 hover:bg-slate-900 text-amber-300 hover:text-amber-200 border border-amber-400/50 flex items-center justify-center shadow-md transition-all cursor-pointer backdrop-blur-md focus:outline-none"
+                                        style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                     <span class="font-bold text-sm leading-none select-none">ⓘ</span>
                                 </button>
-                            </div>
 
-                            <!-- AI Video Disclaimer Tooltip Banner (Safely centered within card, never clipped by overflow-hidden) -->
-                            <div x-show="showDisclaimer"
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 translate-y-1"
-                                 x-transition:enter-end="opacity-100 translate-y-0"
-                                 x-transition:leave="transition ease-in duration-100"
-                                 x-transition:leave-start="opacity-100 translate-y-0"
-                                 x-transition:leave-end="opacity-0 translate-y-1"
-                                 @mouseenter="showDisclaimer = true"
-                                 @click.outside="showDisclaimer = false"
-                                 @click.stop
-                                 class="absolute top-11 z-30 pointer-events-auto p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/50 text-[11px] leading-relaxed shadow-2xl"
-                                 style="left: 10px; right: 10px; width: calc(100% - 20px);">
-                                <div class="flex items-start gap-2">
-                                    <span class="size-4 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5">i</span>
-                                    <p class="text-slate-100 font-normal">
-                                        AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
-                                    </p>
+                                <!-- AI Video Disclaimer Tooltip Banner (Directly below button, spanning card width safely with padding) -->
+                                <div :class="showDisclaimer ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'"
+                                     @click.outside="showDisclaimer = false"
+                                     @click.stop
+                                     class="transition-all duration-150 ease-out w-full pointer-events-auto"
+                                     style="margin-top: 6px;">
+                                    <div class="p-3 rounded-xl bg-slate-950/95 text-slate-100 backdrop-blur-md border border-amber-500/50 text-[11px] leading-relaxed shadow-2xl">
+                                        <div class="flex items-start gap-2">
+                                            <span class="rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center text-[10px] font-serif italic shrink-0 mt-0.5"
+                                                  style="width: 16px; height: 16px; min-width: 16px;">i</span>
+                                            <p class="text-slate-100 font-normal flex-1">
+                                                AI-generated video for illustration purposes only. Actual product details may vary; please refer to the actual product images for accurate details.
+                                            </p>
+                                            <button type="button"
+                                                    @click.stop="showDisclaimer = false"
+                                                    class="text-slate-400 hover:text-white text-xs px-1 leading-none shrink-0 cursor-pointer"
+                                                    aria-label="Close disclaimer">✕</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -537,7 +542,8 @@
                             </div>
 
                             <!-- Bottom Controls: Unmute (Left) + Model Motion (Right) -->
-                            <div class="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between z-10 pointer-events-none">
+                            <div class="absolute flex items-center justify-between z-10 pointer-events-none"
+                                 style="bottom: 10px; left: 10px; right: 10px;">
                                 <!-- Bottom-Left: Unmute Button -->
                                 <button type="button"
                                         @click.stop="$refs.galleryVideo.muted = !$refs.galleryVideo.muted; isMuted = $refs.galleryVideo.muted;"
@@ -1064,8 +1070,8 @@
             </div>
 
             <!-- Bottom Floating Tagged Product Details (Direct child of modal, always visible above native controls) -->
-            <div class="absolute bottom-3 sm:bottom-4 inset-x-3 sm:inset-x-4 p-3.5 sm:p-4 rounded-2xl shadow-2xl z-30 pointer-events-auto"
-                 style="background-color: rgba(10, 10, 14, 0.96); backdrop-filter: blur(16px); border: 1px solid rgba(251, 191, 36, 0.35);">
+            <div class="absolute p-3.5 sm:p-4 rounded-2xl shadow-2xl z-30 pointer-events-auto"
+                 style="bottom: 16px; left: 12px; right: 12px; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.2);">
                 <div class="flex items-center justify-between gap-3">
                     <div class="min-w-0 flex-1">
                         <span class="inline-block text-[10px] uppercase tracking-wider font-bold mb-1"
