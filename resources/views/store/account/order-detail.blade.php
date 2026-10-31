@@ -98,8 +98,12 @@
                     @foreach($order->items as $item)
                         <div class="py-4 first:pt-0 last:pb-0 flex items-start gap-4">
                             <div class="w-16 h-20 rounded-xl overflow-hidden border border-light-gold bg-cream shrink-0">
-                                @if($item->product && $item->product->images->isNotEmpty())
-                                    <img src="/storage/{{ ltrim($item->product->images->first()->storage_key, '/') }}" alt="{{ $item->product_name }}" class="w-full h-full object-cover">
+                                @php
+                                    $itemImageUrl = $item->product?->primary_image_url
+                                        ?? ($item->product && $item->product->images->isNotEmpty() ? $item->product->images->first()->url : null);
+                                @endphp
+                                @if($itemImageUrl)
+                                    <img src="{{ $itemImageUrl }}" alt="{{ $item->product_name }}" class="w-full h-full object-cover">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center text-xs text-rich-black/30 font-serif">DS</div>
                                 @endif

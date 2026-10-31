@@ -13,7 +13,7 @@ use App\Models\Customer;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\ProductImage;
+use App\Models\Product;
 use App\Models\Review;
 use App\Support\Audit\AuditLogger;
 use App\Support\Commerce\IndianStates;
@@ -158,6 +158,7 @@ class CustomerAccountService
         // Fetch primary images for all items
         $productIds = collect($paginator->items())
             ->flatMap(fn (Order $order) => $order->items->pluck('product_id'))
+            ->filter()
             ->unique()
             ->values()
             ->all();
@@ -494,13 +495,13 @@ class CustomerAccountService
             return [];
         }
 
-        $images = ProductImage::whereIn('product_id', $productIds)
-            ->where('position', 0)
+        $products = Product::whereIn('id', $productIds)
+            ->with(['images' => fn ($q) => $q->orderBy('position', 'asc')])
             ->get();
 
         $map = [];
-        foreach ($images as $img) {
-            $map[$img->product_id] = '/storage/' . ltrim($img->storage_key, '/');
+        foreach ($products as $p) {
+            $map[$p->id] = $p->primary_image_url ?? $p->images->first()?->url;
         }
 
         return $map;
