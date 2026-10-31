@@ -909,13 +909,32 @@
                 </div>
 
                 <!-- Primary Action CTAs (Clean Full-Width Pills Stacked - Reference Snapshot 2) -->
+                <style>
+                    .dhansree-pdp-btn-outline {
+                        border: 2px solid #163a35 !important;
+                        color: #163a35 !important;
+                        background-color: #ffffff !important;
+                    }
+                    .dhansree-pdp-btn-outline:hover:not(:disabled) {
+                        background-color: rgba(22, 58, 53, 0.05) !important;
+                    }
+                    .dhansree-pdp-btn-solid {
+                        background-color: #163a35 !important;
+                        color: #ffffff !important;
+                        border: 2px solid #163a35 !important;
+                    }
+                    .dhansree-pdp-btn-solid:hover:not(:disabled) {
+                        background-color: #0f2925 !important;
+                        border-color: #0f2925 !important;
+                    }
+                </style>
                 <div class="space-y-3 pt-1">
                     <!-- 1. Add to Cart / Add to Bag (Pill Outline) -->
                     <button type="button"
                             @click="addToCart(selectedVariantId, quantity)"
                             :disabled="!inStock"
-                            :style="!inStock ? 'border: 2px solid #cbd5e1 !important; color: #94a3b8 !important; background-color: #f8fafc !important; cursor: not-allowed;' : 'border: 2px solid #163a35 !important; color: #163a35 !important; background-color: #ffffff !important;'"
-                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+                            :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-300' : 'dhansree-pdp-btn-outline cursor-pointer active:scale-[0.99]'"
+                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-2 shadow-xs">
                         <span x-text="inStock ? 'Add to cart' : 'Sold Out'">Add to Bag</span>
                     </button>
 
@@ -923,8 +942,8 @@
                     <button type="button"
                             @click="buyNowProduct(selectedVariantId, quantity)"
                             :disabled="!inStock || isBuyingNow"
-                            :style="!inStock ? 'background-color: #cbd5e1 !important; color: #64748b !important; cursor: not-allowed;' : 'background-color: #163a35 !important; color: #ffffff !important;'"
-                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg">
+                            :class="!inStock ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500' : 'dhansree-pdp-btn-solid cursor-pointer shadow-md hover:shadow-lg active:scale-[0.99]'"
+                            class="w-full py-3.5 sm:py-4 px-6 rounded-full text-[15px] sm:text-base font-semibold tracking-wide transition-all duration-200 flex items-center justify-center gap-2">
                         <span x-text="isBuyingNow ? 'Proceeding to checkout...' : (inStock ? 'Buy it now' : 'Out of Stock')">Buy it now</span>
                     </button>
 
