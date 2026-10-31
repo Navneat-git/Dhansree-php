@@ -190,17 +190,8 @@
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2 font-bold text-xs text-rich-black">
                                     <span>⚡ Online Payment (UPI, Cards, NetBanking)</span>
-                                    @if(!$razorpayEnabled)
-                                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[0.625rem] font-semibold">Test Mode</span>
-                                    @endif
                                 </div>
-                                <p class="text-[0.6875rem] text-rich-black/60">
-                                    @if($razorpayEnabled)
-                                        Instant verification via Razorpay • Google Pay, PhonePe, Paytm, Cards &amp; NetBanking.
-                                    @else
-                                        Test simulation mode active • Simulates instant order placement without gateway charge.
-                                    @endif
-                                </p>
+                                <p class="text-[0.6875rem] text-rich-black/60">Instant verification via Razorpay • Google Pay, PhonePe, Paytm, Cards &amp; NetBanking.</p>
                                 <div class="pt-2 flex flex-wrap items-center gap-1.5">
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded border border-light-gold/70 bg-white shadow-2xs">
                                         <img src="{{ asset('payments/upi.png') }}" alt="UPI" class="h-3 w-auto object-contain">
@@ -322,7 +313,7 @@
                         :disabled="submitting || calculating"
                         class="w-full py-4 rounded-xl bg-maroon-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-md disabled:opacity-60 flex items-center justify-center gap-2">
                     <span x-show="!submitting">
-                        <span x-text="form.payment_method === 'COD' ? 'Confirm Order (Cash on Delivery) ➔' : ({{ $razorpayEnabled ? 'true' : 'false' }} ? 'Proceed to Pay with Razorpay ➔' : 'Place Test Order (Simulated Payment) ➔')"></span>
+                        <span x-text="form.payment_method === 'COD' ? 'Confirm Order (Cash on Delivery) ➔' : 'Proceed to Pay with Razorpay ➔'"></span>
                     </span>
                     <span x-show="submitting">Processing your order...</span>
                 </button>
@@ -477,8 +468,8 @@
                         return;
                     }
 
-                    // Cash on Delivery or Test Mode -> Redirect directly to confirmation
-                    if (!data.is_online || data.is_mock) {
+                    // Cash on Delivery -> Redirect directly to confirmation
+                    if (!data.is_online) {
                         window.location.href = data.redirect_url;
                         return;
                     }
