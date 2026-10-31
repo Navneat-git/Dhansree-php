@@ -1041,16 +1041,16 @@
                             <img src="{{ $storeSettings->payment_strip_url }}" alt="Secure Payments" class="h-full w-auto object-contain">
                         </div>
                     @else
-                        <ul aria-label="Ways to pay" class="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <li class="flex items-center"><img src="{{ asset('payments/visa.png') }}" alt="Visa" width="46" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" width="36" height="22" loading="lazy" class="h-4.5 sm:h-5 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/rupay.png') }}" alt="RuPay" width="56" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/upi.png') }}" alt="UPI" width="57" height="20" loading="lazy" class="h-4 sm:h-4.5 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" width="41" height="22" loading="lazy" class="h-4.5 sm:h-5 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" width="59" height="16" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
-                            <li class="flex items-center"><img src="{{ asset('payments/paytm.png') }}" alt="Paytm" width="48" height="15" loading="lazy" class="h-3.5 sm:h-4 w-auto object-contain"></li>
-                            <li class="flex items-center">
-                                <span class="rounded-full border border-light-gold bg-white px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-rich-black uppercase">
+                        <ul aria-label="Ways to pay" class="flex flex-wrap items-center gap-x-4 gap-y-2" style="gap: 8px 14px;">
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/visa.png') }}" alt="Visa" style="height: 15px; width: auto; max-height: 15px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" style="height: 18px; width: auto; max-height: 18px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/rupay.png') }}" alt="RuPay" style="height: 15px; width: auto; max-height: 15px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/upi.png') }}" alt="UPI" style="height: 16px; width: auto; max-height: 16px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" style="height: 18px; width: auto; max-height: 18px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" style="height: 16px; width: auto; max-height: 16px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0"><img src="{{ asset('payments/paytm.png') }}" alt="Paytm" style="height: 15px; width: auto; max-height: 15px; display: block;" loading="lazy"></li>
+                            <li class="flex items-center shrink-0">
+                                <span class="rounded-full border border-light-gold bg-white px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-rich-black uppercase whitespace-nowrap">
                                     Cash on delivery
                                 </span>
                             </li>

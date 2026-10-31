@@ -908,24 +908,24 @@
                     </button>
                 </div>
 
-                <!-- Primary Action CTAs (Clean Full-Width Pills Stacked - Reference Snapshot 2) -->
+                <!-- Primary Action CTAs (Clean Full-Width Pills Stacked - Brand Guidelines) -->
                 <style>
                     .dhansree-pdp-btn-outline {
-                        border: 2px solid #163a35 !important;
-                        color: #163a35 !important;
+                        border: 2px solid #7b1c1c !important;
+                        color: #7b1c1c !important;
                         background-color: #ffffff !important;
                     }
                     .dhansree-pdp-btn-outline:hover:not(:disabled) {
-                        background-color: rgba(22, 58, 53, 0.05) !important;
+                        background-color: #fdf2f2 !important;
                     }
                     .dhansree-pdp-btn-solid {
-                        background-color: #163a35 !important;
+                        background-color: #7b1c1c !important;
                         color: #ffffff !important;
-                        border: 2px solid #163a35 !important;
+                        border: 2px solid #7b1c1c !important;
                     }
                     .dhansree-pdp-btn-solid:hover:not(:disabled) {
-                        background-color: #0f2925 !important;
-                        border-color: #0f2925 !important;
+                        background-color: #581212 !important;
+                        border-color: #581212 !important;
                     }
                 </style>
                 <div class="space-y-3 pt-1">
@@ -950,16 +950,16 @@
                     <!-- Payment Trust Badges (Matching Footer) -->
                     <div class="pt-3 pb-1 border-t border-light-gold/40 mt-3">
                         <div class="flex flex-col items-center gap-2 text-center">
-                            <ul aria-label="Ways to pay" class="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2">
-                                <li class="flex items-center"><img src="{{ asset('payments/visa.png') }}" alt="Visa" width="46" height="15" loading="lazy" class="h-4 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" width="36" height="22" loading="lazy" class="h-5 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/rupay.png') }}" alt="RuPay" width="56" height="15" loading="lazy" class="h-4 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/upi.png') }}" alt="UPI" width="57" height="20" loading="lazy" class="h-4.5 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" width="41" height="22" loading="lazy" class="h-5 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" width="59" height="16" loading="lazy" class="h-4 w-auto object-contain"></li>
-                                <li class="flex items-center"><img src="{{ asset('payments/paytm.png') }}" alt="Paytm" width="48" height="15" loading="lazy" class="h-4 w-auto object-contain"></li>
-                                <li class="flex items-center">
-                                    <span class="rounded-full border border-light-gold bg-white px-2.5 py-0.5 text-[0.625rem] font-medium tracking-wide text-rich-black uppercase shadow-xs">
+                            <ul aria-label="Ways to pay" class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5" style="gap: 10px 14px;">
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/visa.png') }}" alt="Visa" style="height: 16px; width: auto; max-height: 16px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/mastercard.png') }}" alt="Mastercard" style="height: 18px; width: auto; max-height: 18px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/rupay.png') }}" alt="RuPay" style="height: 15px; width: auto; max-height: 15px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/upi.png') }}" alt="UPI" style="height: 16px; width: auto; max-height: 16px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/google-pay.png') }}" alt="Google Pay" style="height: 18px; width: auto; max-height: 18px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/phonepe.png') }}" alt="PhonePe" style="height: 16px; width: auto; max-height: 16px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;"><img src="{{ asset('payments/paytm.png') }}" alt="Paytm" style="height: 15px; width: auto; max-height: 15px; display: block;" loading="lazy"></li>
+                                <li class="inline-flex items-center shrink-0" style="flex-shrink: 0;">
+                                    <span class="rounded-full border border-light-gold bg-white px-2.5 py-0.5 text-[0.625rem] font-semibold tracking-wide text-rich-black uppercase shadow-xs whitespace-nowrap" style="font-size: 10px; line-height: 1.4; display: inline-block;">
                                         Cash on delivery
                                     </span>
                                 </li>
