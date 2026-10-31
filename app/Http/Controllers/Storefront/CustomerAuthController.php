@@ -100,9 +100,15 @@ class CustomerAuthController extends Controller
 
         $nextUrl = $this->safeNext($request->input('next'));
 
-        // Merge guest wishlist into customer account
+        // Merge guest wishlist and guest orders into customer account
         try {
             app(\App\Services\Storefront\WishlistService::class)->mergeSessionToCustomer($result['customer']->id);
+        } catch (\Throwable) {}
+
+        try {
+            \App\Models\Order::whereNull('customer_id')
+                ->where('customer_email', strtolower(trim((string) $result['customer']->email)))
+                ->update(['customer_id' => $result['customer']->id]);
         } catch (\Throwable) {}
 
         if ($request->expectsJson() || $request->is('api/*')) {

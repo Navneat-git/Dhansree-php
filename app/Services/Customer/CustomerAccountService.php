@@ -26,12 +26,32 @@ class CustomerAccountService
     public const MAX_ADDRESS_LIMIT = 10;
 
     /**
+     * Link any guest orders placed with this customer's email to their customer account.
+     */
+    public function claimOrdersForCustomer(Customer|int $customer): void
+    {
+        $cust = is_int($customer) ? Customer::find($customer) : $customer;
+        if (!$cust) {
+            return;
+        }
+
+        $email = strtolower(trim((string) $cust->email));
+        if ($email !== '') {
+            Order::whereNull('customer_id')
+                ->where('customer_email', $email)
+                ->update(['customer_id' => $cust->id]);
+        }
+    }
+
+    /**
      * Customer dashboard overview stats and recent activity.
      *
      * @return array{customer: array, orderCount: int, addressCount: int, reviewCount: int, awaitingReview: int, recentOrders: array}
      */
     public function dashboard(Customer $customer): array
     {
+        $this->claimOrdersForCustomer($customer);
+
         $orderCount = Order::where('customer_id', $customer->id)->count();
         $addressCount = CustomerAddress::where('customer_id', $customer->id)->count();
         $reviewCount = Review::where('customer_id', $customer->id)->count();
@@ -117,7 +137,17 @@ class CustomerAccountService
      */
     public function listOrders(int $customerId, int $page = 1, int $perPage = 10): array
     {
-        $query = Order::where('customer_id', $customerId)
+        $this->claimOrdersForCustomer($customerId);
+
+        $customer = Customer::find($customerId);
+        $customerEmail = $customer ? strtolower(trim((string) $customer->email)) : null;
+
+        $query = Order::where(function ($q) use ($customerId, $customerEmail) {
+                $q->where('customer_id', $customerId);
+                if ($customerEmail) {
+                    $q->orWhere('customer_email', $customerEmail);
+                }
+            })
             ->with(['items', 'shipments' => function ($q) {
                 $q->latest('id')->limit(1);
             }])
@@ -171,13 +201,26 @@ class CustomerAccountService
      */
     public function orderDetail(int $customerId, string $orderNumber): Order
     {
-        $order = Order::where('customer_id', $customerId)
-            ->where('order_number', $orderNumber)
-            ->with(['items.review', 'shippingAddress', 'billingAddress', 'shipments', 'payments'])
+        $customer = Customer::find($customerId);
+        $customerEmail = $customer ? strtolower(trim((string) $customer->email)) : null;
+
+        $order = Order::where('order_number', trim($orderNumber))
+            ->where(function ($q) use ($customerId, $customerEmail) {
+                $q->where('customer_id', $customerId);
+                if ($customerEmail) {
+                    $q->orWhere('customer_email', $customerEmail);
+                }
+            })
+            ->with(['items.review', 'items.product.images', 'items.variant', 'shippingAddress', 'billingAddress', 'shipments', 'payments'])
             ->first();
 
         if (!$order) {
             throw new ApiException('NOT_FOUND', 'We could not find that order.', 404);
+        }
+
+        // Auto-assign order to this customer if placed previously as guest
+        if ($order->customer_id !== $customerId) {
+            $order->update(['customer_id' => $customerId]);
         }
 
         return $order;

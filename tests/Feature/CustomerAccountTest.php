@@ -224,6 +224,86 @@ class CustomerAccountTest extends TestCase
         $res->assertStatus(404);
     }
 
+    public function test_customer_can_view_and_claim_guest_order_placed_with_same_email(): void
+    {
+        // Create an unlinked guest order placed with the customer's email
+        $guestOrder = Order::create([
+            'order_number' => OrderNumber::generate(),
+            'customer_id' => null,
+            'customer_name' => $this->customer->name,
+            'customer_email' => $this->customer->email,
+            'customer_phone' => '+919876543210',
+            'checkout_key_hash' => hash('sha256', uniqid('', true)),
+            'request_hash' => hash('sha256', uniqid('', true)),
+            'status' => OrderStatus::CONFIRMED,
+            'payment_status' => PaymentStatus::PAID,
+            'payment_method' => PaymentMethod::ONLINE,
+            'currency' => 'INR',
+            'prices_include_tax' => true,
+            'gst_registration_type' => GstRegistrationType::REGULAR,
+            'store_state_code' => '08',
+            'place_of_supply_state_code' => '08',
+            'supply_type' => GstSupplyType::INTRA_STATE,
+            'item_count' => 1,
+            'subtotal_paise' => 249900,
+            'discount_paise' => 0,
+            'shipping_paise' => 0,
+            'shipping_gst_rate_bps' => 1800,
+            'shipping_taxable_paise' => 0,
+            'shipping_tax_paise' => 0,
+            'taxable_paise' => 211780,
+            'cgst_paise' => 19060,
+            'sgst_paise' => 19060,
+            'igst_paise' => 0,
+            'tax_paise' => 38120,
+            'total_paise' => 249900,
+            'placed_at' => now(),
+            'payment_due_at' => now()->addMinutes(30),
+        ]);
+
+        $product = Product::first();
+        $variant = ProductVariant::first();
+
+        \App\Models\OrderItem::create([
+            'order_id' => $guestOrder->id,
+            'product_id' => $product?->id ?? 1,
+            'variant_id' => $variant?->id ?? 1,
+            'product_name' => 'Chanderi Silk Kurta',
+            'variant_title' => 'Indigo / L',
+            'option_values' => ['Size' => 'L', 'Color' => 'Indigo'],
+            'sku' => $variant?->sku ?? 'DS-SKU-1',
+            'quantity' => 1,
+            'unit_price_paise' => 249900,
+            'mrp_paise' => 299900,
+            'discount_paise' => 0,
+            'gst_rate_bps' => 1800,
+            'taxable_paise' => 211780,
+            'cgst_paise' => 19060,
+            'sgst_paise' => 19060,
+            'igst_paise' => 0,
+            'tax_paise' => 38120,
+            'line_total_paise' => 249900,
+            'position' => 1,
+        ]);
+
+        // Customer views the order detail
+        $res = $this->withUnencryptedCookie(CustomerSessionManager::getCookieName(), $this->token)
+            ->get("/account/orders/{$guestOrder->order_number}");
+
+        $res->assertStatus(200);
+        $res->assertSee($guestOrder->order_number);
+        $res->assertSee('Chanderi Silk Kurta');
+
+        // Order is claimed and assigned to customer
+        $this->assertEquals($this->customer->id, $guestOrder->fresh()->customer_id);
+
+        // Order appears in customer's order history
+        $listRes = $this->withUnencryptedCookie(CustomerSessionManager::getCookieName(), $this->token)
+            ->get('/account/orders');
+        $listRes->assertStatus(200);
+        $listRes->assertSee($guestOrder->order_number);
+    }
+
     private function createOrderForCustomer(Customer $cust): Order
     {
         $order = Order::create([

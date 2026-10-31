@@ -292,6 +292,9 @@ class CheckoutService
             $rawPhone = preg_replace('/\D/', '', $data['contact']['phone']);
             $normalizedPhone = '+91' . substr($rawPhone, -10);
 
+            $customerEmail = strtolower(trim($data['contact']['email']));
+            $customer = $customer ?? \App\Models\Customer::where('email', $customerEmail)->first();
+
             // 1. Create Order
             $order = Order::create([
                 'order_number' => $orderNumber,

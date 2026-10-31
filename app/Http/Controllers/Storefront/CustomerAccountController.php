@@ -48,11 +48,20 @@ class CustomerAccountController extends Controller
     /**
      * Customer single order details.
      */
-    public function orderDetail(string $orderNumber): View
+    public function orderDetail(Request $request, string $orderNumber): View|RedirectResponse
     {
         /** @var Customer $customer */
         $customer = Auth::guard('customer')->user();
-        $order = $this->accountService->orderDetail($customer->id, $orderNumber);
+
+        try {
+            $order = $this->accountService->orderDetail($customer->id, $orderNumber);
+        } catch (\App\Exceptions\ApiException $e) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('store/account/*')) {
+                throw $e;
+            }
+
+            abort($e->getStatusCode(), $e->getMessage());
+        }
 
         return view('store.account.order-detail', [
             'order' => $order,
