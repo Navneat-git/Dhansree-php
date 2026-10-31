@@ -292,6 +292,14 @@
      x-data="{
         allImages: @js($preparedImages),
         videosByColor: @js($videosByColor),
+        defaultVideo: @js($approvedVideo ? [
+            'id' => $approvedVideo->id,
+            'video_url' => $approvedVideo->video_url,
+            'webm_url' => $approvedVideo->webm_url,
+            'thumbnail_url' => $approvedVideo->thumbnail_url,
+            'duration' => $approvedVideo->duration_seconds ?? 8,
+            'is_ai_generated' => (bool) $approvedVideo->isAiGenerated(),
+        ] : null),
         currentVideo: @js($approvedVideo ? [
             'id' => $approvedVideo->id,
             'video_url' => $approvedVideo->video_url,
@@ -375,14 +383,7 @@
                 if (this.videosByColor[key]) {
                     this.currentVideo = this.videosByColor[key];
                 } else {
-                    this.currentVideo = @js($product->approved_video ? [
-                        'id' => $product->approved_video->id,
-                        'video_url' => $product->approved_video->video_url,
-                        'webm_url' => $product->approved_video->webm_url,
-                        'thumbnail_url' => $product->approved_video->thumbnail_url,
-                        'duration' => $product->approved_video->duration_seconds ?? 8,
-                        'is_ai_generated' => (bool) $product->approved_video->isAiGenerated(),
-                    ] : null);
+                    this.currentVideo = this.defaultVideo;
                 }
             }
 
@@ -436,26 +437,7 @@
             if (this.$refs.modalVideo) this.$refs.modalVideo.pause();
 
             const vId = this.selectedVariantId || (this.variantsMatrix && this.variantsMatrix[0] ? this.variantsMatrix[0].id : null);
-            if (!vId) {
-                window.location.href = '{{ route('cart.index') }}';
-                return;
-            }
-
-            try {
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                await fetch('{{ route('cart.add') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': token
-                    },
-                    body: JSON.stringify({ variant_id: vId, quantity: 1 })
-                });
-                window.location.href = '{{ route('cart.index') }}';
-            } catch (e) {
-                window.location.href = '{{ route('cart.index') }}';
-            }
+            await window.handleBuyNowFromReel(vId);
         }
      }">
 
@@ -1667,6 +1649,29 @@
 @endphp
 
 <script>
+    window.handleBuyNowFromReel = async function(variantId) {
+        if (!variantId) {
+            window.location.href = '{{ route('cart.index') }}';
+            return;
+        }
+        try {
+            const meta = document.querySelector('meta[name=csrf-token]');
+            const token = meta ? meta.getAttribute('content') : '{{ csrf_token() }}';
+            await fetch('{{ route('cart.add') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ variant_id: variantId, quantity: 1 })
+            });
+        } catch (e) {
+            console.error('Buy now error:', e);
+        }
+        window.location.href = '{{ route('cart.index') }}';
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof window.dhansreeTrack === 'function') {
             window.dhansreeTrack('view_item', {
