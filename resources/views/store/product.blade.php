@@ -1069,35 +1069,35 @@
                 </video>
             </div>
 
-            <!-- Bottom Floating Tagged Product Details (Direct child of modal, always visible above native controls) -->
-            <div class="absolute p-3.5 sm:p-4 rounded-2xl shadow-2xl z-30 pointer-events-auto"
-                 style="bottom: 16px; left: 12px; right: 12px; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.2);">
+            <!-- Bottom Floating Tagged Product Details (Ultra-transparent frosted glass so the product/garment is clearly visible behind it) -->
+            <div class="absolute p-3 sm:p-3.5 rounded-2xl z-30 pointer-events-auto"
+                 style="bottom: 12px; left: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.22); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);">
                 <div class="flex items-center justify-between gap-3">
                     <div class="min-w-0 flex-1">
-                        <span class="inline-block text-[10px] uppercase tracking-wider font-bold mb-1"
-                              style="color: #fbbf24 !important;">
+                        <span class="inline-block text-[10px] uppercase tracking-wider font-bold mb-0.5"
+                              style="color: #fbbf24 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);">
                             Featured in Reel
                         </span>
-                        <!-- Product Title in Wrap Mode with Pure White Color -->
+                        <!-- Product Title in Wrap Mode with Pure White Color & Text Shadow for Legibility Over Transparent Glass -->
                         <p class="text-xs sm:text-sm font-bold leading-snug line-clamp-2 break-words"
-                           style="color: #ffffff !important;">
+                           style="color: #ffffff !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 2px 6px rgba(0, 0, 0, 0.7);">
                             {{ $product->name }}
                         </p>
                         <!-- Complete Pricing Display -->
                         <div class="flex items-baseline gap-2 mt-1 flex-wrap">
                             <span class="text-sm sm:text-base font-black"
-                                  style="color: #fbbf24 !important;"
+                                  style="color: #fbbf24 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);"
                                   x-text="selectedVariantPrice">
                                 {{ $firstMatch['price'] ?? $product->formatted_price }}
                             </span>
                             <span class="text-xs line-through"
-                                  style="color: #cbd5e1 !important;"
+                                  style="color: #cbd5e1 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);"
                                   x-text="selectedVariantMrp"
                                   x-show="selectedVariantMrp">
                                 {{ $firstMatch['mrp'] ?? ($product->formatted_mrp ?? '') }}
                             </span>
                             <span class="text-[11px] font-bold"
-                                  style="color: #34d399 !important;"
+                                  style="color: #34d399 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);"
                                   x-text="selectedVariantDiscount"
                                   x-show="selectedVariantDiscount">
                                 {{ $firstMatch['discount'] ?? ($product->discount_percentage ? $product->discount_percentage . '% OFF' : '') }}
