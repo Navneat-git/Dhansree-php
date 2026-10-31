@@ -577,12 +577,13 @@
                                                         isAi: {{ $prodVideo->isAiGenerated() ? 'true' : 'false' }},
                                                         variantId: {{ $firstVariant?->id ?? 'null' }}
                                                     })"
-                                                    class="absolute top-2 left-2 z-20 pointer-events-auto h-6 sm:h-7 px-1.5 sm:px-2.5 rounded-full bg-slate-900/90 hover:bg-black text-amber-300 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-amber-400/50 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+                                                    class="absolute top-2 left-2 z-20 pointer-events-auto h-5 sm:h-6 px-1.5 sm:px-2 rounded-full bg-white/90 hover:bg-white text-maroon-800 text-[10px] font-bold tracking-wide flex items-center justify-center gap-1 border border-light-gold/80 shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
                                                     title="Watch video reel in motion"
-                                                    aria-label="Play product video">
-                                                <span class="size-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                                <svg class="size-3 sm:size-3.5 fill-amber-300 translate-x-[0.5px]" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                                <span class="hidden sm:inline">Reel</span>
+                                                    aria-label="Play product video"
+                                                    style="line-height: 1;">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                                                <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-maroon-800 shrink-0 translate-x-[0.5px]" viewBox="0 0 24 24" style="width: 10px; height: 10px;"><path d="M8 5v14l11-7z"/></svg>
+                                                <span class="hidden sm:inline text-[9.5px] font-bold text-rich-black uppercase tracking-tight">Reel</span>
                                             </button>
                                         @endif
 
