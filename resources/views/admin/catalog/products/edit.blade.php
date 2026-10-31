@@ -951,7 +951,97 @@
         </div>
 
         <!-- Product Videos Grid -->
-        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4">
+        <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-4"
+             x-data="{
+                 isDownloadingReel: false,
+                 downloadingVideoId: null,
+                 downloadSuccess: false,
+                 downloadError: '',
+                 downloadStatus: 'Initializing video generator...',
+                 downloadSubtext: 'Composing vertical 9:16 video with floating product details card...',
+                 currentStep: 1,
+
+                 async downloadVideoReel(videoId, url, fallbackFilename) {
+                     if (this.isDownloadingReel) return;
+                     this.isDownloadingReel = true;
+                     this.downloadingVideoId = videoId;
+                     this.downloadSuccess = false;
+                     this.downloadError = '';
+                     this.currentStep = 1;
+                     this.downloadStatus = 'Processing source video & overlay graphic...';
+                     this.downloadSubtext = 'Using FFmpeg to compose Watch in Motion floating card, pricing, and Buy Now CTA...';
+
+                     const stepTimer = setInterval(() => {
+                         if (this.currentStep === 1) {
+                             this.currentStep = 2;
+                             this.downloadStatus = 'Rendering 9:16 vertical video...';
+                             this.downloadSubtext = 'Composing translucent card, price tags, and high-definition h.264 stream...';
+                         } else if (this.currentStep === 2) {
+                             this.currentStep = 3;
+                             this.downloadStatus = 'Finalizing video stream & preparing download...';
+                             this.downloadSubtext = 'Almost ready! Saving MP4 for instant browser download...';
+                         }
+                     }, 3500);
+
+                     try {
+                         const res = await fetch(url, {
+                             headers: {
+                                 'X-Requested-With': 'XMLHttpRequest',
+                                 'Accept': 'video/mp4, application/json'
+                             }
+                         });
+
+                         clearInterval(stepTimer);
+
+                         if (!res.ok) {
+                             let errText = 'Server returned error ' + res.status;
+                             try {
+                                 const errJson = await res.json();
+                                 errText = errJson.message || errText;
+                             } catch(e) {}
+                             throw new Error(errText);
+                         }
+
+                         this.currentStep = 4;
+                         this.downloadSuccess = true;
+                         this.downloadStatus = 'Reel Ready! Downloading now...';
+                         this.downloadSubtext = 'Your browser download will begin in a moment.';
+
+                         const blob = await res.blob();
+                         let filename = fallbackFilename || 'Dhansree-Watch-in-Motion-Reel.mp4';
+                         const disposition = res.headers.get('Content-Disposition');
+                         if (disposition && disposition.indexOf('filename=') !== -1) {
+                             const matches = /filename[^;=\n]*=(([\'\"]).*?\2|[^;\n]*)/.exec(disposition);
+                             if (matches != null && matches[1]) {
+                                 filename = matches[1].replace(/[\'\"]/g, '');
+                             }
+                         }
+
+                         const blobUrl = window.URL.createObjectURL(blob);
+                         const a = document.createElement('a');
+                         a.style.display = 'none';
+                         a.href = blobUrl;
+                         a.download = filename;
+                         document.body.appendChild(a);
+                         a.click();
+                         setTimeout(() => {
+                             document.body.removeChild(a);
+                             window.URL.revokeObjectURL(blobUrl);
+                         }, 2000);
+
+                         setTimeout(() => {
+                             this.isDownloadingReel = false;
+                             this.downloadingVideoId = null;
+                             this.downloadSuccess = false;
+                         }, 2500);
+                     } catch (err) {
+                         clearInterval(stepTimer);
+                         this.downloadError = err.message || 'Failed to download Watch in Motion Reel. Please try again.';
+                         this.downloadStatus = 'Download Failed';
+                         this.downloadSubtext = this.downloadError;
+                     }
+                 }
+             }">
             <div class="border-b border-slate-200/80 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <div class="flex items-center gap-2">
@@ -1054,13 +1144,28 @@
                             </div>
 
                             <div class="space-y-2 pt-2 border-t border-slate-100">
-                                <!-- Download Reel (Watch in Motion MP4 for Instagram/Facebook) -->
-                                <a href="{{ route('admin.videos.download-reel', $vid) }}"
-                                   class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 transition-colors flex items-center justify-center gap-1.5 shadow-2xs text-center"
-                                   title="Download vertical 9:16 video with floating Watch in Motion product details card for Instagram & Facebook Reels">
-                                    <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                    <span>Download Reel (Watch in Motion)</span>
-                                </a>
+                                <!-- Download Reel (Watch in Motion MP4 for Instagram/Facebook) with Interactive Loader -->
+                                <button type="button"
+                                        @click="downloadVideoReel({{ $vid->id }}, '{{ route('admin.videos.download-reel', $vid) }}', 'Dhansree-{{ Str::slug($product->name) }}-Watch-in-Motion-Reel.mp4')"
+                                        :disabled="isDownloadingReel"
+                                        class="w-full py-2 px-3 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-slate-900 transition-colors flex items-center justify-center gap-1.5 shadow-2xs text-center cursor-pointer"
+                                        title="Download vertical 9:16 video with floating Watch in Motion product details card for Instagram & Facebook Reels">
+                                    <template x-if="downloadingVideoId !== {{ $vid->id }}">
+                                        <span class="flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                            <span>Download Reel (Watch in Motion)</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="downloadingVideoId === {{ $vid->id }}">
+                                        <span class="flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-slate-900 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Generating Reel...</span>
+                                        </span>
+                                    </template>
+                                </button>
 
                                 <!-- Pin to Color / Edit Button -->
                                 <button type="button" @click="editVideoModal = true"
@@ -1222,6 +1327,107 @@
                     </p>
                 </div>
             @endif
+
+            <!-- Fullscreen Watch in Motion Reel Download Modal Loader -->
+            <div x-show="isDownloadingReel"
+                 x-cloak
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+                <div class="relative max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 sm:p-8 text-center space-y-5">
+                    <!-- Close Button (only when error) -->
+                    <button x-show="downloadError"
+                            @click="isDownloadingReel = false; downloadingVideoId = null;"
+                            class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg leading-none p-1 cursor-pointer">
+                        &times;
+                    </button>
+
+                    <!-- Animated Icon -->
+                    <div class="flex items-center justify-center">
+                        <template x-if="!downloadSuccess && !downloadError">
+                            <div class="relative size-20 flex items-center justify-center">
+                                <div class="absolute inset-0 rounded-full border-4 border-amber-200 border-t-amber-600 animate-spin"></div>
+                                <div class="size-14 rounded-full bg-amber-50 flex items-center justify-center">
+                                    <svg class="size-7 text-amber-700 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="downloadSuccess">
+                            <div class="size-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
+                                <svg class="size-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                        </template>
+                        <template x-if="downloadError">
+                            <div class="size-20 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shadow-inner">
+                                <svg class="size-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Titles -->
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-black text-slate-900"
+                            x-text="downloadError ? 'Download Failed' : (downloadSuccess ? 'Reel Download Started!' : 'Generating Watch in Motion Reel...')"></h3>
+                        <p class="text-xs text-slate-600 leading-relaxed" x-text="downloadSubtext"></p>
+                    </div>
+
+                    <!-- Progress Steps Card (while generating) -->
+                    <div x-show="!downloadSuccess && !downloadError" class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 space-y-3 text-left">
+                        <div class="flex items-center gap-2.5 text-xs" :class="currentStep >= 1 ? 'font-bold text-amber-900' : 'text-slate-400'">
+                            <div class="size-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                 :class="currentStep > 1 ? 'bg-emerald-600 text-white' : (currentStep === 1 ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-200 text-slate-500')">
+                                <span x-show="currentStep > 1">✓</span>
+                                <span x-show="currentStep <= 1">1</span>
+                            </div>
+                            <span>Load source video footage</span>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 text-xs" :class="currentStep >= 2 ? 'font-bold text-amber-900' : 'text-slate-400'">
+                            <div class="size-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                 :class="currentStep > 2 ? 'bg-emerald-600 text-white' : (currentStep === 2 ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-200 text-slate-500')">
+                                <span x-show="currentStep > 2">✓</span>
+                                <span x-show="currentStep <= 2">2</span>
+                            </div>
+                            <span>Compose floating Watch in Motion card (Title, Price, Buy Now)</span>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 text-xs" :class="currentStep >= 3 ? 'font-bold text-amber-900' : 'text-slate-400'">
+                            <div class="size-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                 :class="currentStep > 3 ? 'bg-emerald-600 text-white' : (currentStep === 3 ? 'bg-amber-500 text-white animate-pulse' : 'bg-slate-200 text-slate-500')">
+                                <span x-show="currentStep > 3">✓</span>
+                                <span x-show="currentStep <= 3">3</span>
+                            </div>
+                            <span>Encode vertical 9:16 MP4 for Instagram/Facebook</span>
+                        </div>
+                    </div>
+
+                    <!-- Success Message -->
+                    <div x-show="downloadSuccess" class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-900 font-medium">
+                        Your Watch in Motion Reel has been saved to your downloads. You can now post it directly to Instagram and Facebook Reels!
+                    </div>
+
+                    <!-- Error Message & Close -->
+                    <div x-show="downloadError" class="space-y-3">
+                        <button type="button"
+                                @click="isDownloadingReel = false; downloadingVideoId = null;"
+                                class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer">
+                            Dismiss
+                        </button>
+                    </div>
+
+                    <div class="text-[11px] text-slate-500 flex items-center justify-center gap-1.5" x-show="!downloadSuccess && !downloadError">
+                        <svg class="size-3.5 text-amber-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Please keep this window open while FFmpeg generates the reel...</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Images Grid -->

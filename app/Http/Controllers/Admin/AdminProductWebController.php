@@ -1063,7 +1063,7 @@ class AdminProductWebController extends Controller
      * Download Watch in Motion vertical 9:16 Reel MP4 for Instagram/Facebook.
      * Matches the frontend product detail page "Watch in Motion" popup exactly.
      */
-    public function downloadReel(Request $request, ProductVideo $video): BinaryFileResponse|RedirectResponse
+    public function downloadReel(Request $request, ProductVideo $video): BinaryFileResponse|RedirectResponse|JsonResponse
     {
         try {
             $videoStudioService = app(VideoStudioService::class);
@@ -1074,9 +1074,16 @@ class AdminProductWebController extends Controller
 
             return response()->download($absolutePath, $downloadName, [
                 'Content-Type' => 'video/mp4',
+                'Access-Control-Expose-Headers' => 'Content-Disposition',
             ]);
         } catch (Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Failed to generate Watch in Motion Reel for ProductVideo #{$video->id}: " . $e->getMessage());
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Could not generate Watch in Motion Reel: ' . $e->getMessage(),
+                ], 500);
+            }
             return back()->with('error', 'Could not generate Watch in Motion Reel: ' . $e->getMessage());
         }
     }

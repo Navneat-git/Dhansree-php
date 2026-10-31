@@ -535,9 +535,16 @@ class AdminVideoStudioWebController extends Controller
                 $downloadName = "Dhansree-{$cleanTitle}-watch-in-motion-reel.mp4";
                 return response()->download($reelAbsPath, $downloadName, [
                     'Content-Type' => 'video/mp4',
+                    'Access-Control-Expose-Headers' => 'Content-Disposition',
                 ]);
             } catch (\Throwable $e) {
                 Log::error("Failed to generate Watch in Motion Reel for ProductVideo #{$video->id}: " . $e->getMessage());
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Could not generate Watch in Motion Reel: ' . $e->getMessage(),
+                    ], 500);
+                }
                 return back()->with('error', 'Could not generate Watch in Motion Reel: ' . $e->getMessage());
             }
         } elseif ($format === 'webm' && !empty($settings['webm_path']) && Storage::disk($disk)->exists($settings['webm_path'])) {
