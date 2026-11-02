@@ -205,25 +205,71 @@
 
         <!-- Geographic Locations & Top Campaigns -->
         <div class="space-y-6">
-            <!-- Top Locations -->
-            <div class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-3">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-100 pb-2 flex items-center justify-between">
-                    <span>Top Visitor Locations</span>
-                    <span class="text-[10px] font-normal text-slate-400">City & Region</span>
-                </h2>
-                <div class="space-y-2">
+            <!-- Top Locations (Cities & Countries) -->
+            <div class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-3" x-data="{ viewMode: 'cities' }">
+                <div class="border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-800">
+                            Top Visitor Locations
+                        </h2>
+                    </div>
+                    <!-- View Mode Toggle -->
+                    <div class="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-semibold">
+                        <button type="button" 
+                                @click="viewMode = 'cities'" 
+                                :class="viewMode === 'cities' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-2 py-0.5 rounded transition-all">
+                            Cities (Top 10)
+                        </button>
+                        <button type="button" 
+                                @click="viewMode = 'countries'" 
+                                :class="viewMode === 'countries' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-2 py-0.5 rounded transition-all">
+                            Countries
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cities View -->
+                <div x-show="viewMode === 'cities'" class="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
                     @forelse($locationsBreakdown as $loc)
-                        <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 border border-slate-100">
-                            <span class="flex items-center gap-1.5 font-medium text-slate-800 truncate">
-                                <span>📍</span>
-                                <span>{{ $loc->city ?: 'Unknown City' }}</span>
-                                <span class="text-[11px] text-slate-400">({{ $loc->region ?: $loc->country }})</span>
+                        @php
+                            $isIndia = str_contains(strtolower($loc->country ?? ''), 'india');
+                        @endphp
+                        <div class="flex items-center justify-between text-xs p-2 rounded-lg border transition-colors {{ $isIndia ? 'bg-amber-50/70 border-amber-200/80 font-semibold' : 'bg-slate-50 border-slate-100' }}">
+                            <span class="flex items-center gap-1.5 text-slate-800 truncate">
+                                <span>{{ $isIndia ? '🇮🇳' : '📍' }}</span>
+                                <span class="{{ $isIndia ? 'text-amber-950 font-bold' : '' }}">{{ $loc->city ?: 'Unknown City' }}</span>
+                                <span class="text-[11px] text-slate-400 font-normal">({{ $loc->region ? $loc->region . ', ' : '' }}{{ $loc->country }})</span>
                             </span>
-                            <span class="text-slate-600 font-mono font-bold">{{ $loc->count }}</span>
+                            <span class="text-slate-700 font-mono font-bold shrink-0 ml-2">{{ number_format($loc->count) }}</span>
                         </div>
                     @empty
                         <div class="py-4 text-center text-slate-400 text-xs">
                             Locations will appear as visitors arrive.
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Countries View -->
+                <div x-show="viewMode === 'countries'" x-cloak class="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
+                    @forelse($countriesBreakdown as $c)
+                        @php
+                            $isIndia = str_contains(strtolower($c->country ?? ''), 'india');
+                        @endphp
+                        <div class="flex items-center justify-between text-xs p-2 rounded-lg border transition-colors {{ $isIndia ? 'bg-amber-50/70 border-amber-200/80 font-semibold' : 'bg-slate-50 border-slate-100' }}">
+                            <span class="flex items-center gap-1.5 text-slate-800 truncate">
+                                <span>{{ $isIndia ? '🇮🇳' : '🌐' }}</span>
+                                <span class="{{ $isIndia ? 'text-amber-950 font-bold' : '' }}">{{ $c->country }}</span>
+                                @if($isIndia)
+                                    <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold">Domestic</span>
+                                @endif
+                            </span>
+                            <span class="text-slate-700 font-mono font-bold shrink-0 ml-2">{{ number_format($c->count) }}</span>
+                        </div>
+                    @empty
+                        <div class="py-4 text-center text-slate-400 text-xs">
+                            No country data recorded yet.
                         </div>
                     @endforelse
                 </div>

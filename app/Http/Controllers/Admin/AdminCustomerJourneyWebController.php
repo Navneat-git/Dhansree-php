@@ -96,14 +96,24 @@ class AdminCustomerJourneyWebController extends Controller
             ->orderByDesc('count')
             ->get();
 
-        // 4. Locations Breakdown (City & Country)
+        // 4. Locations Breakdown (City & Country) - Expanded to top 10
         $locationsBreakdown = (clone $baseQuery)
             ->whereNotNull('city')
             ->where('city', '!=', '')
             ->select('city', 'region', 'country', DB::raw('count(*) as count'))
             ->groupBy('city', 'region', 'country')
             ->orderByDesc('count')
-            ->take(6)
+            ->take(10)
+            ->get();
+
+        // 4.1 Country Breakdown
+        $countriesBreakdown = (clone $baseQuery)
+            ->whereNotNull('country')
+            ->where('country', '!=', '')
+            ->select('country', DB::raw('count(*) as count'))
+            ->groupBy('country')
+            ->orderByDesc('count')
+            ->take(8)
             ->get();
 
         // 5. UTM Campaigns breakdown (if any)
@@ -138,6 +148,7 @@ class AdminCustomerJourneyWebController extends Controller
             'platformBreakdown' => $platformBreakdown,
             'deviceBreakdown' => $deviceBreakdown,
             'locationsBreakdown' => $locationsBreakdown,
+            'countriesBreakdown' => $countriesBreakdown,
             'campaignsBreakdown' => $campaignsBreakdown,
             'allPlatforms' => $allPlatforms,
             'period' => $period,
