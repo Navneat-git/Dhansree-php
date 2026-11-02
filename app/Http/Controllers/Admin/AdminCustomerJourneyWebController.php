@@ -23,6 +23,8 @@ class AdminCustomerJourneyWebController extends Controller
         $period = (string) $request->input('period', '7days');
         $platformFilter = (string) $request->input('platform', 'all');
         $visitorTypeFilter = (string) $request->input('visitor_type', 'all'); // 'all', 'new', 'repeat'
+        $countryFilter = trim((string) $request->input('country', ''));
+        $cityFilter = trim((string) $request->input('city', ''));
         $search = trim((string) $request->input('search', ''));
 
         $startDate = match ($period) {
@@ -126,7 +128,17 @@ class AdminCustomerJourneyWebController extends Controller
             ->get();
 
         // 6. Detailed Customer Journeys Feed (Paginated)
-        $journeys = (clone $baseQuery)
+        $journeyQuery = clone $baseQuery;
+
+        if ($countryFilter !== '' && $countryFilter !== 'all') {
+            $journeyQuery->where('country', $countryFilter);
+        }
+
+        if ($cityFilter !== '' && $cityFilter !== 'all') {
+            $journeyQuery->where('city', $cityFilter);
+        }
+
+        $journeys = $journeyQuery
             ->with(['pageViews', 'trackedVisitor'])
             ->latest('started_at')
             ->paginate(25)
@@ -154,6 +166,8 @@ class AdminCustomerJourneyWebController extends Controller
             'period' => $period,
             'selectedPlatform' => $platformFilter,
             'selectedVisitorType' => $visitorTypeFilter,
+            'selectedCountry' => $countryFilter,
+            'selectedCity' => $cityFilter,
             'search' => $search,
         ]);
     }

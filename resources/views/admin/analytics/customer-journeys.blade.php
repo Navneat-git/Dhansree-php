@@ -206,7 +206,7 @@
         <!-- Geographic Locations & Top Campaigns -->
         <div class="space-y-6">
             <!-- Top Locations (Cities & Countries) -->
-            <div class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-3" x-data="{ viewMode: 'cities' }">
+            <div class="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs space-y-3" x-data="{ viewMode: '{{ !empty($selectedCountry) ? 'countries' : (!empty($selectedCity) ? 'cities' : 'cities') }}' }">
                 <div class="border-b border-slate-100 pb-2.5 flex items-center justify-between">
                     <div>
                         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-800">
@@ -235,15 +235,30 @@
                     @forelse($locationsBreakdown as $loc)
                         @php
                             $isIndia = str_contains(strtolower($loc->country ?? ''), 'india');
+                            $isSelectedCity = !empty($selectedCity) && $selectedCity === $loc->city;
                         @endphp
-                        <div class="flex items-center justify-between text-xs p-2 rounded-lg border transition-colors {{ $isIndia ? 'bg-amber-50/70 border-amber-200/80 font-semibold' : 'bg-slate-50 border-slate-100' }}">
+                        <a href="{{ route('admin.analytics.journeys', array_merge(request()->query(), [
+                                'city' => $isSelectedCity ? null : $loc->city,
+                                'country' => null,
+                                'page' => 1
+                            ])) }}#journeys-feed"
+                           title="{{ $isSelectedCity ? 'Click to clear filter' : 'Click to filter journeys for ' . $loc->city }}"
+                           class="flex items-center justify-between text-xs p-2 rounded-lg border transition-all cursor-pointer group {{ $isSelectedCity ? 'bg-amber-100 border-amber-500 ring-2 ring-amber-500/30 shadow-xs' : ($isIndia ? 'bg-amber-50/70 border-amber-200/80 hover:bg-amber-100/70' : 'bg-slate-50 border-slate-100 hover:bg-slate-100') }}">
                             <span class="flex items-center gap-1.5 text-slate-800 truncate">
                                 <span>{{ $isIndia ? '🇮🇳' : '📍' }}</span>
-                                <span class="{{ $isIndia ? 'text-amber-950 font-bold' : '' }}">{{ $loc->city ?: 'Unknown City' }}</span>
+                                <span class="{{ $isIndia || $isSelectedCity ? 'text-amber-950 font-bold' : '' }} group-hover:underline">{{ $loc->city ?: 'Unknown City' }}</span>
                                 <span class="text-[11px] text-slate-400 font-normal">({{ $loc->region ? $loc->region . ', ' : '' }}{{ $loc->country }})</span>
+                                @if($isSelectedCity)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-600 text-white font-bold">Active</span>
+                                @endif
                             </span>
-                            <span class="text-slate-700 font-mono font-bold shrink-0 ml-2">{{ number_format($loc->count) }}</span>
-                        </div>
+                            <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                                <span class="text-slate-700 font-mono font-bold">{{ number_format($loc->count) }}</span>
+                                <svg class="size-3 text-slate-400 group-hover:text-amber-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                </svg>
+                            </div>
+                        </a>
                     @empty
                         <div class="py-4 text-center text-slate-400 text-xs">
                             Locations will appear as visitors arrive.
@@ -256,17 +271,32 @@
                     @forelse($countriesBreakdown as $c)
                         @php
                             $isIndia = str_contains(strtolower($c->country ?? ''), 'india');
+                            $isSelectedCountry = !empty($selectedCountry) && $selectedCountry === $c->country;
                         @endphp
-                        <div class="flex items-center justify-between text-xs p-2 rounded-lg border transition-colors {{ $isIndia ? 'bg-amber-50/70 border-amber-200/80 font-semibold' : 'bg-slate-50 border-slate-100' }}">
+                        <a href="{{ route('admin.analytics.journeys', array_merge(request()->query(), [
+                                'country' => $isSelectedCountry ? null : $c->country,
+                                'city' => null,
+                                'page' => 1
+                            ])) }}#journeys-feed"
+                           title="{{ $isSelectedCountry ? 'Click to clear filter' : 'Click to filter journeys for ' . $c->country }}"
+                           class="flex items-center justify-between text-xs p-2 rounded-lg border transition-all cursor-pointer group {{ $isSelectedCountry ? 'bg-amber-100 border-amber-500 ring-2 ring-amber-500/30 shadow-xs' : ($isIndia ? 'bg-amber-50/70 border-amber-200/80 hover:bg-amber-100/70' : 'bg-slate-50 border-slate-100 hover:bg-slate-100') }}">
                             <span class="flex items-center gap-1.5 text-slate-800 truncate">
                                 <span>{{ $isIndia ? '🇮🇳' : '🌐' }}</span>
-                                <span class="{{ $isIndia ? 'text-amber-950 font-bold' : '' }}">{{ $c->country }}</span>
+                                <span class="{{ $isIndia || $isSelectedCountry ? 'text-amber-950 font-bold' : '' }} group-hover:underline">{{ $c->country }}</span>
                                 @if($isIndia)
                                     <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold">Domestic</span>
                                 @endif
+                                @if($isSelectedCountry)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-600 text-white font-bold">Active</span>
+                                @endif
                             </span>
-                            <span class="text-slate-700 font-mono font-bold shrink-0 ml-2">{{ number_format($c->count) }}</span>
-                        </div>
+                            <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                                <span class="text-slate-700 font-mono font-bold">{{ number_format($c->count) }}</span>
+                                <svg class="size-3 text-slate-400 group-hover:text-amber-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                </svg>
+                            </div>
+                        </a>
                     @empty
                         <div class="py-4 text-center text-slate-400 text-xs">
                             No country data recorded yet.
@@ -304,7 +334,7 @@
     </div>
 
     <!-- Live Customer Journeys Feed -->
-    <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+    <div id="journeys-feed" class="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-6">
         <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-slate-50/50">
             <div>
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
@@ -321,6 +351,34 @@
                 Page {{ $journeys->currentPage() }} of {{ $journeys->lastPage() }}
             </div>
         </div>
+
+        <!-- Active Location Filter Banner (if country or city selected) -->
+        @if(!empty($selectedCountry) || !empty($selectedCity))
+            <div class="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-slate-700 font-medium flex items-center gap-1.5">
+                        <svg class="size-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                        </svg>
+                        <span>Active Location Filter:</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-amber-300 text-amber-950 font-bold shadow-2xs">
+                        @if(!empty($selectedCountry))
+                            <span>{{ str_contains(strtolower($selectedCountry), 'india') ? '🇮🇳' : '🌐' }}</span>
+                            <span>{{ $selectedCountry }}</span>
+                        @endif
+                        @if(!empty($selectedCity))
+                            <span>🏙️ {{ $selectedCity }}</span>
+                        @endif
+                        <span class="ml-1 text-[11px] font-mono font-normal text-slate-500">({{ number_format($journeys->total()) }} sessions)</span>
+                    </span>
+                </div>
+                <a href="{{ route('admin.analytics.journeys', array_merge(request()->query(), ['country' => null, 'city' => null, 'page' => 1])) }}#journeys-feed"
+                   class="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs transition-colors shadow-2xs">
+                    <span>&times; Clear Filter (Show All)</span>
+                </a>
+            </div>
+        @endif
 
         <div class="divide-y divide-slate-100">
             @forelse($journeys as $session)
@@ -385,10 +443,16 @@
 
                             <!-- Location Badge -->
                             @if($session->city || $session->country)
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200" title="{{ $session->display_location }}">
-                                    <span>📍</span>
-                                    <span>{{ $session->city ?: $session->region ?: $session->country }}</span>
-                                </span>
+                                <a href="{{ route('admin.analytics.journeys', array_merge(request()->query(), [
+                                        'country' => $session->country,
+                                        'city' => null,
+                                        'page' => 1
+                                    ])) }}#journeys-feed"
+                                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 hover:bg-amber-100 hover:text-amber-950 text-slate-700 border border-slate-200 transition-colors"
+                                   title="Click to filter journeys for {{ $session->country }}">
+                                    <span>{{ str_contains(strtolower($session->country ?? ''), 'india') ? '🇮🇳' : '📍' }}</span>
+                                    <span>{{ $session->city ?: ($session->region ?: $session->country) }}</span>
+                                </a>
                             @endif
 
                             <!-- Device & OS Badge -->
