@@ -451,7 +451,10 @@ usage() {
     echo "  status            Display current WAF mode, GeoIP status, and RAM consumption"
     echo "  mode detection    Set ModSecurity to DetectionOnly mode (Logging only, no blocks)"
     echo "  mode blocking     Set ModSecurity to On mode (Actively blocks attacks with 403)"
+    echo "  geo on            ACTIVATE Country Blocking (Enforces 403 on unapproved countries)"
+    echo "  geo off           DEACTIVATE Country Blocking (Switches to safe monitoring mode)"
     echo "  countries         Show list of allowed country codes"
+    echo "  allow <list>      Set allowed countries, e.g.: waf-ctl allow IN,US,GB"
     echo "  test              Execute safe simulated attacks to verify WAF detection"
     echo "  logs [lines]      View recent WAF audit log entries (default: 30 lines)"
     echo "  help              Show this help message"
@@ -477,6 +480,13 @@ cmd_status() {
     local countries=$(grep -oP 'RewriteCond %{ENV:MM_COUNTRY_CODE} \^\(\K[^\)]+' "${GEO_CONF}" || echo "Not configured")
     echo "Allowed Countries:   ${countries}"
 
+    local master_conf="/etc/apache2/conf-available/lightsail-security.conf"
+    local geo_enforce="\033[0;33mMONITORING ONLY (Not blocking yet)\033[0m"
+    if grep -qE "^RewriteRule \^ - \[F,L\]" "${master_conf}" 2>/dev/null; then
+        geo_enforce="\033[0;31mACTIVE ENFORCEMENT (Blocking all traffic outside allowed countries with 403)\033[0m"
+    fi
+    echo -e "Country Blocking:    ${geo_enforce}"
+
     local mmdb_file="/var/lib/GeoIP/GeoLite2-Country.mmdb"
     if [[ -f "${mmdb_file}" ]]; then
         local db_size=$(du -h "${mmdb_file}" | cut -f1)
@@ -489,6 +499,36 @@ cmd_status() {
     echo ""
     echo "=== Apache & RAM Usage ==="
     free -h
+}
+
+cmd_geo() {
+    local target="${1:-status}"
+    local master_conf="/etc/apache2/conf-available/lightsail-security.conf"
+    if [[ "$target" == "on" || "$target" == "enable" ]]; then
+        sed -i 's/# RewriteCond %{ENV:WAF_GEO_ALLOW} !^1$/RewriteCond %{ENV:WAF_GEO_ALLOW} !^1$/' "${master_conf}"
+        sed -i 's/# RewriteRule ^ - \[F,L\]/RewriteRule ^ - [F,L]/' "${master_conf}"
+        apache2ctl configtest && systemctl reload apache2
+        echo -e "\033[0;31m[OK]\033[0m Country Blocking is now ACTIVE. Traffic from unapproved countries will be dropped with 403."
+    elif [[ "$target" == "off" || "$target" == "disable" ]]; then
+        sed -i 's/^RewriteCond %{ENV:WAF_GEO_ALLOW} !^1$/# RewriteCond %{ENV:WAF_GEO_ALLOW} !^1$/' "${master_conf}"
+        sed -i 's/^RewriteRule ^ - \[F,L\]/# RewriteRule ^ - [F,L]/' "${master_conf}"
+        apache2ctl configtest && systemctl reload apache2
+        echo -e "\033[0;32m[OK]\033[0m Country Blocking is now DEACTIVATED (Monitoring mode)."
+    else
+        echo "Usage: waf-ctl geo [on|off]"
+    fi
+}
+
+cmd_allow() {
+    local list="${1:-}"
+    if [[ -z "$list" ]]; then
+        echo "Usage: waf-ctl allow <COUNTRY_CODES> (e.g. waf-ctl allow IN or waf-ctl allow IN,US,GB)"
+        exit 1
+    fi
+    local regex=$(echo "$list" | tr ',' '|' | tr '[:lower:]' '[:upper:]' | tr -d ' ')
+    sed -i -E "s/RewriteCond %\\{ENV:MM_COUNTRY_CODE\\} \\^\\([^)]+\\)\\$/RewriteCond %{ENV:MM_COUNTRY_CODE} ^(${regex})\$/" "${GEO_CONF}"
+    apache2ctl configtest && systemctl reload apache2
+    echo -e "\033[0;32m[OK]\033[0m Allowed countries updated to: ${regex}"
 }
 
 cmd_mode() {
@@ -547,6 +587,8 @@ cmd_logs() {
 case "${1:-status}" in
     status)    cmd_status ;;
     mode)      cmd_mode "${2:-}" ;;
+    geo)       cmd_geo "${2:-status}" ;;
+    allow)     cmd_allow "${2:-}" ;;
     countries) cmd_countries ;;
     test)      cmd_test ;;
     logs)      cmd_logs "${2:-30}" ;;
