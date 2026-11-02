@@ -259,6 +259,16 @@ EOF
 chmod 644 "${COUNTRY_ALLOWLIST_CONF}"
 log_success "Created: ${COUNTRY_ALLOWLIST_CONF}"
 
+# Ensure base modsecurity.conf exists
+if [[ ! -f /etc/modsecurity/modsecurity.conf ]]; then
+    log_info "Creating /etc/modsecurity/modsecurity.conf from recommended template..."
+    cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf
+fi
+# Optimize base modsecurity.conf for 2 GB RAM (Disable response body buffering)
+sed -i -E 's/SecResponseBodyAccess\s+On/SecResponseBodyAccess Off/' /etc/modsecurity/modsecurity.conf
+sed -i -E 's|SecAuditLog\s+.*|SecAuditLog /var/log/apache2/waf/modsec_audit.log|' /etc/modsecurity/modsecurity.conf
+sed -i -E 's|SecDebugLog\s+.*|SecDebugLog /var/log/apache2/waf/modsec_debug.log|' /etc/modsecurity/modsecurity.conf
+
 # 5.2 ModSecurity Core Settings (Detection-Only by default, Low RAM Profile)
 cat > "${MODSEC_CUSTOM_CONF}" <<'EOF'
 # ==============================================================================
@@ -278,7 +288,6 @@ cat > "${MODSEC_CUSTOM_CONF}" <<'EOF'
 
     # CRITICAL FOR 2 GB RAM: Turn OFF response body buffering to avoid OOM crashes!
     SecResponseBodyAccess Off
-    SecResponseBodyMimeType text/plain text/html text/xml
     SecResponseBodyLimit 524288
     SecResponseBodyLimitAction ProcessPartial
 
@@ -297,19 +306,6 @@ cat > "${MODSEC_CUSTOM_CONF}" <<'EOF'
     SecAuditLog /var/log/apache2/waf/modsec_audit.log
     SecAuditLogStorageDir /var/log/apache2/waf/
 
-    # Security: Mask sensitive credentials from audit logs
-    SecAction \
-        "id:900005,\
-        phase:1,\
-        nolog,\
-        pass,\
-        t:none,\
-        setvar:tx.arg_name=password,\
-        setvar:tx.arg_name=password_confirmation,\
-        setvar:tx.arg_name=card_number,\
-        setvar:tx.arg_name=cvv,\
-        setvar:tx.arg_name=token"
-
     # Status code returned on WAF block
     SecDefaultAction "phase:1,deny,log,status:403"
     SecDefaultAction "phase:2,deny,log,status:403"
@@ -317,44 +313,6 @@ cat > "${MODSEC_CUSTOM_CONF}" <<'EOF'
 EOF
 chmod 644 "${MODSEC_CUSTOM_CONF}"
 log_success "Created: ${MODSEC_CUSTOM_CONF}"
-
-# 5.3 OWASP CRS Paranoia Level 1 Configuration
-cat > "${WAF_DIR}/owasp-crs.conf" <<'EOF'
-# ==============================================================================
-# OWASP Core Rule Set (CRS v3) Integration - Paranoia Level 1 (Low CPU Profile)
-# ==============================================================================
-<IfModule security2_module>
-    # Include base CRS setup configuration if present
-    IncludeOptional /etc/modsecurity/crs-setup.conf
-    IncludeOptional /usr/share/modsecurity-crs/crs-setup.conf
-
-    # Overwrite CRS parameters for lightweight operation:
-    SecAction \
-        "id:900000,\
-        phase:1,\
-        nolog,\
-        pass,\
-        t:none,\
-        setvar:tx.paranoia_level=1,\
-        setvar:tx.executing_paranoia_level=1,\
-        setvar:tx.inbound_anomaly_score_threshold=5,\
-        setvar:tx.outbound_anomaly_score_threshold=4"
-
-    # Include official OWASP rules
-    IncludeOptional /usr/share/modsecurity-crs/rules/*.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-901-INITIALIZATION.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/REQUEST-949-BLOCKING-EVALUATION.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/RESPONSE-959-BLOCKING-EVALUATION.conf
-    IncludeOptional /usr/share/modsecurity-crs/rules/RESPONSE-980-CORRELATION.conf
-</IfModule>
-EOF
-chmod 644 "${WAF_DIR}/owasp-crs.conf"
-log_success "Created: ${WAF_DIR}/owasp-crs.conf"
 
 # 5.4 Application Exclusions (Laravel, Admin Panel & Payment Gateways)
 cat > "${EXCLUSIONS_CONF}" <<'EOF'
@@ -432,7 +390,6 @@ cat > /etc/apache2/conf-available/lightsail-security.conf <<'EOF'
 # Include WAF and Country components
 IncludeOptional /etc/apache2/waf/country-allowlist.conf
 IncludeOptional /etc/apache2/waf/waf-settings.conf
-IncludeOptional /etc/apache2/waf/owasp-crs.conf
 IncludeOptional /etc/apache2/waf/exclusions.conf
 IncludeOptional /etc/apache2/waf/rate-limiting.conf
 
@@ -538,10 +495,12 @@ cmd_mode() {
     local target="${1:-}"
     if [[ "$target" == "detection" ]]; then
         sed -i -E 's/SecRuleEngine\s+(On|Off|DetectionOnly)/SecRuleEngine DetectionOnly/' "${WAF_SETTINGS}"
+        sed -i -E 's/SecRuleEngine\s+(On|Off|DetectionOnly)/SecRuleEngine DetectionOnly/' /etc/modsecurity/modsecurity.conf 2>/dev/null || true
         apache2ctl configtest && systemctl reload apache2
         echo -e "\033[0;32m[OK]\033[0m ModSecurity switched to DETECTION ONLY mode."
     elif [[ "$target" == "blocking" ]]; then
         sed -i -E 's/SecRuleEngine\s+(On|Off|DetectionOnly)/SecRuleEngine On/' "${WAF_SETTINGS}"
+        sed -i -E 's/SecRuleEngine\s+(On|Off|DetectionOnly)/SecRuleEngine On/' /etc/modsecurity/modsecurity.conf 2>/dev/null || true
         apache2ctl configtest && systemctl reload apache2
         echo -e "\033[0;31m[OK]\033[0m ModSecurity switched to BLOCKING mode (Enforcing 403 on attacks)."
     else
