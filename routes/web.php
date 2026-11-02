@@ -238,6 +238,9 @@ Route::prefix('admin')->group(function () {
         // Catalog: Wishlists
         Route::get('/catalog/wishlists', [\App\Http\Controllers\Admin\AdminWishlistWebController::class, 'index'])->name('admin.wishlists.index');
 
+        // Catalog: Share & WhatsApp Hub
+        Route::get('/catalog/share', [\App\Http\Controllers\Admin\AdminCatalogShareController::class, 'index'])->name('admin.catalog.share');
+
         // Direct Variant & Image actions
         Route::put('/catalog/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'updateVariant'])->name('admin.variants.update');
         Route::delete('/catalog/variants/{variant}', [\App\Http\Controllers\Admin\AdminProductWebController::class, 'destroyVariant'])->name('admin.variants.destroy');
