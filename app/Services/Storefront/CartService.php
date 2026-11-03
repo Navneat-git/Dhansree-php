@@ -68,6 +68,9 @@ class CartService
         $subtotalPaise = 0;
         $totalQuantity = 0;
 
+        $store = StoreSettings::current();
+        $defaultCoupon = $store->getDefaultCoupon();
+
         foreach ($rawCart as $variantId => $cartRow) {
             $variant = $variants->get($variantId);
             if (!$variant || !$variant->product || $variant->product->status->value === 'ARCHIVED') {
@@ -84,8 +87,25 @@ class CartService
             }
 
             $pricePaise = (int) $variant->price_paise;
+            $priceRupees = $pricePaise / 100;
             $mrpPaise = (int) $variant->mrp_paise;
+            $mrpRupees = $mrpPaise > 0 ? ($mrpPaise / 100) : null;
+
+            // Calculate discounted price using store coupon rules (same as product listing & PDP)
+            $calc = $store->calculateDiscountedPrice($priceRupees, $mrpRupees);
+            $discountedPriceRupees = (float) $calc['discounted_price'];
+            $discountedPricePaise = (int) round($discountedPriceRupees * 100);
+
             $lineTotalPaise = $pricePaise * $qty;
+            $lineTotalRupees = $lineTotalPaise / 100;
+
+            $lineDiscountedTotalPaise = $discountedPricePaise * $qty;
+            $lineDiscountedTotalRupees = $lineDiscountedTotalPaise / 100;
+
+            $lineMrpTotalPaise = $mrpPaise > 0 ? ($mrpPaise * $qty) : $lineTotalPaise;
+            $lineMrpTotalRupees = $lineMrpTotalPaise / 100;
+
+            $hasDiscount = ($discountedPriceRupees < $priceRupees) || ($mrpPaise > $pricePaise);
 
             $subtotalPaise += $lineTotalPaise;
             $totalQuantity += $qty;
@@ -106,25 +126,46 @@ class CartService
                 'sku' => $variant->sku,
                 'image_url' => $image,
                 'price_paise' => $pricePaise,
-                'price_rupees' => $pricePaise / 100,
+                'price_rupees' => $priceRupees,
                 'mrp_paise' => $mrpPaise,
-                'mrp_rupees' => $mrpPaise / 100,
+                'mrp_rupees' => $mrpRupees,
+                'discounted_price_paise' => $discountedPricePaise,
+                'discounted_price_rupees' => $discountedPriceRupees,
                 'quantity' => $qty,
                 'line_total_paise' => $lineTotalPaise,
-                'line_total_rupees' => $lineTotalPaise / 100,
+                'line_total_rupees' => $lineTotalRupees,
+                'line_discounted_total_paise' => $lineDiscountedTotalPaise,
+                'line_discounted_total_rupees' => $lineDiscountedTotalRupees,
+                'line_mrp_total_paise' => $lineMrpTotalPaise,
+                'line_mrp_total_rupees' => $lineMrpTotalRupees,
+                'discount_percentage' => $calc['discount_percentage'],
+                'has_discount' => $hasDiscount,
                 'stock_on_hand' => $availableStock,
             ];
         }
 
         Session::put(self::SESSION_KEY, $rawCart);
 
-        $store = StoreSettings::current();
+        // Auto-applied default coupon calculation for cart
+        $discountPaise = 0;
+        if ($defaultCoupon && $subtotalPaise > 0) {
+            if ($defaultCoupon->type === \App\Enums\CouponType::PERCENTAGE) {
+                $discountPaise = (int) round(($subtotalPaise * (int) $defaultCoupon->value) / 10000);
+                if ($defaultCoupon->max_discount_paise !== null && $discountPaise > $defaultCoupon->max_discount_paise) {
+                    $discountPaise = $defaultCoupon->max_discount_paise;
+                }
+            } elseif ($defaultCoupon->type === \App\Enums\CouponType::FIXED_AMOUNT) {
+                $discountPaise = min((int) $defaultCoupon->value, $subtotalPaise);
+            }
+        }
+        $effectiveSubtotalPaise = max(0, $subtotalPaise - $discountPaise);
+
         $freeShippingThresholdPaise = $store->free_shipping_threshold_paise !== null ? (int) $store->free_shipping_threshold_paise : null;
         $flatShippingPaise = (int) ($store->shipping_flat_rate_paise ?? 5000);
 
         $isFreeShipping = ($freeShippingThresholdPaise !== null && $subtotalPaise >= $freeShippingThresholdPaise);
         $shippingPaise = $isFreeShipping || $subtotalPaise === 0 ? 0 : $flatShippingPaise;
-        $totalPaise = $subtotalPaise + $shippingPaise;
+        $totalPaise = $effectiveSubtotalPaise + $shippingPaise;
 
         $remainingForFreeShippingPaise = max(0, $freeShippingThresholdPaise - $subtotalPaise);
         $progress = $freeShippingThresholdPaise > 0
@@ -136,6 +177,11 @@ class CartService
             'total_quantity' => $totalQuantity,
             'subtotal_paise' => $subtotalPaise,
             'subtotal_rupees' => round($subtotalPaise / 100, 2),
+            'discount_paise' => $discountPaise,
+            'discount_rupees' => round($discountPaise / 100, 2),
+            'effective_subtotal_paise' => $effectiveSubtotalPaise,
+            'effective_subtotal_rupees' => round($effectiveSubtotalPaise / 100, 2),
+            'coupon_code' => $defaultCoupon?->code,
             'free_shipping_threshold_paise' => $freeShippingThresholdPaise,
             'free_shipping_threshold_rupees' => round($freeShippingThresholdPaise / 100, 2),
             'remaining_for_free_shipping_paise' => $remainingForFreeShippingPaise,
@@ -251,6 +297,11 @@ class CartService
             'total_quantity' => 0,
             'subtotal_paise' => 0,
             'subtotal_rupees' => 0.0,
+            'discount_paise' => 0,
+            'discount_rupees' => 0.0,
+            'effective_subtotal_paise' => 0,
+            'effective_subtotal_rupees' => 0.0,
+            'coupon_code' => null,
             'free_shipping_threshold_paise' => $freeShippingThresholdPaise,
             'free_shipping_threshold_rupees' => round($freeShippingThresholdPaise / 100, 2),
             'remaining_for_free_shipping_paise' => $freeShippingThresholdPaise,

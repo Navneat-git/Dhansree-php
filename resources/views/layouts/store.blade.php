@@ -638,7 +638,20 @@
 
                                     <!-- Price -->
                                     <div class="text-right">
-                                        <span class="text-xs sm:text-sm font-bold text-maroon-800 whitespace-nowrap" x-text="'₹' + item.line_total_rupees"></span>
+                                        <div class="flex items-baseline justify-end gap-1.5 flex-wrap">
+                                            <span class="text-xs sm:text-sm font-bold text-maroon-800 whitespace-nowrap"
+                                                  x-text="'₹' + (item.line_discounted_total_rupees || item.line_total_rupees)"></span>
+                                            <del class="text-[11px] text-rich-black/40 line-through whitespace-nowrap"
+                                                 x-show="item.line_discounted_total_rupees && item.line_discounted_total_rupees < item.line_total_rupees"
+                                                 x-text="'₹' + item.line_total_rupees"></del>
+                                            <del class="text-[11px] text-rich-black/40 line-through whitespace-nowrap"
+                                                 x-show="(!item.line_discounted_total_rupees || item.line_discounted_total_rupees >= item.line_total_rupees) && item.line_mrp_total_rupees && item.line_mrp_total_rupees > item.line_total_rupees"
+                                                 x-text="'₹' + item.line_mrp_total_rupees"></del>
+                                        </div>
+                                        <template x-if="item.discount_percentage">
+                                            <span class="text-[10px] font-bold text-emerald-700 block"
+                                                  x-text="item.discount_percentage + '% OFF'"></span>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -660,8 +673,20 @@
                 <div x-show="cart.items.length > 0" class="p-4 sm:p-5 bg-white border-t border-light-gold space-y-3 shrink-0">
                     <div class="flex items-center justify-between text-sm">
                         <span class="text-rich-black/70 font-medium">Subtotal</span>
-                        <strong class="text-base text-rich-black whitespace-nowrap" x-text="'₹' + cart.subtotal_rupees"></strong>
+                        <div class="text-right">
+                            <strong class="text-base text-rich-black whitespace-nowrap"
+                                    x-text="'₹' + (cart.effective_subtotal_rupees || cart.subtotal_rupees)"></strong>
+                            <del class="text-xs text-rich-black/40 line-through block"
+                                 x-show="cart.discount_rupees > 0"
+                                 x-text="'₹' + cart.subtotal_rupees"></del>
+                        </div>
                     </div>
+                    <template x-if="cart.discount_rupees > 0">
+                        <div class="flex items-center justify-between text-xs text-emerald-700 font-medium">
+                            <span x-text="'Coupon ' + (cart.coupon_code || 'Discount')"></span>
+                            <span class="font-semibold" x-text="'−₹' + cart.discount_rupees"></span>
+                        </div>
+                    </template>
                     <div class="flex items-center justify-between text-xs text-rich-black/60">
                         <span class="font-medium">Shipping</span>
                         <span class="font-semibold text-emerald-700 whitespace-nowrap" x-text="cart.is_free_shipping ? 'FREE' : '₹' + cart.shipping_rupees"></span>
@@ -1105,6 +1130,11 @@
                     total_quantity: 0,
                     subtotal_paise: 0,
                     subtotal_rupees: 0.0,
+                    discount_paise: 0,
+                    discount_rupees: 0.0,
+                    effective_subtotal_paise: 0,
+                    effective_subtotal_rupees: 0.0,
+                    coupon_code: null,
                     remaining_for_free_shipping_rupees: 999.0,
                     free_shipping_progress_percentage: 0,
                     is_free_shipping: false,

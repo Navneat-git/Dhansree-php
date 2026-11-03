@@ -96,20 +96,27 @@
                                     <p class="text-xs text-rich-black/60">
                                         Option: <span class="font-semibold text-rich-black">{{ $item['variant_title'] }}</span>
                                     </p>
-                                    @php
-                                        $store = \App\Models\StoreSettings::current();
-                                        $defaultCoupon = $store->getDefaultCoupon();
-                                        $calcItem = $defaultCoupon ? $store->calculateDiscountedPrice($item['price_rupees'], $item['mrp_rupees']) : null;
-                                    @endphp
-                                    <p class="text-xs text-rich-black/50">
-                                        Unit Price:
-                                        @if($calcItem && $calcItem['discounted_price'] < $item['price_rupees'])
-                                            <span class="font-bold text-maroon-800">{{ $calcItem['formatted_price'] }}</span>
-                                            <del class="text-[11px] text-rich-black/40 ml-1">₹{{ number_format($item['price_rupees'], 0) }}</del>
+                                    <div class="flex items-baseline gap-2 pt-0.5 flex-wrap">
+                                        <span class="text-xs text-rich-black/60 font-medium">Unit:</span>
+                                        @if(($item['discounted_price_rupees'] ?? $item['price_rupees']) < $item['price_rupees'])
+                                            <span class="font-bold text-maroon-800 text-xs sm:text-sm">₹{{ number_format($item['discounted_price_rupees'], 0) }}</span>
+                                            <del class="text-[11px] text-rich-black/40 line-through">₹{{ number_format($item['price_rupees'], 0) }}</del>
+                                            @if(!empty($item['mrp_rupees']) && $item['mrp_rupees'] > $item['price_rupees'])
+                                                <del class="text-[10px] text-rich-black/30 line-through">₹{{ number_format($item['mrp_rupees'], 0) }}</del>
+                                            @endif
+                                        @elseif(!empty($item['mrp_rupees']) && $item['mrp_rupees'] > $item['price_rupees'])
+                                            <span class="font-bold text-maroon-800 text-xs sm:text-sm">₹{{ number_format($item['price_rupees'], 0) }}</span>
+                                            <del class="text-[11px] text-rich-black/40 line-through">₹{{ number_format($item['mrp_rupees'], 0) }}</del>
                                         @else
-                                            <span class="font-semibold text-rich-black">₹{{ number_format($item['price_rupees'], 0) }}</span>
+                                            <span class="font-semibold text-rich-black text-xs sm:text-sm">₹{{ number_format($item['price_rupees'], 0) }}</span>
                                         @endif
-                                    </p>
+
+                                        @if(!empty($item['discount_percentage']))
+                                            <span class="font-bold text-emerald-700 text-[11px]">
+                                                {{ $item['discount_percentage'] }}% OFF
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
@@ -130,10 +137,38 @@
                                 </div>
 
                                 <!-- Line total -->
-                                <div class="text-right">
-                                    <span class="text-base font-bold text-maroon-800">
-                                        ₹{{ number_format($item['line_total_rupees'], 0) }}
-                                    </span>
+                                <div class="text-right shrink-0 min-w-[80px]">
+                                    <div class="flex flex-col items-end">
+                                        @if(($item['line_discounted_total_rupees'] ?? $item['line_total_rupees']) < $item['line_total_rupees'])
+                                            <span class="text-base sm:text-lg font-bold text-maroon-800">
+                                                ₹{{ number_format($item['line_discounted_total_rupees'], 0) }}
+                                            </span>
+                                            <del class="text-xs sm:text-sm text-rich-black/40 line-through">
+                                                ₹{{ number_format($item['line_total_rupees'], 0) }}
+                                            </del>
+                                            @if(!empty($item['discount_percentage']))
+                                                <span class="text-[10px] sm:text-[11px] font-bold text-emerald-700">
+                                                    {{ $item['discount_percentage'] }}% OFF
+                                                </span>
+                                            @endif
+                                        @elseif(!empty($item['line_mrp_total_rupees']) && $item['line_mrp_total_rupees'] > $item['line_total_rupees'])
+                                            <span class="text-base sm:text-lg font-bold text-maroon-800">
+                                                ₹{{ number_format($item['line_total_rupees'], 0) }}
+                                            </span>
+                                            <del class="text-xs sm:text-sm text-rich-black/40 line-through">
+                                                ₹{{ number_format($item['line_mrp_total_rupees'], 0) }}
+                                            </del>
+                                            @if(!empty($item['discount_percentage']))
+                                                <span class="text-[10px] sm:text-[11px] font-bold text-emerald-700">
+                                                    {{ $item['discount_percentage'] }}% OFF
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="text-base sm:text-lg font-bold text-maroon-800">
+                                                ₹{{ number_format($item['line_total_rupees'], 0) }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <!-- Remove button -->
@@ -181,33 +216,31 @@
                 @php
                     $store = \App\Models\StoreSettings::current();
                     $defaultCoupon = $store->getDefaultCoupon();
-                    $cartDiscountPaise = 0;
-                    if ($defaultCoupon && $cart['subtotal_paise'] > 0) {
-                        if ($defaultCoupon->type === \App\Enums\CouponType::PERCENTAGE) {
-                            $cartDiscountPaise = (int) round(($cart['subtotal_paise'] * (int) $defaultCoupon->value) / 10000);
-                            if ($defaultCoupon->max_discount_paise !== null && $cartDiscountPaise > $defaultCoupon->max_discount_paise) {
-                                $cartDiscountPaise = $defaultCoupon->max_discount_paise;
-                            }
-                        } elseif ($defaultCoupon->type === \App\Enums\CouponType::FIXED_AMOUNT) {
-                            $cartDiscountPaise = min((int) $defaultCoupon->value, $cart['subtotal_paise']);
-                        }
-                    }
-                    $effectiveTotalRupees = max(0, $cart['total_rupees'] - ($cartDiscountPaise / 100));
+                    $cartDiscountRupees = $cart['discount_rupees'] ?? 0;
+                    $cartCouponCode = $cart['coupon_code'] ?? ($defaultCoupon?->code ?? 'FESTIVE10');
+                    $subtotalRupees = $cart['subtotal_rupees'] ?? 0;
+                    $effectiveSubtotalRupees = $cart['effective_subtotal_rupees'] ?? ($subtotalRupees - $cartDiscountRupees);
+                    $totalPayableRupees = $cart['total_rupees'] ?? ($effectiveSubtotalRupees + ($cart['shipping_rupees'] ?? 0));
                 @endphp
 
                 <div class="space-y-3 text-xs sm:text-sm divide-y divide-light-gold/60">
                     <div class="flex justify-between py-2 text-rich-black/70">
                         <span>Items Subtotal ({{ $cart['total_quantity'] }})</span>
-                        <span class="font-bold text-rich-black">₹{{ number_format($cart['subtotal_rupees'], 0) }}</span>
+                        <div class="text-right">
+                            <span class="font-bold text-rich-black">₹{{ number_format($effectiveSubtotalRupees, 0) }}</span>
+                            @if($cartDiscountRupees > 0)
+                                <del class="block text-xs text-rich-black/40 line-through">₹{{ number_format($subtotalRupees, 0) }}</del>
+                            @endif
+                        </div>
                     </div>
 
-                    @if($cartDiscountPaise > 0)
+                    @if($cartDiscountRupees > 0)
                         <div class="flex justify-between py-2 text-emerald-700 font-medium">
                             <span class="flex items-center gap-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                                <span>Coupon {{ $defaultCoupon->code }}</span>
+                                <span>Coupon {{ $cartCouponCode }}</span>
                             </span>
-                            <span class="font-semibold">−₹{{ number_format($cartDiscountPaise / 100, 0) }}</span>
+                            <span class="font-semibold">−₹{{ number_format($cartDiscountRupees, 0) }}</span>
                         </div>
                     @endif
 
@@ -223,9 +256,9 @@
                     <div class="flex justify-between pt-4 text-base font-bold text-rich-black">
                         <span>Total Payable</span>
                         <div class="text-right">
-                            <span class="text-xl text-maroon-800">₹{{ number_format($effectiveTotalRupees, 0) }}</span>
-                            @if($cartDiscountPaise > 0)
-                                <span class="block text-[10px] text-emerald-700 font-normal">({{ $defaultCoupon->code }} auto-applied)</span>
+                            <span class="text-xl text-maroon-800">₹{{ number_format($totalPayableRupees, 0) }}</span>
+                            @if($cartDiscountRupees > 0)
+                                <span class="block text-[10px] text-emerald-700 font-normal">({{ $cartCouponCode }} auto-applied)</span>
                             @endif
                         </div>
                     </div>

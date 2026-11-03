@@ -160,25 +160,7 @@
                     </div>
 
                     <div class="space-y-3">
-                        <!-- Cash on Delivery (COD) -->
-                        <label class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
-                               :class="form.payment_method === 'COD' ? 'border-maroon-800 bg-maroon-50/40 ring-1 ring-maroon-800' : 'border-light-gold hover:bg-slate-50'">
-                            <input type="radio"
-                                   name="payment_method"
-                                   value="COD"
-                                   x-model="form.payment_method"
-                                   @change="recalculateQuote"
-                                   class="mt-1 text-maroon-800 focus:ring-maroon-800">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2 font-bold text-xs text-rich-black">
-                                    <span>💵 Cash on Delivery (COD)</span>
-                                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[0.625rem] font-semibold">Available</span>
-                                </div>
-                                <p class="text-[0.6875rem] text-rich-black/60">Pay in cash or UPI when your parcel arrives at your doorstep.</p>
-                            </div>
-                        </label>
-
-                        <!-- Online Payment (Razorpay) -->
+                        <!-- Online Payment (Razorpay) - Default / Recommended -->
                         <label class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
                                :class="form.payment_method === 'ONLINE' ? 'border-maroon-800 bg-maroon-50/40 ring-1 ring-maroon-800' : 'border-light-gold hover:bg-slate-50'">
                             <input type="radio"
@@ -190,6 +172,7 @@
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2 font-bold text-xs text-rich-black">
                                     <span>⚡ Online Payment (UPI, Cards, NetBanking)</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[0.625rem] font-semibold">Recommended • Fast &amp; Secure</span>
                                 </div>
                                 <p class="text-[0.6875rem] text-rich-black/60">Instant verification via Razorpay • Google Pay, PhonePe, Paytm, Cards &amp; NetBanking.</p>
                                 <div class="pt-2 flex flex-wrap items-center gap-1.5">
@@ -215,6 +198,24 @@
                                         <img src="{{ asset('payments/rupay.png') }}" alt="RuPay" class="h-2.5 w-auto object-contain">
                                     </span>
                                 </div>
+                            </div>
+                        </label>
+
+                        <!-- Cash on Delivery (COD) -->
+                        <label class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
+                               :class="form.payment_method === 'COD' ? 'border-maroon-800 bg-maroon-50/40 ring-1 ring-maroon-800' : 'border-light-gold hover:bg-slate-50'">
+                            <input type="radio"
+                                   name="payment_method"
+                                   value="COD"
+                                   x-model="form.payment_method"
+                                   @change="recalculateQuote"
+                                   class="mt-1 text-maroon-800 focus:ring-maroon-800">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 font-bold text-xs text-rich-black">
+                                    <span>💵 Cash on Delivery (COD)</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-slate-100 text-rich-black/70 text-[0.625rem] font-semibold">Pay at Doorstep</span>
+                                </div>
+                                <p class="text-[0.6875rem] text-rich-black/60">Pay in cash or UPI when your parcel arrives at your doorstep.</p>
                             </div>
                         </label>
                     </div>
@@ -254,7 +255,12 @@
                                     <p class="text-[0.6875rem] text-rich-black/50" x-text="'Qty: ' + item.quantity"></p>
                                 </div>
                             </div>
-                            <span class="font-bold text-rich-black shrink-0" x-text="'₹' + (item.line_total_paise / 100).toFixed(0)"></span>
+                            <div class="text-right shrink-0">
+                                <span class="font-bold text-rich-black block" x-text="'₹' + (item.line_total_paise / 100).toFixed(0)"></span>
+                                <del class="text-[11px] text-rich-black/40 line-through block"
+                                     x-show="item.discount_paise > 0"
+                                     x-text="'₹' + ((item.line_subtotal_paise || (item.line_total_paise + item.discount_paise)) / 100).toFixed(0)"></del>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -356,7 +362,7 @@
                 city: '',
                 state_code: '08',
                 postal_code: '',
-                payment_method: 'COD',
+                payment_method: '{{ $razorpayEnabled ? "ONLINE" : "COD" }}',
                 coupon_code: '{{ $quote['coupon']?->code ?? '' }}',
                 customer_note: ''
             },

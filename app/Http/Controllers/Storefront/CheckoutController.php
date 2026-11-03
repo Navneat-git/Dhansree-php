@@ -58,7 +58,7 @@ class CheckoutController extends Controller
             null,
             $store->state_code ?? '08',
             null,
-            'COD'
+            'ONLINE'
         );
 
         return view('store.checkout', [
@@ -99,7 +99,7 @@ class CheckoutController extends Controller
                 $request->input('postal_code'),
                 $request->input('state_code'),
                 $couponCode,
-                $request->input('payment_method', 'COD')
+                $request->input('payment_method', 'ONLINE')
             );
 
             return response()->json([
