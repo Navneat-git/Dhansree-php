@@ -206,8 +206,8 @@
                                     <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none"></div>
                                 @endif
 
-                                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full z-10">
-                                    <div class="max-w-xl space-y-3 sm:space-y-5 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
+                                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-16 w-full z-10 flex flex-col justify-start sm:justify-center h-full">
+                                    <div class="max-w-md lg:max-w-lg space-y-2.5 sm:space-y-4 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
                                         @if($bEyebrow)
                                             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30 backdrop-blur-xs' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
                                                 <span>✨</span>
@@ -220,20 +220,20 @@
                                             </div>
                                         @endif
 
-                                        <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.15] tracking-tight">
+                                        <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.15] tracking-tight">
                                             {{ $bTitle }}
                                         </h1>
 
                                         @if($bSubtitle)
-                                            <p class="text-xs sm:text-sm md:text-base leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }}">
+                                            <p class="text-xs sm:text-sm leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }} max-w-md">
                                                 {{ $bSubtitle }}
                                             </p>
                                         @endif
 
                                         @if($b->link_path)
-                                            <div class="pt-2">
+                                            <div class="pt-1.5">
                                                 <a href="{{ url($b->link_path) }}"
-                                                   class="inline-block px-8 py-3.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
+                                                   class="inline-block px-7 py-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
                                                     {{ $b->cta_label ?: 'Shop Now' }}
                                                 </a>
                                             </div>

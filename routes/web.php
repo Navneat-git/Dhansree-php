@@ -105,8 +105,9 @@ Route::prefix('store/account')->group(function () {
 });
 
 
-// ─── Curated Collections ───────────────────────────────────────────────────
+// ─── Curated Collections & Shop ──────────────────────────────────────────
 Route::get('/collections/{slug}', [StorefrontController::class, 'collection'])->name('store.collection');
+Route::get('/shop', [StorefrontController::class, 'shop'])->name('store.shop');
 
 // ─── Search ────────────────────────────────────────────────────────────────
 Route::get('/search', [StorefrontController::class, 'search'])->name('store.search');

@@ -148,6 +148,14 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Main catalog / shop page (defaults to curated women fashion collection).
+     */
+    public function shop(Request $request): View|RedirectResponse
+    {
+        return $this->collection('women-fashion', $request);
+    }
+
+    /**
      * Product detail page
      */
     public function product(string $slug): View|RedirectResponse
