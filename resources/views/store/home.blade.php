@@ -156,8 +156,37 @@
                      x-init="start()"
                      @mouseenter="stop()"
                      @mouseleave="start()">
+
+                <style>
+                    .btn-hero-primary {
+                        padding: 9px 20px;
+                        min-height: 38px;
+                        font-size: 0.75rem;
+                        letter-spacing: 0.06em;
+                        white-space: nowrap;
+                    }
+                    .btn-hero-secondary {
+                        padding: 9px 18px;
+                        min-height: 38px;
+                        font-size: 0.75rem;
+                        letter-spacing: 0.05em;
+                        white-space: nowrap;
+                    }
+                    @media (min-width: 640px) {
+                        .btn-hero-primary {
+                            padding: 12px 28px !important;
+                            min-height: 46px !important;
+                            font-size: 0.8125rem !important;
+                        }
+                        .btn-hero-secondary {
+                            padding: 12px 24px !important;
+                            min-height: 46px !important;
+                            font-size: 0.8125rem !important;
+                        }
+                    }
+                </style>
                 
-                <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] overflow-hidden bg-warm-beige flex items-center">
+                <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] min-h-[500px] sm:min-h-0 overflow-hidden bg-warm-beige flex items-start sm:items-center">
                     @php
                         $storeSettings = $store ?? \App\Models\StoreSettings::current();
                     @endphp
@@ -178,7 +207,7 @@
                              x-transition:leave="transition ease-in duration-300"
                              x-transition:leave-start="opacity-100 translate-x-0"
                              x-transition:leave-end="opacity-0 -translate-x-4"
-                             class="absolute inset-0 w-full h-full flex items-center">
+                             class="absolute inset-0 w-full h-full flex items-start sm:items-center">
                             
                             <!-- Background Image (Crisp & High Priority for First Slide) -->
                             @if($b->image_url)
@@ -188,7 +217,7 @@
                                     @endif
                                     <img src="{{ $b->image_url }}"
                                          alt="{{ $b->image_alt_text ?? $bTitle }}"
-                                         class="w-full h-full object-cover"
+                                         class="w-full h-full object-cover object-top sm:object-center"
                                          loading="{{ $idx === 0 ? 'eager' : 'lazy' }}"
                                          fetchpriority="{{ $idx === 0 ? 'high' : 'auto' }}">
                                 </picture>
@@ -197,44 +226,89 @@
                             <!-- Readability Overlays -->
                             @if($hasWords)
                                 @if($light)
-                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent sm:hidden pointer-events-none"></div>
+                                    <!-- Mobile Dark Fade Overlay: Top 44% dark fade to guarantee text readability without covering models -->
+                                    <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
+                                         style="height: 44%; background: linear-gradient(180deg, rgba(12, 3, 7, 0.94) 0%, rgba(20, 5, 11, 0.78) 50%, rgba(20, 5, 11, 0) 100%);"></div>
+                                    <!-- Desktop Readability Gradient: Left side dark fade -->
+                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
+                                         style="width: 50%; background: linear-gradient(90deg, rgba(15, 3, 8, 0.92) 0%, rgba(20, 5, 11, 0.65) 45%, rgba(20, 5, 11, 0) 100%);"></div>
                                 @else
-                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-ivory/85 via-ivory/35 to-transparent sm:hidden pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
+                                         style="height: 44%; background: linear-gradient(180deg, rgba(255, 252, 248, 0.94) 0%, rgba(255, 252, 248, 0.75) 50%, rgba(255, 252, 248, 0) 100%);"></div>
+                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
+                                         style="width: 50%; background: linear-gradient(90deg, rgba(255, 252, 248, 0.92) 0%, rgba(255, 252, 248, 0.65) 45%, rgba(255, 252, 248, 0) 100%);"></div>
                                 @endif
 
                                 @if($veiled)
-                                    <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none z-[5]"></div>
                                 @endif
 
-                                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-16 w-full z-10 flex flex-col justify-start sm:justify-center h-full">
-                                    <div class="max-w-md lg:max-w-lg space-y-2.5 sm:space-y-4 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
+                                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 sm:py-16 w-full z-10 flex flex-col justify-start sm:justify-center h-full">
+                                    <div class="max-w-md sm:max-w-lg lg:max-w-xl space-y-2 sm:space-y-3.5 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
                                         @if($bEyebrow)
-                                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30 backdrop-blur-xs' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
+                                            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30 backdrop-blur-xs' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
                                                 <span>✨</span>
                                                 <span>{{ $bEyebrow }}</span>
                                                 @if($storeSettings && $isFestive)
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-normal bg-amber-400 text-slate-950 shadow-xs">
+                                                    <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-normal bg-amber-400 text-slate-950 shadow-xs">
                                                         {{ $storeSettings->getActiveDiscountText(false) }}
                                                     </span>
                                                 @endif
                                             </div>
                                         @endif
 
-                                        <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal leading-[1.15] tracking-tight">
-                                            {{ $bTitle }}
+                                        @php
+                                            $rawTitle = $bTitle ?: '';
+                                            // Format "Diwali" (or *word*) in gold italic
+                                            if (preg_match('/\*(.*?)\*/', $rawTitle)) {
+                                                $renderedTitle = preg_replace(
+                                                    '/\*(.*?)\*/',
+                                                    '<span class="italic font-serif" style="color: #f6c851; font-style: italic; font-family: \'Cormorant Garamond\', Georgia, serif;">$1</span>',
+                                                    e($rawTitle)
+                                                );
+                                            } else {
+                                                $renderedTitle = preg_replace(
+                                                    '/\b(diwali)\b/i',
+                                                    '<span class="italic font-serif" style="color: #f6c851; font-style: italic; font-family: \'Cormorant Garamond\', Georgia, serif;">$1</span>',
+                                                    e($rawTitle)
+                                                );
+                                            }
+                                        @endphp
+
+                                        <h1 class="font-serif text-xl sm:text-3xl md:text-4xl font-normal leading-tight tracking-tight whitespace-nowrap sm:whitespace-normal">
+                                            {!! $renderedTitle !!}
                                         </h1>
 
                                         @if($bSubtitle)
-                                            <p class="text-xs sm:text-sm leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }} max-w-md">
+                                            <p class="text-[11px] sm:text-sm leading-snug sm:leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200/90' : 'text-rich-black/75' }} max-w-xs sm:max-w-md line-clamp-2 sm:line-clamp-none mx-auto sm:mx-0">
                                                 {{ $bSubtitle }}
                                             </p>
                                         @endif
 
-                                        @if($b->link_path)
-                                            <div class="pt-1.5">
-                                                <a href="{{ url($b->link_path) }}"
-                                                   class="inline-block px-7 py-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-md {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}">
-                                                    {{ $b->cta_label ?: 'Shop Now' }}
+                                        @if($b->link_path || $b->cta_label)
+                                            <div class="pt-1.5 sm:pt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3">
+                                                <!-- Primary Button (Gold finish for festive, luxury lift for all) -->
+                                                <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
+                                                   class="btn-hero-primary group inline-flex items-center justify-center gap-2 font-bold uppercase tracking-wider text-xs sm:text-sm rounded-lg shadow-md transition-all duration-300 active:translate-y-0"
+                                                   @if($isFestive)
+                                                       style="padding: 10px 22px; min-height: 40px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); text-decoration: none;"
+                                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 22px rgba(217, 119, 6, 0.45)';"
+                                                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(217, 119, 6, 0.35)';"
+                                                   @else
+                                                       style="padding: 10px 22px; min-height: 40px; text-decoration: none;"
+                                                       class="{{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}"
+                                                   @endif>
+                                                    <span>{{ $b->cta_label ?: 'Shop Festive Edit' }}</span>
+                                                    <span class="transition-transform duration-300 group-hover:translate-x-1" style="display: inline-block;">➔</span>
+                                                </a>
+
+                                                <!-- Secondary Outlined Button -->
+                                                <a href="{{ url('/shop') }}"
+                                                   class="btn-hero-secondary inline-flex items-center justify-center gap-1.5 font-semibold uppercase tracking-wider text-xs sm:text-sm rounded-lg transition-all duration-300 active:translate-y-0"
+                                                   style="padding: 10px 18px; min-height: 40px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.8); text-decoration: none;"
+                                                   onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#ffffff'; this.style.background='rgba(255, 255, 255, 0.2)'; this.style.boxShadow='0 6px 18px rgba(0, 0, 0, 0.35)';"
+                                                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255, 255, 255, 0.8)'; this.style.background='rgba(0, 0, 0, 0.25)'; this.style.boxShadow='none';">
+                                                    <span>Explore All</span>
                                                 </a>
                                             </div>
                                         @endif
