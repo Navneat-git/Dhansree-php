@@ -134,6 +134,32 @@
     {{-- SECTION: PROMO_CAROUSEL --}}
     @if($blockType === 'PROMO_CAROUSEL')
         <!-- Hero Section (Dynamic Banners or Brand Fallback) -->
+        <style>
+            .ds-hero-wrap{position:absolute;inset:0;z-index:10;display:flex;align-items:center}
+            .ds-hero-copy{box-sizing:border-box;width:40%;padding:0 2.5% 0 5.5%;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+            .ds-hero--light .ds-hero-copy{color:#fff8ec}
+            .ds-hero--dark .ds-hero-copy{color:#2a0a0f}
+            .ds-hero-badge{display:inline-flex;align-items:center;gap:10px;padding:6px 6px 6px 14px;border:1px solid rgba(240,215,140,.45);border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(4px);font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f0d78c}
+            .ds-hero-badge b{background:#f0d78c;color:#4a0e17;padding:3px 10px;border-radius:999px;font-size:10px;letter-spacing:.06em}
+            .ds-hero-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:clamp(30px,3.1vw,58px);line-height:1.05;letter-spacing:-.01em;margin:18px 0 0}
+            .ds-hero-text{margin:14px 0 0;max-width:430px;font-size:clamp(13px,.95vw,16px);line-height:1.65;opacity:.82}
+            .ds-hero-ctas{margin-top:28px}
+            .ds-hero-btn{display:inline-flex;align-items:center;gap:12px;padding:15px 34px;border-radius:2px;background:linear-gradient(135deg,#f6e3a6 0%,#d4af5a 55%,#b8913d 100%);color:#3a0b12;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;white-space:nowrap;box-shadow:0 10px 28px -10px rgba(212,175,90,.75);transition:transform .25s,box-shadow .25s}
+            .ds-hero-btn span{transition:transform .25s}
+            .ds-hero-btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px -10px rgba(212,175,90,.9)}
+            .ds-hero-btn:hover span{transform:translateX(4px)}
+            .ds-hero--dark .ds-hero-btn{background:#4a0e17;color:#fff8ec;box-shadow:none}
+            @media (max-width:640px){
+                .ds-hero-wrap{align-items:flex-start}
+                .ds-hero-copy{width:100%;height:100%;padding:18px 20px 56px;align-items:center;justify-content:flex-start;text-align:center}
+                .ds-hero-badge{font-size:9px;letter-spacing:.14em;padding:4px 4px 4px 10px;gap:6px}
+                .ds-hero-badge b{font-size:9px;padding:2px 7px}
+                .ds-hero-title{font-size:26px;margin-top:10px}
+                .ds-hero-text{display:none}
+                .ds-hero-ctas{margin-top:auto}
+                .ds-hero-btn{padding:13px 30px;font-size:11px;letter-spacing:.18em;gap:8px;box-shadow:0 8px 24px -6px rgba(0,0,0,.55)}
+            }
+        </style>
         @if(!empty($banners) && $banners->isNotEmpty())
             <section class="relative bg-warm-beige/40 border-b border-light-gold overflow-hidden"
                      x-data="{
@@ -156,71 +182,8 @@
                      x-init="start()"
                      @mouseenter="stop()"
                      @mouseleave="start()">
-
-                <style>
-                    .btn-hero-primary {
-                        padding: 9px 20px;
-                        min-height: 38px;
-                        font-size: 0.75rem;
-                        letter-spacing: 0.06em;
-                        white-space: nowrap;
-                    }
-                    .btn-hero-secondary {
-                        padding: 9px 18px;
-                        min-height: 38px;
-                        font-size: 0.75rem;
-                        letter-spacing: 0.05em;
-                        white-space: nowrap;
-                    }
-                    @media (min-width: 640px) {
-                        .btn-hero-primary {
-                            padding: 12px 28px !important;
-                            min-height: 46px !important;
-                            font-size: 0.8125rem !important;
-                        }
-                        .btn-hero-secondary {
-                            padding: 12px 24px !important;
-                            min-height: 46px !important;
-                            font-size: 0.8125rem !important;
-                        }
-                    }
-                    .hero-mobile-cta {
-                        position: absolute !important;
-                        bottom: 44px !important;
-                        left: 0 !important;
-                        right: 0 !important;
-                        z-index: 25 !important;
-                        padding-left: 1rem !important;
-                        padding-right: 1rem !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        gap: 0.625rem !important;
-                    }
-                    @media (min-width: 640px) {
-                        .hero-mobile-cta {
-                            display: none !important;
-                        }
-                    }
-                    .hero-carousel-dots {
-                        position: absolute !important;
-                        bottom: 14px !important;
-                        left: 0 !important;
-                        right: 0 !important;
-                        z-index: 30 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        gap: 0.5rem !important;
-                    }
-                    @media (min-width: 640px) {
-                        .hero-carousel-dots {
-                            bottom: 24px !important;
-                        }
-                    }
-                </style>
                 
-                <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] min-h-[500px] sm:min-h-0 overflow-hidden bg-warm-beige flex items-start sm:items-center">
+                <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] overflow-hidden bg-warm-beige flex items-center">
                     @php
                         $storeSettings = $store ?? \App\Models\StoreSettings::current();
                     @endphp
@@ -241,7 +204,7 @@
                              x-transition:leave="transition ease-in duration-300"
                              x-transition:leave-start="opacity-100 translate-x-0"
                              x-transition:leave-end="opacity-0 -translate-x-4"
-                             class="absolute inset-0 w-full h-full flex items-start sm:items-center">
+                             class="absolute inset-0 w-full h-full flex items-center">
                             
                             <!-- Background Image (Crisp & High Priority for First Slide) -->
                             @if($b->image_url)
@@ -251,7 +214,7 @@
                                     @endif
                                     <img src="{{ $b->image_url }}"
                                          alt="{{ $b->image_alt_text ?? $bTitle }}"
-                                         class="w-full h-full object-cover object-top sm:object-center"
+                                         class="w-full h-full object-cover"
                                          loading="{{ $idx === 0 ? 'eager' : 'lazy' }}"
                                          fetchpriority="{{ $idx === 0 ? 'high' : 'auto' }}">
                                 </picture>
@@ -260,125 +223,42 @@
                             <!-- Readability Overlays -->
                             @if($hasWords)
                                 @if($light)
-                                    <!-- Mobile Dark Fade Overlay: Top 36% dark fade for header typography -->
-                                    <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 36%; background: linear-gradient(180deg, rgba(12, 3, 7, 0.94) 0%, rgba(20, 5, 11, 0.72) 50%, rgba(20, 5, 11, 0) 100%);"></div>
-                                    <!-- Mobile Bottom Fade Overlay: Bottom 28% dark fade for buttons contrast -->
-                                    <div aria-hidden class="absolute inset-x-0 bottom-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 28%; background: linear-gradient(0deg, rgba(10, 2, 5, 0.92) 0%, rgba(10, 2, 5, 0.55) 60%, rgba(10, 2, 5, 0) 100%);"></div>
-                                    <!-- Desktop Readability Gradient: Left side dark fade -->
-                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
-                                         style="width: 50%; background: linear-gradient(90deg, rgba(15, 3, 8, 0.92) 0%, rgba(20, 5, 11, 0.65) 45%, rgba(20, 5, 11, 0) 100%);"></div>
+                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent sm:hidden pointer-events-none"></div>
                                 @else
-                                    <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 36%; background: linear-gradient(180deg, rgba(255, 252, 248, 0.94) 0%, rgba(255, 252, 248, 0.72) 50%, rgba(255, 252, 248, 0) 100%);"></div>
-                                    <div aria-hidden class="absolute inset-x-0 bottom-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 28%; background: linear-gradient(0deg, rgba(255, 252, 248, 0.92) 0%, rgba(255, 252, 248, 0.55) 60%, rgba(255, 252, 248, 0) 100%);"></div>
-                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
-                                         style="width: 50%; background: linear-gradient(90deg, rgba(255, 252, 248, 0.92) 0%, rgba(255, 252, 248, 0.65) 45%, rgba(255, 252, 248, 0) 100%);"></div>
+                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-ivory/85 via-ivory/35 to-transparent sm:hidden pointer-events-none"></div>
                                 @endif
 
                                 @if($veiled)
-                                    <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none z-[5]"></div>
+                                    <div aria-hidden class="absolute inset-0 hidden sm:block bg-gradient-to-r from-ivory/90 via-ivory/60 to-transparent w-2/3 pointer-events-none"></div>
                                 @endif
 
-                                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 sm:py-16 w-full z-10 flex flex-col justify-start sm:justify-center h-full">
-                                    <div class="max-w-md sm:max-w-lg lg:max-w-xl space-y-2 sm:space-y-3.5 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
+                                <div class="ds-hero-wrap {{ $light ? 'ds-hero--light' : 'ds-hero--dark' }}">
+                                    <div class="ds-hero-copy">
                                         @if($bEyebrow)
-                                            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30 backdrop-blur-xs' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
-                                                <span>✨</span>
+                                            <div class="ds-hero-badge">
                                                 <span>{{ $bEyebrow }}</span>
                                                 @if($storeSettings && $isFestive)
-                                                    <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-normal bg-amber-400 text-slate-950 shadow-xs">
-                                                        {{ $storeSettings->getActiveDiscountText(false) }}
-                                                    </span>
+                                                    <b>{{ $storeSettings->getActiveDiscountText(false) }}</b>
                                                 @endif
                                             </div>
                                         @endif
 
-                                        @php
-                                            $rawTitle = $bTitle ?: '';
-                                            // Format "Diwali" (or *word*) in gold italic
-                                            if (preg_match('/\*(.*?)\*/', $rawTitle)) {
-                                                $renderedTitle = preg_replace(
-                                                    '/\*(.*?)\*/',
-                                                    '<span class="italic font-serif" style="color: #f6c851; font-style: italic; font-family: \'Cormorant Garamond\', Georgia, serif;">$1</span>',
-                                                    e($rawTitle)
-                                                );
-                                            } else {
-                                                $renderedTitle = preg_replace(
-                                                    '/\b(diwali)\b/i',
-                                                    '<span class="italic font-serif" style="color: #f6c851; font-style: italic; font-family: \'Cormorant Garamond\', Georgia, serif;">$1</span>',
-                                                    e($rawTitle)
-                                                );
-                                            }
-                                        @endphp
-
-                                        <h1 class="font-serif text-xl sm:text-3xl md:text-4xl font-normal leading-tight tracking-tight whitespace-nowrap sm:whitespace-normal">
-                                            {!! $renderedTitle !!}
-                                        </h1>
+                                        <h1 class="ds-hero-title">{{ $bTitle }}</h1>
 
                                         @if($bSubtitle)
-                                            <p class="text-[11px] sm:text-sm leading-snug sm:leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200/90' : 'text-rich-black/75' }} max-w-xs sm:max-w-md line-clamp-2 sm:line-clamp-none mx-auto sm:mx-0">
-                                                {{ $bSubtitle }}
-                                            </p>
+                                            <p class="ds-hero-text">{{ $bSubtitle }}</p>
                                         @endif
 
-                                        <!-- Desktop CTA Buttons (inside text column) -->
-                                        @if($b->link_path || $b->cta_label)
-                                            <div class="hidden sm:flex pt-2 sm:pt-3 flex-wrap items-center justify-start gap-3">
-                                                <!-- Primary Button (Gold finish for festive, luxury lift for all) -->
-                                                <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
-                                                   class="btn-hero-primary group inline-flex items-center justify-center gap-2 font-bold uppercase tracking-wider text-xs sm:text-sm rounded-lg shadow-md transition-all duration-300 active:translate-y-0"
-                                                   @if($isFestive)
-                                                       style="padding: 12px 28px; min-height: 46px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); text-decoration: none;"
-                                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 22px rgba(217, 119, 6, 0.45)';"
-                                                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(217, 119, 6, 0.35)';"
-                                                   @else
-                                                       style="padding: 12px 28px; min-height: 46px; text-decoration: none;"
-                                                       class="{{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}"
-                                                   @endif>
-                                                    <span>{{ $b->cta_label ?: 'Shop Festive Edit' }}</span>
-                                                    <span class="transition-transform duration-300 group-hover:translate-x-1" style="display: inline-block;">➔</span>
-                                                </a>
-
-                                                <!-- Secondary Outlined Button -->
-                                                <a href="{{ url('/shop') }}"
-                                                   class="btn-hero-secondary inline-flex items-center justify-center gap-1.5 font-semibold uppercase tracking-wider text-xs sm:text-sm rounded-lg transition-all duration-300 active:translate-y-0"
-                                                   style="padding: 12px 24px; min-height: 46px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.8); text-decoration: none;"
-                                                   onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#ffffff'; this.style.background='rgba(255, 255, 255, 0.2)'; this.style.boxShadow='0 6px 18px rgba(0, 0, 0, 0.35)';"
-                                                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255, 255, 255, 0.8)'; this.style.background='rgba(0, 0, 0, 0.25)'; this.style.boxShadow='none';">
-                                                    <span>Explore All</span>
+                                        @if($b->link_path)
+                                            <div class="ds-hero-ctas">
+                                                <a href="{{ url($b->link_path) }}" class="ds-hero-btn">
+                                                    {{ $b->cta_label ?: 'Shop Now' }}
+                                                    <span aria-hidden="true">&rarr;</span>
                                                 </a>
                                             </div>
                                         @endif
                                     </div>
                                 </div>
-
-                                <!-- Mobile CTA Buttons (Explicitly anchored at bottom: 44px above dots) -->
-                                @if($b->link_path || $b->cta_label)
-                                    <div class="hero-mobile-cta" style="position: absolute !important; bottom: 44px !important; left: 0 !important; right: 0 !important; z-index: 25 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; padding: 0 16px !important;">
-                                        <!-- Primary Button -->
-                                        <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
-                                           class="btn-hero-primary group flex-1 max-w-[190px] inline-flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-xs rounded-lg shadow-md transition-all active:translate-y-0"
-                                           @if($isFestive)
-                                               style="padding: 10px 14px; min-height: 40px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45); text-decoration: none;"
-                                           @else
-                                               style="padding: 10px 14px; min-height: 40px; text-decoration: none;"
-                                               class="{{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950' : 'bg-maroon-800 text-white' }}"
-                                           @endif>
-                                            <span class="truncate">{{ $b->cta_label ?: 'Shop Festive Edit' }}</span>
-                                            <span class="text-[11px]">➔</span>
-                                        </a>
-
-                                        <!-- Secondary Outlined Button -->
-                                        <a href="{{ url('/shop') }}"
-                                           class="btn-hero-secondary flex-1 max-w-[145px] inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-xs rounded-lg transition-all active:translate-y-0"
-                                           style="padding: 10px 14px; min-height: 40px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.85); text-decoration: none;">
-                                            <span class="truncate">Explore All</span>
-                                        </a>
-                                    </div>
-                                @endif
                             @elseif($b->link_path)
                                 <a href="{{ url($b->link_path) }}" class="absolute inset-0 z-10" aria-label="{{ $b->image_alt_text ?? 'Promotion' }}"></a>
                             @endif
@@ -388,7 +268,7 @@
 
                 <!-- Navigation Dots & Arrows -->
                 @if($banners->count() > 1)
-                    <div class="hero-carousel-dots" style="position: absolute !important; bottom: 14px !important; left: 0 !important; right: 0 !important; z-index: 30 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important;">
+                    <div class="absolute bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-2">
                         @foreach($banners as $idx => $b)
                             <button type="button"
                                     @click="active = {{ $idx }}"
