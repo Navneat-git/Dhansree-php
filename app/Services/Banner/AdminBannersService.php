@@ -310,7 +310,7 @@ class AdminBannersService
         }
 
         return [
-            'title' => !empty($data['title']) ? trim((string) $data['title']) : null,
+            'title' => !empty($data['title']) ? trim((string) $data['title']) : '',
             'eyebrow' => !empty($data['eyebrow']) ? trim((string) $data['eyebrow']) : null,
             'subtitle' => !empty($data['subtitle']) ? trim((string) $data['subtitle']) : null,
             'caption' => !empty($data['caption']) ? trim((string) $data['caption']) : null,

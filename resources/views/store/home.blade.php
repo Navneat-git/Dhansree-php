@@ -138,26 +138,38 @@
             .ds-hero-wrap{position:absolute;inset:0;z-index:10;display:flex;align-items:center}
             .ds-hero-copy{box-sizing:border-box;width:40%;padding:0 2.5% 0 5.5%;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
             .ds-hero--light .ds-hero-copy{color:#fff8ec}
-            .ds-hero--dark .ds-hero-copy{color:#2a0a0f}
-            .ds-hero-badge{display:inline-flex;align-items:center;gap:10px;padding:6px 6px 6px 14px;border:1px solid rgba(240,215,140,.45);border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(4px);font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f0d78c}
-            .ds-hero-badge b{background:#f0d78c;color:#4a0e17;padding:3px 10px;border-radius:999px;font-size:10px;letter-spacing:.06em}
-            .ds-hero-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:clamp(30px,3.1vw,58px);line-height:1.05;letter-spacing:-.01em;margin:18px 0 0}
-            .ds-hero-text{margin:14px 0 0;max-width:430px;font-size:clamp(13px,.95vw,16px);line-height:1.65;opacity:.82}
-            .ds-hero-ctas{margin-top:28px}
-            .ds-hero-btn{display:inline-flex;align-items:center;gap:12px;padding:15px 34px;border-radius:2px;background:linear-gradient(135deg,#f6e3a6 0%,#d4af5a 55%,#b8913d 100%);color:#3a0b12;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;white-space:nowrap;box-shadow:0 10px 28px -10px rgba(212,175,90,.75);transition:transform .25s,box-shadow .25s}
+            .ds-hero--dark .ds-hero-copy{color:#3a0b12}
+            
+            /* High-End Festive Badge */
+            .ds-hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:1.5px solid #d4af37;border-radius:999px;background:rgba(54,7,15,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#fde68a;box-shadow:0 4px 14px rgba(54,7,15,.25)}
+            .ds-hero-badge b{background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1a0408;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.06em;box-shadow:0 2px 6px rgba(217,119,6,.4)}
+            
+            /* Vibrant Royal Title */
+            .ds-hero-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:clamp(30px,3.1vw,56px);line-height:1.1;letter-spacing:-.01em;margin:16px 0 0;color:#4a0610;text-shadow:0 1px 2px rgba(255,255,255,.9),0 2px 10px rgba(74,6,16,.15)}
+            .ds-hero--light .ds-hero-title{color:#ffffff;text-shadow:0 2px 12px rgba(0,0,0,.65)}
+            .ds-gold-italic{font-style:italic;color:#c47d0e;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;display:inline-block;text-shadow:0 0 1px rgba(196,125,14,.4),0 1px 2px rgba(255,255,255,.8)}
+            .ds-hero--light .ds-gold-italic{color:#fde047;text-shadow:0 0 12px rgba(250,204,21,.65)}
+            
+            .ds-hero-text{margin:14px 0 0;max-width:430px;font-size:clamp(13px,.95vw,16px);line-height:1.65;color:#3d0f16;font-weight:500;opacity:.92;text-shadow:0 1px 1px rgba(255,255,255,.8)}
+            .ds-hero--light .ds-hero-text{color:#f1f5f9;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+            
+            /* Radiant Festive Gold Button */
+            .ds-hero-ctas{margin-top:26px}
+            .ds-hero-btn{display:inline-flex;align-items:center;gap:12px;padding:14px 34px;border-radius:6px;background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1c0407 !important;font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;white-space:nowrap;border:1px solid #fde68a;box-shadow:0 8px 24px -4px rgba(217,119,6,.6),0 2px 6px rgba(0,0,0,.15);transition:transform .25s,box-shadow .25s,background .25s}
             .ds-hero-btn span{transition:transform .25s}
-            .ds-hero-btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px -10px rgba(212,175,90,.9)}
+            .ds-hero-btn:hover{transform:translateY(-2px);background:linear-gradient(135deg,#fde047 0%,#fbbf24 50%,#d97706 100%);box-shadow:0 12px 28px -4px rgba(217,119,6,.75)}
             .ds-hero-btn:hover span{transform:translateX(4px)}
-            .ds-hero--dark .ds-hero-btn{background:#4a0e17;color:#fff8ec;box-shadow:none}
+            .ds-hero--dark .ds-hero-btn{background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1c0407;border:1px solid #fde68a}
+
             @media (max-width:640px){
                 .ds-hero-wrap{align-items:flex-start}
-                .ds-hero-copy{width:100%;height:100%;padding:18px 20px 56px;align-items:center;justify-content:flex-start;text-align:center}
-                .ds-hero-badge{font-size:9px;letter-spacing:.14em;padding:4px 4px 4px 10px;gap:6px}
+                .ds-hero-copy{width:100%;height:100%;padding:18px 20px 48px;align-items:center;justify-content:flex-start;text-align:center}
+                .ds-hero-badge{font-size:9.5px;letter-spacing:.14em;padding:4px 6px 4px 11px;gap:6px;box-shadow:0 4px 14px rgba(54,7,15,.3)}
                 .ds-hero-badge b{font-size:9px;padding:2px 7px}
-                .ds-hero-title{font-size:26px;margin-top:10px}
+                .ds-hero-title{font-size:28px;margin-top:10px;line-height:1.15}
                 .ds-hero-text{display:none}
-                .ds-hero-ctas{margin-top:auto}
-                .ds-hero-btn{padding:13px 30px;font-size:11px;letter-spacing:.18em;gap:8px;box-shadow:0 8px 24px -6px rgba(0,0,0,.55)}
+                .ds-hero-ctas{margin-top:auto;padding-bottom:6px}
+                .ds-hero-btn{padding:12px 28px;font-size:11.5px;letter-spacing:.16em;gap:8px;border-radius:6px;box-shadow:0 8px 24px -4px rgba(217,119,6,.65)}
             }
         </style>
         @if(!empty($banners) && $banners->isNotEmpty())
@@ -223,9 +235,9 @@
                             <!-- Readability Overlays -->
                             @if($hasWords)
                                 @if($light)
-                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent sm:hidden pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent sm:hidden pointer-events-none"></div>
                                 @else
-                                    <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-ivory/85 via-ivory/35 to-transparent sm:hidden pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-x-0 top-0 h-[38%] bg-gradient-to-b from-amber-50/90 via-amber-50/50 to-transparent sm:hidden pointer-events-none"></div>
                                 @endif
 
                                 @if($veiled)
@@ -243,7 +255,24 @@
                                             </div>
                                         @endif
 
-                                        <h1 class="ds-hero-title">{{ $bTitle }}</h1>
+                                        @php
+                                            $rawTitle = $bTitle ?: '';
+                                            if (preg_match('/\*(.*?)\*/', $rawTitle)) {
+                                                $renderedTitle = preg_replace(
+                                                    '/\*(.*?)\*/',
+                                                    '<span class="ds-gold-italic">$1</span>',
+                                                    e($rawTitle)
+                                                );
+                                            } else {
+                                                $renderedTitle = preg_replace(
+                                                    '/\b(diwali)\b/i',
+                                                    '<span class="ds-gold-italic">$1</span>',
+                                                    e($rawTitle)
+                                                );
+                                            }
+                                        @endphp
+
+                                        <h1 class="ds-hero-title">{!! $renderedTitle !!}</h1>
 
                                         @if($bSubtitle)
                                             <p class="ds-hero-text">{{ $bSubtitle }}</p>
