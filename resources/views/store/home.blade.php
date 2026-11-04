@@ -184,6 +184,40 @@
                             font-size: 0.8125rem !important;
                         }
                     }
+                    .hero-mobile-cta {
+                        position: absolute !important;
+                        bottom: 44px !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        z-index: 25 !important;
+                        padding-left: 1rem !important;
+                        padding-right: 1rem !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 0.625rem !important;
+                    }
+                    @media (min-width: 640px) {
+                        .hero-mobile-cta {
+                            display: none !important;
+                        }
+                    }
+                    .hero-carousel-dots {
+                        position: absolute !important;
+                        bottom: 14px !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        z-index: 30 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 0.5rem !important;
+                    }
+                    @media (min-width: 640px) {
+                        .hero-carousel-dots {
+                            bottom: 24px !important;
+                        }
+                    }
                 </style>
                 
                 <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] min-h-[500px] sm:min-h-0 overflow-hidden bg-warm-beige flex items-start sm:items-center">
@@ -321,9 +355,9 @@
                                     </div>
                                 </div>
 
-                                <!-- Mobile CTA Buttons (Anchored at the bottom to never overlap models' faces) -->
+                                <!-- Mobile CTA Buttons (Explicitly anchored at bottom: 44px above dots) -->
                                 @if($b->link_path || $b->cta_label)
-                                    <div class="sm:hidden absolute bottom-11 inset-x-0 z-10 px-4 flex items-center justify-center gap-2.5">
+                                    <div class="hero-mobile-cta" style="position: absolute !important; bottom: 44px !important; left: 0 !important; right: 0 !important; z-index: 25 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 10px !important; padding: 0 16px !important;">
                                         <!-- Primary Button -->
                                         <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
                                            class="btn-hero-primary group flex-1 max-w-[190px] inline-flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-xs rounded-lg shadow-md transition-all active:translate-y-0"
@@ -340,7 +374,7 @@
                                         <!-- Secondary Outlined Button -->
                                         <a href="{{ url('/shop') }}"
                                            class="btn-hero-secondary flex-1 max-w-[145px] inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-xs rounded-lg transition-all active:translate-y-0"
-                                           style="padding: 10px 14px; min-height: 40px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.85); text-decoration: none;">
+                                           style="padding: 10px 14px; min-height: 40px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.85); text-decoration: none;">
                                             <span class="truncate">Explore All</span>
                                         </a>
                                     </div>
@@ -354,7 +388,7 @@
 
                 <!-- Navigation Dots & Arrows -->
                 @if($banners->count() > 1)
-                    <div class="absolute bottom-3 sm:bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-2">
+                    <div class="hero-carousel-dots" style="position: absolute !important; bottom: 14px !important; left: 0 !important; right: 0 !important; z-index: 30 !important; display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important;">
                         @foreach($banners as $idx => $b)
                             <button type="button"
                                     @click="active = {{ $idx }}"
