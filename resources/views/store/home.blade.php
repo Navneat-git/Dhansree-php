@@ -140,18 +140,26 @@
             .ds-hero--light .ds-hero-copy{color:#fff8ec}
             .ds-hero--dark .ds-hero-copy{color:#3a0b12}
             
+            /* Anti-aliasing & crisp rendering for desktop typography */
+            .ds-hero-title, .ds-hero-text, .ds-gold-italic, .ds-hero-btn, .ds-hero-badge {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: optimizeLegibility;
+            }
+
             /* High-End Festive Badge */
-            .ds-hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:1.5px solid #d4af37;border-radius:999px;background:rgba(54,7,15,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#fde68a;box-shadow:0 4px 14px rgba(54,7,15,.25)}
+            .ds-hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;border:1.5px solid #d4af37;border-radius:999px;background:rgba(54,7,15,.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#fde68a;box-shadow:0 4px 14px rgba(54,7,15,.25)}
             .ds-hero-badge b{background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 50%,#d97706 100%);color:#1a0408;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.06em;box-shadow:0 2px 6px rgba(217,119,6,.4)}
             
-            /* Vibrant Royal Title */
-            .ds-hero-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:clamp(30px,3.1vw,56px);line-height:1.1;letter-spacing:-.01em;margin:16px 0 0;color:#4a0610;text-shadow:0 1px 2px rgba(255,255,255,.9),0 2px 10px rgba(74,6,16,.15)}
-            .ds-hero--light .ds-hero-title{color:#ffffff;text-shadow:0 2px 12px rgba(0,0,0,.65)}
-            .ds-gold-italic{font-style:italic;color:#c47d0e;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;display:inline-block;text-shadow:0 0 1px rgba(196,125,14,.4),0 1px 2px rgba(255,255,255,.8)}
-            .ds-hero--light .ds-gold-italic{color:#fde047;text-shadow:0 0 12px rgba(250,204,21,.65)}
+            /* Razor-Sharp Royal Title */
+            .ds-hero-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700;font-size:clamp(30px,3.1vw,56px);line-height:1.1;letter-spacing:-.01em;margin:16px 0 0;color:#3a070f;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+            .ds-hero--light .ds-hero-title{color:#ffffff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+            .ds-gold-italic{font-style:italic;color:#b86c07;font-family:'Cormorant Garamond',Georgia,serif;font-weight:700;display:inline-block;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+            .ds-hero--light .ds-gold-italic{color:#fde047;text-shadow:0 1px 3px rgba(0,0,0,.5)}
             
-            .ds-hero-text{margin:14px 0 0;max-width:430px;font-size:clamp(13px,.95vw,16px);line-height:1.65;color:#3d0f16;font-weight:500;opacity:.92;text-shadow:0 1px 1px rgba(255,255,255,.8)}
-            .ds-hero--light .ds-hero-text{color:#f1f5f9;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+            /* Crystal Clear Subtitle */
+            .ds-hero-text{margin:14px 0 0;max-width:440px;font-size:clamp(13px,.95vw,16px);line-height:1.65;color:#2e080f;font-weight:500;opacity:1;text-shadow:none}
+            .ds-hero--light .ds-hero-text{color:#f8fafc;text-shadow:0 1px 3px rgba(0,0,0,.5)}
             
             /* Radiant Festive Gold Button */
             .ds-hero-ctas{margin-top:26px}
@@ -236,8 +244,10 @@
                             @if($hasWords)
                                 @if($light)
                                     <div aria-hidden class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent sm:hidden pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block w-3/5 bg-gradient-to-r from-black/65 via-black/30 to-transparent pointer-events-none"></div>
                                 @else
                                     <div aria-hidden class="absolute inset-x-0 top-0 h-[38%] bg-gradient-to-b from-amber-50/90 via-amber-50/50 to-transparent sm:hidden pointer-events-none"></div>
+                                    <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block w-1/2 bg-gradient-to-r from-[#faf6ee]/80 via-[#faf6ee]/35 to-transparent pointer-events-none"></div>
                                 @endif
 
                                 @if($veiled)
