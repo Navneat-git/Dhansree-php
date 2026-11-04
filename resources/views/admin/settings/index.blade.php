@@ -19,6 +19,12 @@
                 class="px-4 py-2.5 border-b-2 text-xs transition-all whitespace-nowrap rounded-t-lg">
             Store Profile
         </button>
+        <button type="button" @click="currentTab = 'announcement_bar'"
+                :class="currentTab === 'announcement_bar' ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-semibold' : 'border-transparent text-slate-600 hover:text-slate-900'"
+                class="px-4 py-2.5 border-b-2 text-xs transition-all whitespace-nowrap rounded-t-lg flex items-center gap-1.5">
+            <span class="text-amber-600">📢</span>
+            <span>Top Announcement Bar</span>
+        </button>
         <button type="button" @click="currentTab = 'business'"
                 :class="currentTab === 'business' ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-semibold' : 'border-transparent text-slate-600 hover:text-slate-900'"
                 class="px-4 py-2.5 border-b-2 text-xs transition-all whitespace-nowrap rounded-t-lg">
@@ -78,12 +84,169 @@
                         <p class="text-[11px] text-slate-400 mt-1">Receives alerts on new customer orders.</p>
                     </div>
 
-                    <div class="sm:col-span-2 pt-2 border-t border-slate-100">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Default Top Bar Promo Coupon</label>
-                        <input type="text" name="featured_coupon_code" value="{{ old('featured_coupon_code', $settings->featured_coupon_code ?? 'FESTIVE10') }}"
-                               placeholder="e.g. FESTIVE10"
-                               class="w-full sm:w-1/2 px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold uppercase text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
-                        <p class="text-[11px] text-slate-400 mt-1">Displayed on the continuous running top marquee bar and checkout coupon placeholder across dhansree.com.</p>
+                    <div class="sm:col-span-2 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="block text-xs font-semibold text-slate-700">Top Announcement Bar & Promo Coupon</span>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Customize running banner messages, enable/disable the top marquee, and link dynamic promo discount.</p>
+                        </div>
+                        <button type="button" @click="currentTab = 'announcement_bar'"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition-colors self-start sm:self-auto">
+                            <span>📢</span>
+                            <span>Configure Announcement Bar &rarr;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: TOP ANNOUNCEMENT BAR -->
+        <div x-show="currentTab === 'announcement_bar'" class="space-y-6">
+            <div class="rounded-xl border border-slate-200/80 bg-white shadow-xs p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <span>📢</span>
+                            <span>Continuous Running Top Announcement Bar</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Control the continuous marquee bar displayed at the very top of dhansree.com, customize messages, and link active promotional discounts.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="announcement_bar_enabled" value="1"
+                                   {{ old('announcement_bar_enabled', $settings->announcement_bar_enabled ?? true) ? 'checked' : '' }}
+                                   class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                            <span class="ml-2 text-xs font-semibold text-slate-700">Bar Active</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Active Promo Token Settings -->
+                <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4.5 space-y-3">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <span class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="size-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                Dynamic Promotional Discount & Coupon Binding
+                            </span>
+                            <p class="text-xs text-amber-800/80 mt-1">
+                                Any occurrence of <code class="px-1.5 py-0.5 bg-amber-100 rounded text-amber-950 font-mono text-[11px] font-bold">{discount}</code> and <code class="px-1.5 py-0.5 bg-amber-100 rounded text-amber-950 font-mono text-[11px] font-bold">{coupon}</code> in your announcement messages or homepage hero banner will automatically resolve to the active discount and coupon selected below.
+                            </p>
+                        </div>
+                        <div class="shrink-0 hidden sm:block">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200/80 text-amber-900 text-xs font-bold font-mono">
+                                Active: {{ $settings->getActiveDiscountText(true) }} ({{ $settings->featured_coupon_code }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-800 mb-1.5">Select Active Store Coupon</label>
+                            <select name="featured_coupon_code"
+                                    class="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                                @if(isset($coupons) && $coupons->isNotEmpty())
+                                    @foreach($coupons as $c)
+                                        @php
+                                            $isPct = ($c->type instanceof \App\Enums\CouponType) ? $c->type === \App\Enums\CouponType::PERCENTAGE : strtoupper((string)$c->type) === 'PERCENTAGE';
+                                            $v = (float)$c->value;
+                                            $val = ($isPct && $v > 100) ? ($v / 100) : (($v >= 100 && !$isPct) ? ($v / 100) : $v);
+                                            $valFormatted = rtrim(rtrim(number_format($val, 2), '0'), '.');
+                                            $discLabel = $isPct ? "{$valFormatted}% OFF" : "₹{$valFormatted} OFF";
+                                        @endphp
+                                        <option value="{{ $c->code }}" {{ (strtoupper($settings->featured_coupon_code ?? '') === strtoupper($c->code)) ? 'selected' : '' }}>
+                                            {{ $c->code }} — {{ $discLabel }} ({{ $c->description ?: 'Active Promo' }})
+                                        </option>
+                                    @endforeach
+                                @else
+                                    <option value="DIWALI15" {{ ($settings->featured_coupon_code === 'DIWALI15') ? 'selected' : '' }}>DIWALI15 — 15% OFF</option>
+                                    <option value="FESTIVE10" {{ ($settings->featured_coupon_code === 'FESTIVE10') ? 'selected' : '' }}>FESTIVE10 — 10% OFF</option>
+                                @endif
+                            </select>
+                            <p class="text-[11px] text-amber-800/70 mt-1">Changing this immediately updates the discount % and coupon code on the top bar and festive banner.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-800 mb-1.5">Custom Coupon Code (Optional Override)</label>
+                            <input type="text" placeholder="Or type a custom coupon..."
+                                   oninput="if(this.value.trim() !== '') { this.form.featured_coupon_code.value = this.value.toUpperCase(); }"
+                                   class="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold uppercase text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none">
+                            <p class="text-[11px] text-amber-800/70 mt-1">You can also manage or add new coupons under <a href="{{ route('admin.coupons.index') }}" class="underline font-bold text-amber-900 hover:text-amber-950">Marketing &rarr; Coupons</a>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Textarea -->
+                <div class="space-y-3" x-data="{
+                    msgText: `{{ old('announcement_bar_messages', is_array($settings->announcement_bar_messages) ? implode("\n", $settings->announcement_bar_messages) : ($settings->announcement_bar_messages ?: implode("\n", $settings->getAnnouncementMessages()))) }}`,
+                    insertTemplate(text) {
+                        this.msgText = this.msgText.trim() ? this.msgText.trim() + '\n' + text : text;
+                    }
+                }">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-900">Running Marquee Messages (One Message Per Line)</label>
+                            <p class="text-[11px] text-slate-500">Each non-empty line will scroll continuously across the top bar separated by elegant gold bullet dots.</p>
+                        </div>
+                        <!-- Quick Template Inserters -->
+                        <div class="flex items-center flex-wrap gap-1.5">
+                            <span class="text-[10px] text-slate-400 font-semibold uppercase">Add Preset:</span>
+                            <button type="button" @click='insertTemplate("🏷️ Special Offer: {discount} on Every Purchase | Use Code: {coupon}")'
+                                    class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 font-medium transition-colors">
+                                + Festive/Diwali
+                            </button>
+                            <button type="button" @click='insertTemplate("✨ Free Express Delivery on all orders above ₹999")'
+                                    class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 font-medium transition-colors">
+                                + Free Shipping
+                            </button>
+                            <button type="button" @click='insertTemplate("📦 Cash on Delivery (COD) Available Across India")'
+                                    class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 font-medium transition-colors">
+                                + COD Available
+                            </button>
+                            <button type="button" @click='insertTemplate("🌸 100% Pure Breathable Fabrics Handcrafted by Artisans")'
+                                    class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 font-medium transition-colors">
+                                + Artisan Quality
+                            </button>
+                        </div>
+                    </div>
+
+                    <textarea name="announcement_bar_messages" rows="6" x-model="msgText"
+                              class="w-full px-3.5 py-3 bg-white border border-slate-300 rounded-lg text-xs font-sans text-slate-900 shadow-2xs focus:border-amber-500 focus:outline-none leading-relaxed"
+                              placeholder="🏷️ Special Offer: {discount} on Every Purchase | Use Code: {coupon}
+✨ Free Express Delivery on all orders above ₹999
+📦 Cash on Delivery (COD) Available Across India
+🌸 100% Pure Breathable Fabrics Handcrafted by Artisans"></textarea>
+
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>💡 Tip: Use <strong class="text-amber-700">{discount}</strong> for active discount and <strong class="text-amber-700">{coupon}</strong> for active coupon code badge.</span>
+                        <button type="button" @click="msgText = `🏷️ Special Offer: {discount} on Every Purchase | Use Code: {coupon}\n✨ Free Express Delivery on all orders above ₹999\n📦 Cash on Delivery (COD) Available Across India\n🌸 100% Pure Breathable Fabrics Handcrafted by Artisans`"
+                                class="text-xs text-amber-700 hover:text-amber-800 underline font-semibold">
+                            Reset to Default Messages
+                        </button>
+                    </div>
+
+                    <!-- Live Marquee Preview Box -->
+                    <div class="pt-4 border-t border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Live Storefront Preview (Exact Styling as seen on dhansree.com)
+                            </span>
+                            <span class="text-[10px] text-slate-400">Marquee Preview</span>
+                        </div>
+
+                        <div class="rounded-lg overflow-hidden border border-amber-900/30 shadow-inner bg-[#500724] text-[#fef08a] py-2.5 px-4 text-xs font-medium tracking-wide">
+                            <div class="flex items-center gap-6 overflow-x-auto scrollbar-none py-0.5">
+                                <template x-for="(line, lIdx) in msgText.split('\n').filter(l => l.trim() !== '')" :key="lIdx">
+                                    <div class="inline-flex items-center gap-6 shrink-0">
+                                        <span x-show="lIdx > 0" class="text-amber-300/50">•</span>
+                                        <span class="inline-flex items-center gap-1.5"
+                                              x-html="line.replaceAll('{discount}', '<strong>{{ $settings->getActiveDiscountText(true) }}</strong>').replaceAll('{coupon}', '<span class=\'bg-amber-400/20 px-1.5 py-0.5 rounded text-amber-300 font-bold border border-amber-400/40\'>{{ $settings->featured_coupon_code }}</span>')">
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

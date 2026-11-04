@@ -47,19 +47,9 @@
         $googleAdsId = ($storeSettings?->google_ads_id ?? null) ?: (config('services.google.ads_id') ?: 'AW-18539949937');
         $metaPixelId = ($storeSettings?->ads_meta_pixel_id ?? null) ?: (config('services.meta.pixel_id') ?: '1783488586189258');
         $topBarCouponCode = $storeSettings?->featured_coupon_code ?? 'FESTIVE10';
-        $topBarCoupon = \App\Models\Coupon::where('code', $topBarCouponCode)->where('is_active', true)->first();
-
-        if ($topBarCoupon) {
-            $isPercentage = ($topBarCoupon->type instanceof \App\Enums\CouponType)
-                ? $topBarCoupon->type === \App\Enums\CouponType::PERCENTAGE
-                : strtoupper((string) $topBarCoupon->type) === 'PERCENTAGE';
-            $num = (float) $topBarCoupon->value;
-            $displayVal = ($isPercentage && $num > 100) ? ($num / 100) : (($num >= 100 && !$isPercentage) ? ($num / 100) : $num);
-            $formattedVal = rtrim(rtrim(number_format($displayVal, 2), '0'), '.');
-            $topBarDiscount = $isPercentage ? "Extra {$formattedVal}% OFF" : "Flat ₹{$formattedVal} OFF";
-        } else {
-            $topBarDiscount = 'Extra 10% OFF';
-        }
+        $topBarDiscount = $storeSettings ? $storeSettings->getActiveDiscountText(true) : 'Extra 10% OFF';
+        $announcementMessages = $storeSettings ? $storeSettings->getAnnouncementMessages() : [];
+        $announcementBarEnabled = (bool) ($storeSettings?->announcement_bar_enabled ?? true);
     @endphp
 
     @if($siteVerification)
@@ -169,27 +159,27 @@
         <!-- End Google Tag Manager (noscript) -->
     @endif
 
+    @if($announcementBarEnabled && !empty($announcementMessages))
     <!-- Continuous Running Announcement Bar -->
     <div class="marquee-container w-full max-w-full overflow-hidden overflow-x-hidden whitespace-nowrap {{ ($isSmartLivingHub ?? false) ? 'bg-tech-dark text-gold-300' : 'bg-maroon-800 text-gold-200' }} py-2 text-xs font-medium tracking-wide border-b {{ ($isSmartLivingHub ?? false) ? 'border-tech-border' : 'border-maroon-900' }}">
         <div class="inline-flex items-center gap-10 pr-10 animate-marquee">
-            <span class="inline-flex items-center gap-1.5"><span class="text-gold-400">🏷️</span> Special Offer: <strong>{{ $topBarDiscount }}</strong> on Every Purchase | Use Code: <span class="bg-gold-500/20 px-1.5 py-0.5 rounded text-gold-300 font-bold border border-gold-400/40">{{ $topBarCouponCode }}</span></span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5"><span class="text-gold-400">✨</span> Free Express Delivery on all orders above <strong>₹999</strong></span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5">📦 Cash on Delivery (COD) Available Across India</span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5">🌸 100% Pure Breathable Fabrics Handcrafted by Artisans</span>
+            @foreach($announcementMessages as $idx => $msg)
+                @if($idx > 0)
+                    <span class="text-gold-500/50">•</span>
+                @endif
+                <span class="inline-flex items-center gap-1.5">{!! $storeSettings->formatAnnouncementMessageHtml($msg) !!}</span>
+            @endforeach
         </div>
         <div class="inline-flex items-center gap-10 pr-10 animate-marquee" aria-hidden="true">
-            <span class="inline-flex items-center gap-1.5"><span class="text-gold-400">🏷️</span> Special Offer: <strong>{{ $topBarDiscount }}</strong> on Every Purchase | Use Code: <span class="bg-gold-500/20 px-1.5 py-0.5 rounded text-gold-300 font-bold border border-gold-400/40">{{ $topBarCouponCode }}</span></span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5"><span class="text-gold-400">✨</span> Free Express Delivery on all orders above <strong>₹999</strong></span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5">📦 Cash on Delivery (COD) Available Across India</span>
-            <span class="text-gold-500/50">•</span>
-            <span class="inline-flex items-center gap-1.5">🌸 100% Pure Breathable Fabrics Handcrafted by Artisans</span>
+            @foreach($announcementMessages as $idx => $msg)
+                @if($idx > 0)
+                    <span class="text-gold-500/50">•</span>
+                @endif
+                <span class="inline-flex items-center gap-1.5">{!! $storeSettings->formatAnnouncementMessageHtml($msg) !!}</span>
+            @endforeach
         </div>
     </div>
+    @endif
 
     <!-- Main Navigation Header (Two distinct rows on wide screens) -->
     <header class="sticky top-0 z-40 bg-ivory/95 backdrop-blur-md border-b border-light-gold/60 transition-shadow duration-300"

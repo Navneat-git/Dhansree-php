@@ -42,6 +42,24 @@
         </div>
     </div>
 
+    <!-- Top Announcement Bar Quick Banner Link -->
+    <div class="rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-white to-amber-50/40 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="size-9 rounded-lg bg-amber-500/10 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 text-lg">
+                📢
+            </div>
+            <div>
+                <h3 class="text-xs font-bold text-slate-900">Continuous Running Top Announcement Bar</h3>
+                <p class="text-[11px] text-slate-500">Edit the running marquee messages at the top of dhansree.com or update the active Diwali/Festive discount.</p>
+            </div>
+        </div>
+        <a href="{{ route('admin.settings.index', ['tab' => 'announcement_bar']) }}"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition-colors self-start sm:self-auto shrink-0">
+            <span>Manage Top Announcement Bar</span>
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+
     <!-- Hub Cross-Promotional Banners Configuration -->
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div class="p-4 sm:p-5 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">

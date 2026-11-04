@@ -37,6 +37,7 @@ class StoreSettings extends Model
         'newsletter_enabled' => 'boolean',
         'newsletter_min_order_paise' => 'integer',
         'newsletter_popup_enabled' => 'boolean',
+        'announcement_bar_enabled' => 'boolean',
     ];
 
     public static function current(): self
@@ -196,5 +197,99 @@ class StoreSettings extends Model
     public function smartLivingPromoProduct(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Product::class, 'smart_living_promo_product_id', 'id');
+    }
+
+    /**
+     * Get human-readable active discount text based on default coupon (e.g. "Extra 15% OFF", "15% OFF").
+     */
+    public function getActiveDiscountText(bool $prefix = true): string
+    {
+        $coupon = $this->getDefaultCoupon();
+        if (!$coupon) {
+            return $prefix ? 'Extra 10% OFF' : '10% OFF';
+        }
+
+        $isPct = ($coupon->type instanceof \App\Enums\CouponType)
+            ? $coupon->type === \App\Enums\CouponType::PERCENTAGE
+            : strtoupper((string) $coupon->type) === 'PERCENTAGE';
+        $v = (float) $coupon->value;
+        $val = ($isPct && $v > 100) ? ($v / 100) : (($v >= 100 && !$isPct) ? ($v / 100) : $v);
+        $valStr = rtrim(rtrim(number_format($val, 2), '0'), '.');
+
+        if ($isPct) {
+            return $prefix ? "Extra {$valStr}% OFF" : "{$valStr}% OFF";
+        }
+
+        return $prefix ? "Flat ₹{$valStr} OFF" : "₹{$valStr} OFF";
+    }
+
+    /**
+     * Get the list of running announcement bar messages.
+     *
+     * @return array<int, string>
+     */
+    public function getAnnouncementMessages(): array
+    {
+        $raw = $this->announcement_bar_messages ?? null;
+        if (!empty($raw)) {
+            if (is_array($raw)) {
+                $lines = $raw;
+            } else {
+                $decoded = json_decode((string) $raw, true);
+                if (is_array($decoded)) {
+                    $lines = $decoded;
+                } else {
+                    $lines = preg_split('/\r\n|\r|\n/', (string) $raw);
+                }
+            }
+
+            $messages = array_values(array_filter(array_map('trim', (array) $lines)));
+            if (!empty($messages)) {
+                return $messages;
+            }
+        }
+
+        return [
+            '🏷️ Special Offer: {discount} on Every Purchase | Use Code: {coupon}',
+            '✨ Free Express Delivery on all orders above ₹999',
+            '📦 Cash on Delivery (COD) Available Across India',
+            '🌸 100% Pure Breathable Fabrics Handcrafted by Artisans',
+        ];
+    }
+
+    /**
+     * Resolve dynamic tokens {discount} and {coupon} in plain text.
+     */
+    public function formatAnnouncementMessage(?string $message): string
+    {
+        if ($message === null || $message === '') {
+            return '';
+        }
+
+        $discount = $this->getActiveDiscountText(true);
+        $code = $this->featured_coupon_code;
+
+        return str_replace(
+            ['{discount}', '{coupon}'],
+            [$discount, $code],
+            $message
+        );
+    }
+
+    /**
+     * Resolve dynamic tokens {discount} and {coupon} into styled HTML for storefront continuous marquee.
+     */
+    public function formatAnnouncementMessageHtml(string $message): string
+    {
+        $discount = '<strong>' . htmlspecialchars($this->getActiveDiscountText(true)) . '</strong>';
+        $code = '<span class="bg-gold-500/20 px-1.5 py-0.5 rounded text-gold-300 font-bold border border-gold-400/40">'
+            . htmlspecialchars($this->featured_coupon_code)
+            . '</span>';
+
+        return str_replace(
+            ['{discount}', '{coupon}'],
+            [$discount, $code],
+            htmlspecialchars($message, ENT_NOQUOTES)
+        );
     }
 }

@@ -158,11 +158,18 @@
                      @mouseleave="start()">
                 
                 <div class="relative w-full aspect-[4/5] sm:aspect-[16/5] overflow-hidden bg-warm-beige flex items-center">
+                    @php
+                        $storeSettings = $store ?? \App\Models\StoreSettings::current();
+                    @endphp
                     @foreach($banners as $idx => $b)
                         @php
                             $veiled = ($b->word_mode === 'ON_LIGHTENED');
                             $light = ($b->word_mode === 'LIGHT_ON_PICTURE');
-                            $hasWords = !empty($b->title) || !empty($b->eyebrow) || !empty($b->subtitle);
+                            $bTitle = $storeSettings ? $storeSettings->formatAnnouncementMessage($b->title) : $b->title;
+                            $bEyebrow = $storeSettings ? $storeSettings->formatAnnouncementMessage($b->eyebrow) : $b->eyebrow;
+                            $bSubtitle = $storeSettings ? $storeSettings->formatAnnouncementMessage($b->subtitle) : $b->subtitle;
+                            $hasWords = !empty($bTitle) || !empty($bEyebrow) || !empty($bSubtitle);
+                            $isFestive = ($idx === 0 || str_contains(strtolower(($b->title ?? '') . ' ' . ($b->eyebrow ?? '')), 'diwali') || str_contains(strtolower(($b->title ?? '') . ' ' . ($b->eyebrow ?? '')), 'festive'));
                         @endphp
                         <div x-show="active === {{ $idx }}"
                              x-transition:enter="transition ease-out duration-500"
@@ -180,7 +187,7 @@
                                         <source media="(max-width: 640px)" srcset="{{ $b->mobile_image_url }}">
                                     @endif
                                     <img src="{{ $b->image_url }}"
-                                         alt="{{ $b->image_alt_text ?? $b->title }}"
+                                         alt="{{ $b->image_alt_text ?? $bTitle }}"
                                          class="w-full h-full object-cover"
                                          loading="{{ $idx === 0 ? 'eager' : 'lazy' }}"
                                          fetchpriority="{{ $idx === 0 ? 'high' : 'auto' }}">
@@ -201,20 +208,25 @@
 
                                 <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full z-10">
                                     <div class="max-w-xl space-y-3 sm:space-y-5 text-center sm:text-left {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-white' : 'text-rich-black' }}">
-                                        @if($b->eyebrow)
-                                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
+                                        @if($bEyebrow)
+                                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-white/20 text-gold-300 border border-white/30 backdrop-blur-xs' : 'bg-gold-200/70 border border-gold-400 text-maroon-900' }}">
                                                 <span>✨</span>
-                                                <span>{{ $b->eyebrow }}</span>
+                                                <span>{{ $bEyebrow }}</span>
+                                                @if($storeSettings && $isFestive)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-normal bg-amber-400 text-slate-950 shadow-xs">
+                                                        {{ $storeSettings->getActiveDiscountText(false) }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         @endif
 
                                         <h1 class="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-[1.15] tracking-tight">
-                                            {{ $b->title }}
+                                            {{ $bTitle }}
                                         </h1>
 
-                                        @if($b->subtitle)
+                                        @if($bSubtitle)
                                             <p class="text-xs sm:text-sm md:text-base leading-relaxed {{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'text-slate-200' : 'text-rich-black/75' }}">
-                                                {{ $b->subtitle }}
+                                                {{ $bSubtitle }}
                                             </p>
                                         @endif
 

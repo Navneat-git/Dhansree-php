@@ -33,9 +33,11 @@ class AdminSettingsWebController extends Controller
         $this->ensureStoreSettingsColumns();
 
         $settings = StoreSettings::findOr(1, fn() => StoreSettings::first() ?? new StoreSettings(['id' => 1]));
+        $coupons = \App\Models\Coupon::where('is_active', true)->orderBy('code')->get();
 
         return view('admin.settings.index', [
             'settings' => $settings,
+            'coupons' => $coupons,
             'canEdit' => $admin->hasPermission(Permissions::SETTINGS_UPDATE),
         ]);
     }
@@ -63,6 +65,16 @@ class AdminSettingsWebController extends Controller
                 $settings->support_email = $request->input('support_email', $settings->support_email);
                 $settings->support_phone = $request->input('support_phone', $settings->support_phone);
                 $settings->order_notification_email = $request->input('order_notification_email', $settings->order_notification_email);
+                if ($request->has('featured_coupon_code') && Schema::hasColumn('store_settings', 'featured_coupon_code')) {
+                    $settings->featured_coupon_code = strtoupper(trim((string) $request->input('featured_coupon_code')));
+                }
+            }
+
+            if ($section === 'announcement_bar' || $section === 'all') {
+                $settings->announcement_bar_enabled = $request->boolean('announcement_bar_enabled');
+                if ($request->has('announcement_bar_messages')) {
+                    $settings->announcement_bar_messages = trim((string) $request->input('announcement_bar_messages'));
+                }
                 if ($request->has('featured_coupon_code') && Schema::hasColumn('store_settings', 'featured_coupon_code')) {
                     $settings->featured_coupon_code = strtoupper(trim((string) $request->input('featured_coupon_code')));
                 }
@@ -222,6 +234,8 @@ class AdminSettingsWebController extends Controller
                 'ads_meta_pixel_id' => fn(Blueprint $t) => $t->string('ads_meta_pixel_id', 64)->nullable(),
                 'facebook_domain_verification' => fn(Blueprint $t) => $t->string('facebook_domain_verification', 100)->nullable()->default('jaur6cwxsewazavl4qh5goy7ylgewz'),
                 'featured_coupon_code' => fn(Blueprint $t) => $t->string('featured_coupon_code', 64)->nullable()->default('FESTIVE10'),
+                'announcement_bar_enabled' => fn(Blueprint $t) => $t->boolean('announcement_bar_enabled')->default(true),
+                'announcement_bar_messages' => fn(Blueprint $t) => $t->text('announcement_bar_messages')->nullable(),
             ];
 
             $missing = [];
