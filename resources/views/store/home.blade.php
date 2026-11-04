@@ -226,15 +226,20 @@
                             <!-- Readability Overlays -->
                             @if($hasWords)
                                 @if($light)
-                                    <!-- Mobile Dark Fade Overlay: Top 44% dark fade to guarantee text readability without covering models -->
+                                    <!-- Mobile Dark Fade Overlay: Top 36% dark fade for header typography -->
                                     <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 44%; background: linear-gradient(180deg, rgba(12, 3, 7, 0.94) 0%, rgba(20, 5, 11, 0.78) 50%, rgba(20, 5, 11, 0) 100%);"></div>
+                                         style="height: 36%; background: linear-gradient(180deg, rgba(12, 3, 7, 0.94) 0%, rgba(20, 5, 11, 0.72) 50%, rgba(20, 5, 11, 0) 100%);"></div>
+                                    <!-- Mobile Bottom Fade Overlay: Bottom 28% dark fade for buttons contrast -->
+                                    <div aria-hidden class="absolute inset-x-0 bottom-0 sm:hidden pointer-events-none z-[5]"
+                                         style="height: 28%; background: linear-gradient(0deg, rgba(10, 2, 5, 0.92) 0%, rgba(10, 2, 5, 0.55) 60%, rgba(10, 2, 5, 0) 100%);"></div>
                                     <!-- Desktop Readability Gradient: Left side dark fade -->
                                     <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
                                          style="width: 50%; background: linear-gradient(90deg, rgba(15, 3, 8, 0.92) 0%, rgba(20, 5, 11, 0.65) 45%, rgba(20, 5, 11, 0) 100%);"></div>
                                 @else
                                     <div aria-hidden class="absolute inset-x-0 top-0 sm:hidden pointer-events-none z-[5]"
-                                         style="height: 44%; background: linear-gradient(180deg, rgba(255, 252, 248, 0.94) 0%, rgba(255, 252, 248, 0.75) 50%, rgba(255, 252, 248, 0) 100%);"></div>
+                                         style="height: 36%; background: linear-gradient(180deg, rgba(255, 252, 248, 0.94) 0%, rgba(255, 252, 248, 0.72) 50%, rgba(255, 252, 248, 0) 100%);"></div>
+                                    <div aria-hidden class="absolute inset-x-0 bottom-0 sm:hidden pointer-events-none z-[5]"
+                                         style="height: 28%; background: linear-gradient(0deg, rgba(255, 252, 248, 0.92) 0%, rgba(255, 252, 248, 0.55) 60%, rgba(255, 252, 248, 0) 100%);"></div>
                                     <div aria-hidden class="absolute inset-y-0 left-0 hidden sm:block pointer-events-none z-[5]"
                                          style="width: 50%; background: linear-gradient(90deg, rgba(255, 252, 248, 0.92) 0%, rgba(255, 252, 248, 0.65) 45%, rgba(255, 252, 248, 0) 100%);"></div>
                                 @endif
@@ -285,17 +290,18 @@
                                             </p>
                                         @endif
 
+                                        <!-- Desktop CTA Buttons (inside text column) -->
                                         @if($b->link_path || $b->cta_label)
-                                            <div class="pt-1.5 sm:pt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3">
+                                            <div class="hidden sm:flex pt-2 sm:pt-3 flex-wrap items-center justify-start gap-3">
                                                 <!-- Primary Button (Gold finish for festive, luxury lift for all) -->
                                                 <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
                                                    class="btn-hero-primary group inline-flex items-center justify-center gap-2 font-bold uppercase tracking-wider text-xs sm:text-sm rounded-lg shadow-md transition-all duration-300 active:translate-y-0"
                                                    @if($isFestive)
-                                                       style="padding: 10px 22px; min-height: 40px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); text-decoration: none;"
+                                                       style="padding: 12px 28px; min-height: 46px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); text-decoration: none;"
                                                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 22px rgba(217, 119, 6, 0.45)';"
                                                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(217, 119, 6, 0.35)';"
                                                    @else
-                                                       style="padding: 10px 22px; min-height: 40px; text-decoration: none;"
+                                                       style="padding: 12px 28px; min-height: 46px; text-decoration: none;"
                                                        class="{{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950 hover:bg-amber-300' : 'bg-maroon-800 text-white hover:bg-maroon-900' }}"
                                                    @endif>
                                                     <span>{{ $b->cta_label ?: 'Shop Festive Edit' }}</span>
@@ -305,7 +311,7 @@
                                                 <!-- Secondary Outlined Button -->
                                                 <a href="{{ url('/shop') }}"
                                                    class="btn-hero-secondary inline-flex items-center justify-center gap-1.5 font-semibold uppercase tracking-wider text-xs sm:text-sm rounded-lg transition-all duration-300 active:translate-y-0"
-                                                   style="padding: 10px 18px; min-height: 40px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.8); text-decoration: none;"
+                                                   style="padding: 12px 24px; min-height: 46px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.8); text-decoration: none;"
                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='#ffffff'; this.style.background='rgba(255, 255, 255, 0.2)'; this.style.boxShadow='0 6px 18px rgba(0, 0, 0, 0.35)';"
                                                    onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255, 255, 255, 0.8)'; this.style.background='rgba(0, 0, 0, 0.25)'; this.style.boxShadow='none';">
                                                     <span>Explore All</span>
@@ -314,6 +320,31 @@
                                         @endif
                                     </div>
                                 </div>
+
+                                <!-- Mobile CTA Buttons (Anchored at the bottom to never overlap models' faces) -->
+                                @if($b->link_path || $b->cta_label)
+                                    <div class="sm:hidden absolute bottom-11 inset-x-0 z-10 px-4 flex items-center justify-center gap-2.5">
+                                        <!-- Primary Button -->
+                                        <a href="{{ url($b->link_path ?: '/collections/women-fashion') }}"
+                                           class="btn-hero-primary group flex-1 max-w-[190px] inline-flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider text-xs rounded-lg shadow-md transition-all active:translate-y-0"
+                                           @if($isFestive)
+                                               style="padding: 10px 14px; min-height: 40px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); color: #1c1917; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45); text-decoration: none;"
+                                           @else
+                                               style="padding: 10px 14px; min-height: 40px; text-decoration: none;"
+                                               class="{{ $b->word_mode === 'LIGHT_ON_PICTURE' ? 'bg-amber-400 text-slate-950' : 'bg-maroon-800 text-white' }}"
+                                           @endif>
+                                            <span class="truncate">{{ $b->cta_label ?: 'Shop Festive Edit' }}</span>
+                                            <span class="text-[11px]">➔</span>
+                                        </a>
+
+                                        <!-- Secondary Outlined Button -->
+                                        <a href="{{ url('/shop') }}"
+                                           class="btn-hero-secondary flex-1 max-w-[145px] inline-flex items-center justify-center gap-1 font-semibold uppercase tracking-wider text-xs rounded-lg transition-all active:translate-y-0"
+                                           style="padding: 10px 14px; min-height: 40px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #ffffff; border: 1.5px solid rgba(255, 255, 255, 0.85); text-decoration: none;">
+                                            <span class="truncate">Explore All</span>
+                                        </a>
+                                    </div>
+                                @endif
                             @elseif($b->link_path)
                                 <a href="{{ url($b->link_path) }}" class="absolute inset-0 z-10" aria-label="{{ $b->image_alt_text ?? 'Promotion' }}"></a>
                             @endif
@@ -323,7 +354,7 @@
 
                 <!-- Navigation Dots & Arrows -->
                 @if($banners->count() > 1)
-                    <div class="absolute bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-2">
+                    <div class="absolute bottom-3 sm:bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-2">
                         @foreach($banners as $idx => $b)
                             <button type="button"
                                     @click="active = {{ $idx }}"
