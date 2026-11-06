@@ -10,6 +10,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Customer;
+use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\OrderAddress;
 use App\Models\OrderItem;
@@ -22,6 +23,7 @@ use App\Services\Payments\RazorpayService;
 use App\Support\Commerce\IndianStates;
 use App\Support\Commerce\OrderNumber;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class CheckoutService
@@ -293,14 +295,80 @@ class CheckoutService
             $normalizedPhone = '+91' . substr($rawPhone, -10);
 
             $customerEmail = strtolower(trim($data['contact']['email']));
-            $customer = $customer ?? \App\Models\Customer::where('email', $customerEmail)->first();
+            $customerName = trim($data['contact']['name']) ?: 'Customer';
+
+            // Find existing customer by email or phone
+            if (!$customer) {
+                $customer = Customer::where('email', $customerEmail)->first();
+            }
+
+            if (!$customer && strlen($normalizedPhone) >= 12) {
+                $customer = Customer::where('phone', $normalizedPhone)->first();
+            }
+
+            // Auto-create customer account if none exists
+            if (!$customer) {
+                $customer = Customer::create([
+                    'name' => $customerName,
+                    'email' => $customerEmail,
+                    'phone' => $normalizedPhone,
+                    'status' => \App\Enums\CustomerStatus::ACTIVE,
+                    'email_verified_at' => null,
+                ]);
+            } else {
+                $updates = [];
+                if (empty($customer->phone) && $normalizedPhone) {
+                    $updates['phone'] = $normalizedPhone;
+                }
+                if ((empty($customer->name) || $customer->name === 'Customer') && !empty($customerName)) {
+                    $updates['name'] = $customerName;
+                }
+                if (!empty($updates)) {
+                    $customer->update($updates);
+                }
+            }
+
+            // Save default customer shipping address if none exists
+            if ($customer && $customer->addresses()->count() === 0) {
+                try {
+                    $rawShippingPhone = preg_replace('/\D/', '', $data['shipping_address']['phone'] ?? $data['contact']['phone']);
+                    $normalizedShippingPhone = '+91' . substr($rawShippingPhone, -10);
+
+                    CustomerAddress::create([
+                        'customer_id' => $customer->id,
+                        'label' => \App\Enums\AddressLabel::HOME,
+                        'recipient_name' => $data['shipping_address']['recipient_name'] ?? $customerName,
+                        'phone' => $normalizedShippingPhone,
+                        'line1' => $data['shipping_address']['line1'],
+                        'line2' => $data['shipping_address']['line2'] ?? null,
+                        'landmark' => $data['shipping_address']['landmark'] ?? null,
+                        'city' => $data['shipping_address']['city'],
+                        'state_code' => $stateCode,
+                        'postal_code' => $data['shipping_address']['postal_code'],
+                        'country' => $data['shipping_address']['country'] ?? 'IN',
+                        'is_default_shipping' => true,
+                        'is_default_billing' => true,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning("Could not auto-create customer address: {$e->getMessage()}");
+                }
+            }
+
+            // Link any older guest orders matching this email
+            try {
+                Order::where('customer_email', $customerEmail)
+                    ->whereNull('customer_id')
+                    ->update(['customer_id' => $customer->id]);
+            } catch (\Throwable $e) {
+                Log::warning("Could not reconcile past customer orders: {$e->getMessage()}");
+            }
 
             // 1. Create Order
             $order = Order::create([
                 'order_number' => $orderNumber,
                 'checkout_key_hash' => hash('sha256', $orderNumber . microtime(true)),
                 'request_hash' => hash('sha256', json_encode($data)),
-                'customer_id' => $customer?->id,
+                'customer_id' => $customer->id,
                 'status' => $initialOrderStatus,
                 'payment_status' => $initialPaymentStatus,
                 'payment_method' => $paymentMethodEnum,

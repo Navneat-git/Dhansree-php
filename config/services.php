@@ -36,9 +36,18 @@ return [
     ],
 
     'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/account/auth/google/callback'),
         'site_verification' => env('GOOGLE_SITE_VERIFICATION', env('GOOGLE_SEARCH_CONSOLE')),
         'analytics_id' => env('GOOGLE_ANALYTICS_ID', env('GA_MEASUREMENT_ID')),
         'ads_id' => env('GOOGLE_ADS_ID', 'AW-18539949937'),
+    ],
+
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', '/account/auth/facebook/callback'),
     ],
 
     'meta' => [

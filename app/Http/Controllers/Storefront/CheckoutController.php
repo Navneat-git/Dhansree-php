@@ -19,6 +19,7 @@ use App\Support\Commerce\IndianStates;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -61,11 +62,18 @@ class CheckoutController extends Controller
             'ONLINE'
         );
 
+        $customer = Auth::guard('customer')->user();
+        $defaultAddress = $customer?->defaultShippingAddress ?? $customer?->addresses()->first();
+        $customerPhone = $customer?->phone ? substr(preg_replace('/\D/', '', (string) $customer->phone), -10) : '';
+
         return view('store.checkout', [
             'cart' => $cart,
             'states' => $states,
             'store' => $store,
             'quote' => $quote,
+            'customer' => $customer,
+            'customerPhone' => $customerPhone,
+            'defaultAddress' => $defaultAddress,
             'razorpayEnabled' => $this->razorpayService->isEnabled(),
             'razorpayKey' => $this->razorpayService->getKeyId(),
             'seoTitle' => 'Secure Checkout | Dhansree',
@@ -174,7 +182,8 @@ class CheckoutController extends Controller
         ];
 
         try {
-            $result = $this->checkoutService->placeOrder($payload);
+            $customer = Auth::guard('customer')->user();
+            $result = $this->checkoutService->placeOrder($payload, $customer);
             $order = $result['order'];
 
             // Clear session cart upon successful creation

@@ -14,7 +14,12 @@ class Customer extends Authenticatable
 
     protected $guarded = [];
 
+    protected $hidden = [
+        'password',
+    ];
+
     protected $casts = [
+        'password' => 'hashed',
         'email_verified_at' => 'datetime',
         'phone_verified_at' => 'datetime',
         'status' => \App\Enums\CustomerStatus::class,

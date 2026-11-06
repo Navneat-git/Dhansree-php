@@ -61,10 +61,18 @@ Route::get('/feeds/google_merchant.csv', [\App\Http\Controllers\Storefront\Produ
 Route::get('/feeds/google-merchant.csv', [\App\Http\Controllers\Storefront\ProductFeedDeliveryController::class, 'googleFeed']);
 
 // ─── Customer Passwordless Auth & Portal ──────────────────────────────────
+Route::redirect('/login', '/account/login');
+Route::redirect('/register', '/account/register');
+Route::redirect('/signup', '/account/register');
+
 Route::prefix('account')->name('storefront.account.')->group(function () {
     // Guest Auth Routes
     Route::get('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp'])->name('send-otp');
+    Route::get('/register', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'register'])->name('register.submit');
+    Route::get('/auth/{provider}', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'redirectToProvider'])->name('social');
+    Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'handleProviderCallback'])->name('social.callback');
     Route::get('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showVerify'])->name('verify');
     Route::post('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp'])->name('verify.submit');
     Route::post('/logout', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'logout'])->name('logout');
