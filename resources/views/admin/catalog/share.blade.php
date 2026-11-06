@@ -39,10 +39,10 @@
                 <span class="text-xs text-slate-500">• In-Person Meetings &amp; Customer Outreach</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-                Women's Fashion Catalog Share
+                Catalog &amp; Product WhatsApp Share Hub
             </h1>
             <p class="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-                Generate personalized ready-to-send draft messages with catalog links to share directly on WhatsApp or copy with 1 click during customer meetings.
+                Generate personalized ready-to-send WhatsApp messages with direct product &amp; catalog links for one-click purchasing, customer outreach, and in-person meetings.
             </p>
         </div>
 
@@ -257,6 +257,22 @@
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-slate-700">Select Draft Message Template</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <!-- Direct Buy & Order Online (Universal) -->
+                        <div @click="selectTemplate('direct_buy')"
+                             :class="template === 'direct_buy' ? 'border-emerald-500 bg-emerald-50/70 ring-1 ring-emerald-500 shadow-2xs' : 'border-slate-200 bg-white hover:bg-slate-50'"
+                             class="p-3.5 rounded-lg border cursor-pointer transition-all sm:col-span-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl">🛒</span>
+                                    <span class="text-xs font-bold text-slate-900">Direct Buy &amp; Order Online</span>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                                    All Products &amp; Essentials
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1">Direct product link with clear 1-minute steps for the customer to tap "Buy Now", enter their address, and complete payment or COD.</p>
+                        </div>
+
                         <div @click="selectTemplate('in_person')"
                              :class="template === 'in_person' ? 'border-amber-500 bg-amber-50/50 ring-1 ring-amber-500' : 'border-slate-200 bg-white hover:bg-slate-50'"
                              class="p-3 rounded-lg border cursor-pointer transition-all">
@@ -267,16 +283,6 @@
                             <p class="text-[11px] text-slate-600 mt-1">Warm follow-up mentioning you met today, inviting them to explore the catalog.</p>
                         </div>
 
-                        <div @click="selectTemplate('festive_kurti')"
-                             :class="template === 'festive_kurti' ? 'border-amber-500 bg-amber-50/50 ring-1 ring-amber-500' : 'border-slate-200 bg-white hover:bg-slate-50'"
-                             class="p-3 rounded-lg border cursor-pointer transition-all">
-                            <div class="flex items-center gap-2">
-                                <span class="text-lg">🌸</span>
-                                <span class="text-xs font-bold text-slate-900">Festive &amp; Kurti Edit</span>
-                            </div>
-                            <p class="text-[11px] text-slate-600 mt-1">Focuses on handcrafted Jaipur Kurta sets, Anarkalis &amp; Co-ords.</p>
-                        </div>
-
                         <div @click="selectTemplate('quick_link')"
                              :class="template === 'quick_link' ? 'border-amber-500 bg-amber-50/50 ring-1 ring-amber-500' : 'border-slate-200 bg-white hover:bg-slate-50'"
                              class="p-3 rounded-lg border cursor-pointer transition-all">
@@ -285,6 +291,16 @@
                                 <span class="text-xs font-bold text-slate-900">Quick &amp; Concise</span>
                             </div>
                             <p class="text-[11px] text-slate-600 mt-1">Short 2-line direct link message without lengthy text.</p>
+                        </div>
+
+                        <div @click="selectTemplate('festive_kurti')"
+                             :class="template === 'festive_kurti' ? 'border-amber-500 bg-amber-50/50 ring-1 ring-amber-500' : 'border-slate-200 bg-white hover:bg-slate-50'"
+                             class="p-3 rounded-lg border cursor-pointer transition-all">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">🌸</span>
+                                <span class="text-xs font-bold text-slate-900">Festive &amp; Kurti Edit</span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-1">Focuses on handcrafted Jaipur Kurta sets, Anarkalis &amp; Co-ords.</p>
                         </div>
 
                         <div @click="selectTemplate('wholesale')"
@@ -330,7 +346,7 @@
                         </label>
                         <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
                             <input type="checkbox" x-model="includePerks" class="rounded text-amber-600 focus:ring-amber-500 size-4">
-                            <span class="text-xs text-slate-700">Mention Free Delivery &amp; Jaipur Artisans</span>
+                            <span class="text-xs text-slate-700" x-text="template === 'festive_kurti' ? 'Mention Free Delivery & Jaipur Artisans' : 'Mention Free Delivery, COD & Quality Guarantees'"></span>
                         </label>
                     </div>
                 </div>
@@ -379,6 +395,7 @@
 
                         <!-- Editable Textarea so admin can tweak words directly -->
                         <textarea x-model="customMessage" 
+                                  @input="isManuallyEdited = true"
                                   rows="11" 
                                   class="w-full text-xs font-sans text-slate-800 bg-transparent border-0 focus:ring-1 focus:ring-emerald-500 rounded p-1 leading-relaxed resize-y"
                                   placeholder="Type or customize your message here..."></textarea>
@@ -521,6 +538,7 @@ function catalogShareHub() {
     return {
         // State
         storeBaseUrl: @json($storeBaseUrl),
+        products: @json($products->map(fn($p) => ['slug' => $p->slug, 'name' => $p->name])),
         customerName: '',
         customerPhone: '',
         catalogType: 'collection',
@@ -560,6 +578,11 @@ function catalogShareHub() {
 
         setCatalogType(type) {
             this.catalogType = type;
+            if (type === 'product') {
+                if (this.template === 'festive_kurti' || this.template === 'wholesale' || this.template === 'in_person') {
+                    this.template = 'direct_buy';
+                }
+            }
             if (!this.isManuallyEdited) this.generateMessage();
         },
 
@@ -579,6 +602,12 @@ function catalogShareHub() {
             if (!this.customerName.trim()) return 'DS';
             const parts = this.customerName.trim().split(' ');
             return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].substring(0, 2).toUpperCase();
+        },
+
+        get selectedProductName() {
+            if (this.catalogType !== 'product') return '';
+            const prod = this.products.find(p => p.slug === this.selectedProductSlug);
+            return prod ? prod.name : '';
         },
 
         get activeCatalogLink() {
@@ -631,23 +660,47 @@ function catalogShareHub() {
             const greeting = name ? `Namaste ${name} ji! 🙏` : `Namaste! 🙏`;
             const helloGreeting = name ? `Hello ${name}! 🌸` : `Hello! 🌸`;
             const link = this.activeCatalogLink;
-            const coupon = this.effectiveCouponCode ? `\n🎁 *Special Gift for You:* Use coupon code *${this.effectiveCouponCode}* at checkout for a personal discount!\n` : '';
+            const coupon = this.effectiveCouponCode 
+                ? `\n🎁 *Special Discount for You:* Apply coupon code *${this.effectiveCouponCode}* at checkout for an instant discount!\n` 
+                : '';
             
+            const isEthnicFashion = (this.template === 'festive_kurti');
+
             const perksBlock = this.includePerks 
-                ? `\n✨ *Why Dhansree Jaipur:*\n• 100% Pure Breathable Fabrics (Cotton, Rayon & Chanderi)\n• Handcrafted by Jaipur Artisans\n• Free & Fast Express Delivery across India\n• Easy Exchanges & Dedicated Sizing Support\n`
+                ? (isEthnicFashion
+                    ? `\n✨ *Why Dhansree Jaipur:*\n• 100% Pure Breathable Fabrics (Cotton, Rayon & Chanderi)\n• Handcrafted by Jaipur Artisans\n• Free & Fast Express Delivery across India\n• Easy Exchanges & Dedicated Sizing Support\n`
+                    : `\n✨ *Why Shop With Dhansree:*\n• 100% Genuine Quality Assured\n• Cash on Delivery (COD) Available Across India\n• Free & Fast Express Shipping\n• Safe & 100% Secure Checkout\n`)
                 : '';
 
             let msg = '';
 
-            if (this.template === 'in_person') {
-                msg = `${greeting}\n\nIt was truly wonderful meeting you today! As discussed, here is the direct link to explore our exclusive Women's Fashion & Jaipur Ethnic Wear collection at *Dhansree Trends*:\n\n🌸 *Catalog Link:*\n${link}\n${coupon}${perksBlock}\nPlease feel free to reply right here on WhatsApp if you would like close-up fabric videos, sizing advice, or customized recommendations. Looking forward to staying connected! ✨\n\nWarm regards,\n*Dhansree Trends Jaipur*`;
+            if (this.template === 'direct_buy') {
+                const prodTitle = this.selectedProductName ? `*${this.selectedProductName}*\n\n` : '';
+                msg = `${greeting}\n\nHere is the direct link to order your selected product online from *Dhansree*:\n\n🛒 ${prodTitle}👉 *Buy Now Link:*\n${link}\n\n*How to Order in 1 Minute:*\n1️⃣ Tap the link above\n2️⃣ Click on the *Buy Now* button\n3️⃣ Enter your delivery address & choose payment (UPI, Cards, NetBanking or Cash on Delivery)\n${coupon}${perksBlock}\nYour parcel will be safely packed & dispatched with live courier tracking updates on WhatsApp. Please let me know if you need any help with ordering!\n\nWarm regards,\n*Dhansree*`;
+            } else if (this.template === 'in_person') {
+                if (this.catalogType === 'product') {
+                    const prodName = this.selectedProductName ? `*${this.selectedProductName}*` : 'the product we discussed';
+                    msg = `${greeting}\n\nIt was truly wonderful meeting you today! As discussed, here is the direct link to view details and order ${prodName} online at *Dhansree*:\n\n🛒 *Product Link:*\n${link}\n\nYou can click the *Buy Now* button on the page to complete your order easily with UPI or Cash on Delivery.${coupon}${perksBlock}\nPlease feel free to reply right here on WhatsApp if you have any questions. Looking forward to staying connected! ✨\n\nWarm regards,\n*Dhansree*`;
+                } else {
+                    msg = `${greeting}\n\nIt was truly wonderful meeting you today! As discussed, here is the direct link to explore our exclusive collection at *Dhansree*:\n\n🌸 *Catalog Link:*\n${link}\n${coupon}${perksBlock}\nPlease feel free to reply right here on WhatsApp if you would like close-up fabric videos, sizing advice, or customized recommendations. Looking forward to staying connected! ✨\n\nWarm regards,\n*Dhansree Trends Jaipur*`;
+                }
             } else if (this.template === 'festive_kurti') {
                 msg = `${helloGreeting}\n\nDiscover our newest festive edit at *Dhansree Trends Jaipur* — handcrafted Kurta sets, regal Anarkalis, and trendy two-piece Co-ord sets crafted for effortless elegance.\n\n👗 *Explore the Collection:*\n${link}\n${coupon}${perksBlock}\nLet me know your favorite design, and I'll be glad to assist you with the perfect fit! ✨\n\n*Dhansree Trends Jaipur*`;
             } else if (this.template === 'quick_link') {
                 const shortGreeting = name ? `Hi ${name}! ` : `Hi there! `;
-                msg = `${shortGreeting}Here is the link to our latest *Dhansree Trends* Women's Fashion Catalog:\n\n🔗 ${link}\n${coupon}\nExplore handcrafted Jaipur Kurta sets, festive suits & co-ords with Free Express Delivery across India!`;
+                if (this.catalogType === 'product') {
+                    const prodName = this.selectedProductName ? `*${this.selectedProductName}*` : 'your requested product';
+                    msg = `${shortGreeting}Here is the direct link to buy ${prodName} online:\n\n🔗 ${link}\n${coupon}\nTap the link above and click *Buy Now* to order online with Free Express Delivery & COD across India!`;
+                } else {
+                    msg = `${shortGreeting}Here is the link to our latest *Dhansree* catalog:\n\n🔗 ${link}\n${coupon}\nExplore our collection online with Free Express Delivery across India!`;
+                }
             } else if (this.template === 'wholesale') {
-                msg = `${greeting}\n\nThank you for connecting with *Dhansree Trends Jaipur*. You can review our current women's ethnic wear catalog and designs at:\n\n📋 *Direct Catalog Link:*\n${link}\n\nWe offer manufacturer-direct wholesale pricing, boutique curated lots, and reliable dispatch across India. Please share your shortlisted styles or required quantities right here so we can provide our best pricing!\n\nWarm regards,\n*Dhansree Trends Jaipur*`;
+                if (this.catalogType === 'product') {
+                    const prodName = this.selectedProductName ? `*${this.selectedProductName}*` : 'your requested item';
+                    msg = `${greeting}\n\nThank you for connecting with *Dhansree*. You can review pricing and product details for ${prodName} at:\n\n📋 *Direct Product Link:*\n${link}\n\nWe offer bulk manufacturer pricing, verified lots, and reliable dispatch across India. Please share your required quantities right here so we can provide our best wholesale quote!\n\nWarm regards,\n*Dhansree*`;
+                } else {
+                    msg = `${greeting}\n\nThank you for connecting with *Dhansree Trends Jaipur*. You can review our current women's ethnic wear catalog and designs at:\n\n📋 *Direct Catalog Link:*\n${link}\n\nWe offer manufacturer-direct wholesale pricing, boutique curated lots, and reliable dispatch across India. Please share your shortlisted styles or required quantities right here so we can provide our best pricing!\n\nWarm regards,\n*Dhansree Trends Jaipur*`;
+                }
             }
 
             this.customMessage = msg;

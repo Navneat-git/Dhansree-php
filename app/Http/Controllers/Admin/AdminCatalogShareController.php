@@ -42,7 +42,7 @@ class AdminCatalogShareController extends Controller
         $products = Product::query()
             ->where('status', 'ACTIVE')
             ->orderBy('name')
-            ->take(60)
+            ->take(250)
             ->get(['id', 'name', 'slug']);
 
         // Active Promotional Coupons
