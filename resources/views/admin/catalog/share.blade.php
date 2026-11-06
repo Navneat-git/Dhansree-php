@@ -619,7 +619,7 @@ function catalogShareHub() {
                 return `${base}/${this.selectedCategorySlug || 'kurta-set'}`;
             }
             if (this.catalogType === 'product') {
-                return `${base}/products/${this.selectedProductSlug || ''}`;
+                return `${base}/product/${this.selectedProductSlug || ''}`;
             }
             if (this.catalogType === 'special') {
                 if (this.selectedSpecialPage === 'storefront') return base;

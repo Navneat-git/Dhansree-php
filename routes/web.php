@@ -115,6 +115,7 @@ Route::get('/search', [StorefrontController::class, 'search'])->name('store.sear
 // ─── Product Detail & Reviews ──────────────────────────────────────────────
 Route::get('/product/{slug}', [StorefrontController::class, 'product'])->name('store.product');
 Route::get('/product/{slug}/reviews', [\App\Http\Controllers\Storefront\ReviewController::class, 'productReviews'])->name('store.product.reviews');
+Route::redirect('/products/{slug}', '/product/{slug}', 301);
 
 // ─── Static Pages & Policies ───────────────────────────────────────────────
 Route::get('/about', [StorefrontController::class, 'about'])->name('store.about');
