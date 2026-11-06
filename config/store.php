@@ -67,4 +67,11 @@ return [
         'api_base_url' => env('SHIPROCKET_API_BASE_URL', 'https://apiv2.shiprocket.in/v1/external'),
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Support WhatsApp Phone
+    |---------------------------------------------------------------------------
+    */
+    'whatsapp_phone' => env('STORE_WHATSAPP_PHONE', '919887776777'),
+
 ];

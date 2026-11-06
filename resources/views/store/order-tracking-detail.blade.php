@@ -204,7 +204,12 @@
                     Our team is here to help with address corrections, rescheduling, or any delivery inquiries.
                 </p>
                 @php
-                    $supportPhone = preg_replace('/\D/', '', config('store.whatsapp_phone', '919876543210'));
+                    $storeSettings = $store ?? \App\Models\StoreSettings::current();
+                    $rawPhone = $storeSettings?->whatsapp_phone ?: ($storeSettings?->support_phone ?: config('store.whatsapp_phone', '919887776777'));
+                    $supportPhone = preg_replace('/\D/', '', $rawPhone);
+                    if (strlen($supportPhone) === 10) {
+                        $supportPhone = '91' . $supportPhone;
+                    }
                 @endphp
                 <a href="https://wa.me/{{ $supportPhone }}?text=Hi%20Dhansree,%20I%20need%20help%20with%20my%20order%20{{ $order->order_number }}"
                    target="_blank"
