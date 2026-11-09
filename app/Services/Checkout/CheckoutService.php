@@ -155,10 +155,11 @@ class CheckoutService
             }
         }
 
-        // Shipping resolution
+        // Shipping resolution: free shipping threshold applies after coupon discount
         $freeShippingThreshold = $store->free_shipping_threshold_paise !== null ? (int) $store->free_shipping_threshold_paise : null;
         $flatShipping = (int) ($store->shipping_flat_rate_paise ?? 5000);
-        $isFreeShipping = ($freeShippingThreshold !== null && $subtotalPaise >= $freeShippingThreshold);
+        $netSubtotalPaise = max(0, $subtotalPaise - $discountPaise);
+        $isFreeShipping = ($freeShippingThreshold !== null && $netSubtotalPaise >= $freeShippingThreshold);
         $shippingPaise = $isFreeShipping ? 0 : $flatShipping;
 
         // Discounted taxable calculations per line

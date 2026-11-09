@@ -679,7 +679,7 @@
                     </template>
                     <div class="flex items-center justify-between text-xs text-rich-black/60">
                         <span class="font-medium">Shipping</span>
-                        <span class="font-semibold text-emerald-700 whitespace-nowrap" x-text="cart.is_free_shipping ? 'FREE' : '₹' + cart.shipping_rupees"></span>
+                        <span class="font-semibold whitespace-nowrap" :class="cart.is_free_shipping ? 'text-emerald-700 font-bold' : 'text-rich-black'" x-text="cart.is_free_shipping ? 'FREE' : '₹' + cart.shipping_rupees"></span>
                     </div>
                     <p class="text-[0.6875rem] text-rich-black/50 text-center">Taxes included. Discounts applied at checkout.</p>
                     

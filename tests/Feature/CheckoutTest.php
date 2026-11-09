@@ -214,6 +214,58 @@ class CheckoutTest extends TestCase
         $this->assertStringContainsString('invalid', $invalidResponse->json('message'));
     }
 
+    public function test_free_shipping_threshold_evaluated_after_discount(): void
+    {
+        $store = \App\Models\StoreSettings::current();
+        $store->update([
+            'free_shipping_threshold_paise' => 99900, // ₹999 threshold
+            'shipping_flat_rate_paise' => 5000,       // ₹50 flat rate
+        ]);
+
+        // Create 25% coupon
+        $coupon = Coupon::create([
+            'code' => 'SPCL25',
+            'type' => CouponType::PERCENTAGE,
+            'value' => 2500, // 25%
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Variant price ₹1199 (119900 paise)
+        $this->variant->update(['price_paise' => 119900]);
+
+        // Case 1: Without coupon, gross is ₹1199 (>= ₹999), free shipping applies
+        $resNoCoupon = $this->withSession(['dhansree_cart' => [$this->variant->id => 1]])
+            ->postJson('/checkout/quote', [
+                'state_code' => '08',
+                'postal_code' => '302001',
+                'coupon_code' => '',
+            ]);
+
+        $resNoCoupon->assertStatus(200);
+        $quoteNoCoupon = $resNoCoupon->json('quote');
+        $this->assertTrue($quoteNoCoupon['is_free_shipping']);
+        $this->assertEquals(0, $quoteNoCoupon['shipping_paise']);
+        $this->assertEquals(1199.00, $quoteNoCoupon['total_rupees']);
+
+        // Case 2: With 25% coupon, net price is ₹899.25 (< ₹999), free shipping is NOT granted, flat shipping ₹50 applied
+        $resWithCoupon = $this->withSession(['dhansree_cart' => [$this->variant->id => 1]])
+            ->postJson('/checkout/quote', [
+                'state_code' => '08',
+                'postal_code' => '302001',
+                'coupon_code' => 'SPCL25',
+            ]);
+
+        $resWithCoupon->assertStatus(200);
+        $quoteWithCoupon = $resWithCoupon->json('quote');
+        $this->assertFalse($quoteWithCoupon['is_free_shipping']);
+        $this->assertEquals(5000, $quoteWithCoupon['shipping_paise']);
+        $this->assertEquals(50.00, $quoteWithCoupon['shipping_rupees']);
+        $this->assertEquals(299.75, $quoteWithCoupon['discount_rupees']);
+        $this->assertEquals(949.25, $quoteWithCoupon['total_rupees']);
+    }
+
     public function test_cod_order_placement_creates_order_items_and_inventory_reservation(): void
     {
         $sessionCart = [

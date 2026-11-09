@@ -163,13 +163,13 @@ class CartService
         $freeShippingThresholdPaise = $store->free_shipping_threshold_paise !== null ? (int) $store->free_shipping_threshold_paise : null;
         $flatShippingPaise = (int) ($store->shipping_flat_rate_paise ?? 5000);
 
-        $isFreeShipping = ($freeShippingThresholdPaise !== null && $subtotalPaise >= $freeShippingThresholdPaise);
+        $isFreeShipping = ($freeShippingThresholdPaise !== null && $effectiveSubtotalPaise >= $freeShippingThresholdPaise);
         $shippingPaise = $isFreeShipping || $subtotalPaise === 0 ? 0 : $flatShippingPaise;
         $totalPaise = $effectiveSubtotalPaise + $shippingPaise;
 
-        $remainingForFreeShippingPaise = max(0, $freeShippingThresholdPaise - $subtotalPaise);
+        $remainingForFreeShippingPaise = max(0, $freeShippingThresholdPaise - $effectiveSubtotalPaise);
         $progress = $freeShippingThresholdPaise > 0
-            ? (int) min(100, round(($subtotalPaise / $freeShippingThresholdPaise) * 100))
+            ? (int) min(100, round(($effectiveSubtotalPaise / $freeShippingThresholdPaise) * 100))
             : 100;
 
         return [
