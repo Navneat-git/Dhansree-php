@@ -130,8 +130,21 @@ class AdminCouponsService
         $usageLimit = !empty($data['usage_limit']) ? max(1, (int) $data['usage_limit']) : null;
         $perCustomerLimit = !empty($data['per_customer_limit']) ? max(1, (int) $data['per_customer_limit']) : null;
 
-        $startsAt = !empty($data['starts_at']) ? Carbon::parse($data['starts_at']) : null;
-        $expiresAt = !empty($data['expires_at']) ? Carbon::parse($data['expires_at']) : null;
+        $storeTz = config('store.timezone', 'Asia/Kolkata');
+
+        $startsAt = null;
+        if (!empty($data['starts_at'])) {
+            $startsAt = $data['starts_at'] instanceof Carbon
+                ? $data['starts_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['starts_at'], $storeTz)->setTimezone('UTC');
+        }
+
+        $expiresAt = null;
+        if (!empty($data['expires_at'])) {
+            $expiresAt = $data['expires_at'] instanceof Carbon
+                ? $data['expires_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['expires_at'], $storeTz)->setTimezone('UTC');
+        }
 
         if ($startsAt && $expiresAt && $expiresAt->lte($startsAt)) {
             throw new UnprocessableEntityHttpException('Expiry date must be after the start date.');
@@ -218,8 +231,21 @@ class AdminCouponsService
             ? max(1, (int) $data['per_customer_limit'])
             : null;
 
-        $startsAt = !empty($data['starts_at']) ? Carbon::parse($data['starts_at']) : null;
-        $expiresAt = !empty($data['expires_at']) ? Carbon::parse($data['expires_at']) : null;
+        $storeTz = config('store.timezone', 'Asia/Kolkata');
+
+        $startsAt = null;
+        if (!empty($data['starts_at'])) {
+            $startsAt = $data['starts_at'] instanceof Carbon
+                ? $data['starts_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['starts_at'], $storeTz)->setTimezone('UTC');
+        }
+
+        $expiresAt = null;
+        if (!empty($data['expires_at'])) {
+            $expiresAt = $data['expires_at'] instanceof Carbon
+                ? $data['expires_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['expires_at'], $storeTz)->setTimezone('UTC');
+        }
 
         if ($startsAt && $expiresAt && $expiresAt->lte($startsAt)) {
             throw new UnprocessableEntityHttpException('Expiry date must be after the start date.');
@@ -317,6 +343,41 @@ class AdminCouponsService
             metadata: [
                 'code' => $coupon->code,
                 'is_active' => $newActive,
+            ],
+            request: $request
+        );
+
+        return $coupon;
+    }
+
+    /**
+     * Immediately activate a scheduled or inactive coupon by setting starts_at to now.
+     */
+    public function startNow(int $id, AdminUser $admin, ?Request $request = null): Coupon
+    {
+        /** @var Coupon|null $coupon */
+        $coupon = Coupon::find($id);
+        if (!$coupon) {
+            throw new NotFoundHttpException('Coupon not found.');
+        }
+
+        $now = now();
+        $coupon->update([
+            'is_active' => true,
+            'starts_at' => $now->copy()->subMinute(),
+            'version' => $coupon->version + 1,
+        ]);
+
+        AuditLogger::log(
+            action: 'COUPON_UPDATED',
+            actorType: AuditActorType::ADMIN,
+            actorAdminUserId: $admin->id,
+            entityType: 'coupon',
+            entityId: $coupon->id,
+            metadata: [
+                'code' => $coupon->code,
+                'action' => 'START_NOW',
+                'is_active' => true,
             ],
             request: $request
         );

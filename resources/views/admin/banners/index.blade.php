@@ -346,8 +346,8 @@
                                 </td>
                                 <td class="py-3 px-4 text-[0.6875rem] text-slate-500">
                                     @if($banner->starts_at || $banner->ends_at)
-                                        <div>From: {{ $banner->starts_at ? $banner->starts_at->format('d M Y') : 'Immediate' }}</div>
-                                        <div>To: {{ $banner->ends_at ? $banner->ends_at->format('d M Y') : 'Always' }}</div>
+                                        <div>From: {{ $banner->starts_at ? $banner->starts_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('d M Y, H:i') : 'Immediate' }}</div>
+                                        <div>To: {{ $banner->ends_at ? $banner->ends_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('d M Y, H:i') : 'Always' }}</div>
                                     @else
                                         <span class="text-slate-500">Always Visible</span>
                                     @endif

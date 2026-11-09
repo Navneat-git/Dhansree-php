@@ -335,6 +335,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/{coupon}/edit', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'edit'])->name('edit');
             Route::put('/{coupon}', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'update'])->name('update');
             Route::post('/{coupon}/toggle', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'toggle'])->name('toggle');
+            Route::post('/{coupon}/start-now', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'startNow'])->name('start-now');
             Route::post('/{coupon}/featured', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'setFeatured'])->name('set-featured');
             Route::delete('/{coupon}', [\App\Http\Controllers\Admin\AdminCouponWebController::class, 'destroy'])->name('destroy');
         });

@@ -225,6 +225,23 @@ class AdminCouponWebController extends Controller
     }
 
     /**
+     * Immediately activate a scheduled coupon.
+     */
+    public function startNow(Request $request, int $id): RedirectResponse
+    {
+        /** @var AdminUser $admin */
+        $admin = Auth::guard('admin')->user();
+        if (!$admin->hasPermission(Permissions::COUPON_UPDATE)) {
+            abort(403, 'You do not have permission to edit coupons.');
+        }
+
+        $coupon = $this->couponsService->startNow($id, $admin, $request);
+
+        return redirect()->back(fallback: route('admin.coupons.index'))
+            ->with('success', "Coupon '{$coupon->code}' has been activated immediately and is now live!");
+    }
+
+    /**
      * Set coupon as default/featured storefront announcement coupon.
      */
     public function setFeatured(Request $request, int $id): RedirectResponse

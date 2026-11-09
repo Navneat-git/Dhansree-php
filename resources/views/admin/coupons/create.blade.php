@@ -202,6 +202,7 @@
                         value="{{ old('starts_at') }}"
                         class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                     >
+                    <p class="text-[11px] text-slate-500 mt-1">Leave empty to activate immediately upon creation. All times in Indian Standard Time (IST).</p>
                 </div>
 
                 <div>
@@ -215,6 +216,7 @@
                         value="{{ old('expires_at') }}"
                         class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                     >
+                    <p class="text-[11px] text-slate-500 mt-1">Leave empty for no expiration. Times in Indian Standard Time (IST).</p>
                 </div>
             </div>
 

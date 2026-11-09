@@ -267,6 +267,30 @@ class AdminCouponManagementTest extends TestCase
         $this->assertTrue($coupon->is_active);
     }
 
+    public function test_admin_can_start_scheduled_coupon_now(): void
+    {
+        $coupon = Coupon::create([
+            'code' => 'SCHED-' . strtoupper(uniqid()),
+            'type' => CouponType::PERCENTAGE,
+            'value' => 2500,
+            'is_active' => true,
+            'starts_at' => now()->addDays(5),
+            'expires_at' => now()->addDays(30),
+            'created_by_admin_user_id' => $this->admin->id,
+            'version' => 0,
+        ]);
+
+        $this->assertTrue($coupon->starts_at->isFuture());
+
+        $response = $this->asAdmin()->post("/admin/coupons/{$coupon->id}/start-now");
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $coupon->refresh();
+        $this->assertTrue($coupon->is_active);
+        $this->assertTrue($coupon->starts_at->isPast());
+    }
+
     public function test_admin_can_delete_unused_coupon(): void
     {
         $coupon = Coupon::create([

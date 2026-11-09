@@ -210,11 +210,11 @@
                             <!-- Validity -->
                             <td class="px-6 py-4 align-top text-xs text-slate-600 whitespace-nowrap">
                                 @if($coupon->starts_at)
-                                    <div>From: {{ $coupon->starts_at->format('d M Y, H:i') }}</div>
+                                    <div>From: {{ $coupon->starts_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('d M Y, H:i') }}</div>
                                 @endif
                                 @if($coupon->expires_at)
                                     <div class="{{ $coupon->expires_at->isPast() ? 'text-rose-600 font-semibold' : 'text-slate-500' }}">
-                                        Expires: {{ $coupon->expires_at->format('d M Y, H:i') }}
+                                        Expires: {{ $coupon->expires_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('d M Y, H:i') }}
                                     </div>
                                 @elseif(!$coupon->starts_at)
                                     <span class="text-slate-400">Always active</span>
@@ -257,6 +257,20 @@
                             <td class="px-6 py-4 align-top text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-2">
                                     @if($canUpdate)
+                                        @if($isScheduled)
+                                            <form method="POST" action="{{ route('admin.coupons.start-now', $coupon->id) }}" class="inline">
+                                                @csrf
+                                                <button
+                                                    type="submit"
+                                                    class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-2xs flex items-center gap-1"
+                                                    title="Activate coupon immediately right now"
+                                                >
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    Activate Now
+                                                </button>
+                                            </form>
+                                        @endif
+
                                         @if($coupon->is_active)
                                             @if($coupon->is_featured)
                                                 <span class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">

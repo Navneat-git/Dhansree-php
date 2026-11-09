@@ -16,13 +16,31 @@
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900 font-mono text-amber-800">{{ $coupon->code }}</h1>
-                    @if($coupon->is_active)
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
-                        </span>
-                    @else
+                    @php
+                        $isExpired = $coupon->expires_at && $coupon->expires_at->isPast();
+                        $isScheduled = $coupon->starts_at && $coupon->starts_at->isFuture();
+                        $isExhausted = $coupon->usage_limit && $coupon->times_redeemed >= $coupon->usage_limit;
+                    @endphp
+
+                    @if(!$coupon->is_active)
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                             Inactive
+                        </span>
+                    @elseif($isExpired)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            Expired
+                        </span>
+                    @elseif($isExhausted)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+                            Exhausted
+                        </span>
+                    @elseif($isScheduled)
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span> Scheduled
+                        </span>
+                    @else
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
                         </span>
                     @endif
                 </div>
@@ -51,6 +69,33 @@
             </div>
         @endif
     </div>
+
+    <!-- Scheduled Coupon Banner -->
+    @if($isScheduled)
+        <div class="p-4 rounded-xl bg-sky-50 border border-sky-200 text-sky-900 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center text-sky-700 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <p class="font-bold text-sky-950">This coupon is currently Scheduled</p>
+                    <p class="text-xs text-sky-700 mt-0.5">
+                        Scheduled to start on <span class="font-semibold">{{ $coupon->starts_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('d M Y, h:i A') }} (IST)</span>. Customers cannot use it at checkout until then.
+                    </p>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('admin.coupons.start-now', $coupon->id) }}" class="shrink-0">
+                @csrf
+                <button
+                    type="submit"
+                    class="w-full sm:w-auto px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-2xs transition-colors flex items-center justify-center gap-1.5"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Activate Coupon Now
+                </button>
+            </form>
+        </div>
+    @endif
 
     <!-- Flash Alerts -->
     @if(session('success'))
@@ -232,9 +277,10 @@
                         type="datetime-local"
                         id="starts_at"
                         name="starts_at"
-                        value="{{ old('starts_at', $coupon->starts_at ? $coupon->starts_at->format('Y-m-d\TH:i') : '') }}"
+                        value="{{ old('starts_at', $coupon->starts_at ? $coupon->starts_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : '') }}"
                         class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                     >
+                    <p class="text-[11px] text-slate-500 mt-1">Leave empty to activate immediately. All times in Indian Standard Time (IST).</p>
                 </div>
 
                 <div>
@@ -245,9 +291,10 @@
                         type="datetime-local"
                         id="expires_at"
                         name="expires_at"
-                        value="{{ old('expires_at', $coupon->expires_at ? $coupon->expires_at->format('Y-m-d\TH:i') : '') }}"
+                        value="{{ old('expires_at', $coupon->expires_at ? $coupon->expires_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : '') }}"
                         class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs"
                     >
+                    <p class="text-[11px] text-slate-500 mt-1">Leave empty for no expiration. Times in Indian Standard Time (IST).</p>
                 </div>
             </div>
 

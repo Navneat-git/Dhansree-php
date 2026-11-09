@@ -218,9 +218,20 @@ class AdminBannersService
         if (!in_array($wordMode, ['ON_PICTURE', 'ON_LIGHTENED', 'LIGHT_ON_PICTURE'], true)) {
             $wordMode = 'ON_PICTURE';
         }
+        $storeTz = config('store.timezone', 'Asia/Kolkata');
+        $startsAt = null;
+        if (!empty($data['starts_at'])) {
+            $startsAt = $data['starts_at'] instanceof Carbon
+                ? $data['starts_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['starts_at'], $storeTz)->setTimezone('UTC');
+        }
 
-        $startsAt = !empty($data['starts_at']) ? Carbon::parse($data['starts_at']) : null;
-        $endsAt = !empty($data['ends_at']) ? Carbon::parse($data['ends_at']) : null;
+        $endsAt = null;
+        if (!empty($data['ends_at'])) {
+            $endsAt = $data['ends_at'] instanceof Carbon
+                ? $data['ends_at']->copy()->setTimezone('UTC')
+                : Carbon::parse($data['ends_at'], $storeTz)->setTimezone('UTC');
+        }
 
         if ($startsAt && $endsAt && $endsAt->lte($startsAt)) {
             throw new UnprocessableEntityHttpException('End date must be after the start date.');

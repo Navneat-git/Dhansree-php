@@ -187,7 +187,7 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Starts At (Optional)</label>
                     <input type="datetime-local"
                            name="starts_at"
-                           value="{{ old('starts_at', $banner->starts_at ? $banner->starts_at->format('Y-m-d\TH:i') : '') }}"
+                           value="{{ old('starts_at', $banner->starts_at ? $banner->starts_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : '') }}"
                            class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500">
                 </div>
 
@@ -195,7 +195,7 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Ends At (Optional)</label>
                     <input type="datetime-local"
                            name="ends_at"
-                           value="{{ old('ends_at', $banner->ends_at ? $banner->ends_at->format('Y-m-d\TH:i') : '') }}"
+                           value="{{ old('ends_at', $banner->ends_at ? $banner->ends_at->timezone(config('store.timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : '') }}"
                            class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500">
                 </div>
             </div>
