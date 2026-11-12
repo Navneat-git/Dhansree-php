@@ -489,6 +489,86 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminInventoryWebController::class, 'index'])->name('index');
             Route::post('/adjust/{variantId}', [\App\Http\Controllers\Admin\AdminInventoryWebController::class, 'adjust'])->name('adjust');
         });
+
+        // Social Commerce Studio
+        Route::prefix('social-commerce')->name('admin.social-commerce.')->group(function () {
+            // 1. Dashboard
+            Route::get('/', fn () => redirect()->route('admin.social-commerce.dashboard'));
+            Route::get('/dashboard', [\App\Http\Controllers\Admin\SocialCommerce\SocialCommerceDashboardController::class, 'index'])->name('dashboard');
+
+            // 2. Supplier Media Inbox
+            Route::prefix('inbox')->name('inbox.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'index'])->name('index');
+                Route::post('/upload', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'store'])->name('upload');
+                Route::post('/upload-zip', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'storeZip'])->name('upload-zip');
+                Route::post('/bulk', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'bulkAction'])->name('bulk');
+                Route::post('/move-to-product', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'moveToProduct'])->name('move-to-product');
+                Route::delete('/{asset}', [\App\Http\Controllers\Admin\SocialCommerce\SupplierMediaInboxController::class, 'destroy'])->name('destroy');
+            });
+
+            // 3. Product Library
+            Route::prefix('products')->name('products.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'store'])->name('store');
+                Route::get('/{product}', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'show'])->name('show');
+                Route::get('/{product}/edit', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'edit'])->name('edit');
+                Route::put('/{product}', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'update'])->name('update');
+                Route::post('/{product}/availability', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'updateAvailability'])->name('availability');
+                Route::post('/{product}/generate-caption', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'generateCaption'])->name('generate-caption');
+                Route::post('/{product}/promote-to-web', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'promoteToWeb'])->name('promote-to-web');
+                Route::delete('/{product}', [\App\Http\Controllers\Admin\SocialCommerce\SocialProductLibraryController::class, 'destroy'])->name('destroy');
+            });
+
+            // 4. Reel Studio
+            Route::prefix('reels')->name('reels.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'store'])->name('store');
+                Route::get('/{reel}', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'show'])->name('show');
+                Route::post('/{reel}/render', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'render'])->name('render');
+                Route::post('/{reel}/approve', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'approve'])->name('approve');
+                Route::post('/{reel}/push-to-queue', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'pushToQueue'])->name('push-to-queue');
+                Route::delete('/{reel}', [\App\Http\Controllers\Admin\SocialCommerce\SocialReelStudioController::class, 'destroy'])->name('destroy');
+            });
+
+            // 5. WhatsApp Status Studio
+            Route::prefix('whatsapp-status')->name('whatsapp-status.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\WhatsAppStatusStudioController::class, 'index'])->name('index');
+                Route::post('/generate', [\App\Http\Controllers\Admin\SocialCommerce\WhatsAppStatusStudioController::class, 'generate'])->name('generate');
+                Route::get('/download', [\App\Http\Controllers\Admin\SocialCommerce\WhatsAppStatusStudioController::class, 'downloadSingle'])->name('download');
+                Route::get('/download-zip/{product}', [\App\Http\Controllers\Admin\SocialCommerce\WhatsAppStatusStudioController::class, 'downloadProductZip'])->name('download-zip');
+            });
+
+            // 6. Publishing Queue
+            Route::prefix('queue')->name('queue.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'index'])->name('index');
+                Route::post('/{item}/approve', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'approve'])->name('approve');
+                Route::post('/{item}/publish-now', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'publishNow'])->name('publish-now');
+                Route::put('/{item}', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'update'])->name('update');
+                Route::post('/{item}/retry', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'retry'])->name('retry');
+                Route::delete('/{item}', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingQueueController::class, 'destroy'])->name('destroy');
+            });
+
+            // 7. Publishing History
+            Route::prefix('history')->name('history.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialPublishingHistoryController::class, 'index'])->name('index');
+            });
+
+            // 8. Social Media Connections
+            Route::prefix('connections')->name('connections.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'index'])->name('index');
+                Route::get('/connect', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'connect'])->name('connect');
+                Route::get('/callback', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'callback'])->name('callback');
+                Route::post('/{account}/disconnect', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'disconnect'])->name('disconnect');
+            });
+
+            // 9. Settings
+            Route::prefix('settings')->name('settings.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialCommerceSettingsController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialCommerceSettingsController::class, 'update'])->name('update');
+            });
+        });
     });
 });
 

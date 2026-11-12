@@ -31,6 +31,106 @@
         </a>
     </div>
 
+    <!-- Social Commerce Studio Section (Prominently placed at top) -->
+    <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-2">
+        <div class="px-2 flex items-center justify-between mb-2">
+            <p class="text-[0.6875rem] font-bold tracking-wider text-amber-400 uppercase flex items-center gap-1.5">
+                <svg class="size-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Social Commerce Studio
+            </p>
+            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">NEW</span>
+        </div>
+        <div class="space-y-0.5">
+            <!-- 1. Dashboard -->
+            <a href="{{ route('admin.social-commerce.dashboard') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/dashboard') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V18ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-1.25-.35" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <!-- 2. Supplier Media Inbox -->
+            <a href="{{ route('admin.social-commerce.inbox.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/inbox*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0-3-3m3 3 3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                </svg>
+                <span>Supplier Media Inbox</span>
+                <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">WhatsApp</span>
+            </a>
+
+            <!-- 3. Product Library -->
+            <a href="{{ route('admin.social-commerce.products.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/products*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+                <span>Product Library</span>
+            </a>
+
+            <!-- 4. Reel Studio -->
+            <a href="{{ route('admin.social-commerce.reels.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/reels*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <span>Reel Studio</span>
+                <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">FFmpeg</span>
+            </a>
+
+            <!-- 5. WhatsApp Status Studio -->
+            <a href="{{ route('admin.social-commerce.whatsapp-status.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/whatsapp-status*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                </svg>
+                <span>WhatsApp Status Studio</span>
+                <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">9:16</span>
+            </a>
+
+            <!-- 6. Publishing Queue -->
+            <a href="{{ route('admin.social-commerce.queue.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/queue*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span>Publishing Queue</span>
+            </a>
+
+            <!-- 7. Publishing History -->
+            <a href="{{ route('admin.social-commerce.history.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/history*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                </svg>
+                <span>Publishing History</span>
+            </a>
+
+            <!-- 8. Social Media Connections -->
+            <a href="{{ route('admin.social-commerce.connections.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/connections*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                </svg>
+                <span>Social Connections</span>
+                <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">Meta</span>
+            </a>
+
+            <!-- 9. Settings -->
+            <a href="{{ route('admin.social-commerce.settings.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/settings*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.15.894c-.09.542-.559.94-1.109.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                <span>Studio Settings</span>
+            </a>
+        </div>
+    </div>
+
     <!-- Store Section -->
     @if($isSuperAdmin || ($admin && ($admin->hasPermission('PRODUCT_VIEW') || $admin->hasPermission('ORDER_VIEW') || $admin->hasPermission('INVENTORY_VIEW') || $admin->hasPermission('CUSTOMER_VIEW'))))
     <div>
@@ -152,7 +252,7 @@
     </div>
     @endif
 
-    <!-- Growth & Marketing Section -->
+
     @if($isSuperAdmin || ($admin && ($admin->hasPermission('COUPON_VIEW') || $admin->hasPermission('BANNER_VIEW') || $admin->hasPermission('PRODUCT_VIEW') || $admin->hasPermission('REVIEW_VIEW') || $admin->hasPermission('SEO_VIEW'))))
     <div>
         <p class="px-3 text-[0.6875rem] font-semibold tracking-wider text-slate-400 uppercase mb-2">Growth &amp; Marketing</p>
