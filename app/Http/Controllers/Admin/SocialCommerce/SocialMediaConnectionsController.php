@@ -257,40 +257,36 @@ class SocialMediaConnectionsController extends Controller
         $apiVersion = SocialSetting::get('meta_api_version', 'v20.0');
 
         try {
-            // If page_id is provided, query that specific ID; otherwise query /me
-            $endpoint = !empty($pageId) ? $pageId : 'me';
-
-            $response = Http::get("https://graph.facebook.com/{$apiVersion}/{$endpoint}", [
-                'access_token' => $token,
-                'fields' => 'id,name,access_token,instagram_business_account{id,username,name,profile_picture_url},accounts{id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}}',
-            ]);
-
-            if (!$response->successful()) {
-                $err = $response->json('error.message', 'Invalid Access Token or Page ID.');
-                return redirect()->back()->with('error', "Meta API verification failed: {$err}");
-            }
-
-            $data = $response->json();
             $connected = [];
 
-            // Case A: The token directly represents a Page (or specific page queried)
-            if (isset($data['id']) && (!isset($data['accounts']) || !empty($pageId))) {
-                $actualPageId = (string) $data['id'];
-                $pageName = $data['name'] ?? 'Dhansree Facebook Page';
-                $pageAccessToken = $data['access_token'] ?? $token;
+            // Case 1: Specific Page ID was supplied
+            if (!empty($pageId)) {
+                $response = Http::get("https://graph.facebook.com/{$apiVersion}/{$pageId}", [
+                    'access_token' => $token,
+                    'fields' => 'id,name,instagram_business_account{id,username,name,profile_picture_url}',
+                ]);
+
+                if (!$response->successful()) {
+                    $err = $response->json('error.message', 'Invalid Access Token or Page ID.');
+                    return redirect()->back()->with('error', "Meta API verification failed: {$err}");
+                }
+
+                $pageData = $response->json();
+                $actualPageId = (string) ($pageData['id'] ?? $pageId);
+                $pageName = $pageData['name'] ?? 'Dhansree Facebook Page';
 
                 SocialPublishingAccount::updateOrCreate(
                     ['platform' => 'FACEBOOK', 'account_id' => $actualPageId],
                     [
                         'account_name' => $pageName,
-                        'access_token' => $pageAccessToken,
+                        'access_token' => $token,
                         'token_expires_at' => null,
                         'is_connected' => true,
                     ]
                 );
                 $connected[] = "Facebook: {$pageName}";
 
-                $ig = $data['instagram_business_account'] ?? null;
+                $ig = $pageData['instagram_business_account'] ?? null;
                 if (!empty($ig)) {
                     SocialPublishingAccount::updateOrCreate(
                         ['platform' => 'INSTAGRAM', 'account_id' => (string) $ig['id']],
@@ -298,52 +294,133 @@ class SocialMediaConnectionsController extends Controller
                             'account_name' => $ig['name'] ?? $ig['username'] ?? 'Dhansree Instagram',
                             'username' => $ig['username'] ?? null,
                             'profile_picture_url' => $ig['profile_picture_url'] ?? null,
-                            'access_token' => $pageAccessToken,
+                            'access_token' => $token,
                             'token_expires_at' => null,
                             'is_connected' => true,
                         ]
                     );
                     $connected[] = "Instagram: @" . ($ig['username'] ?? $ig['id']);
                 }
-            }
-            // Case B: The token is a User/System Token that returned accounts
-            elseif (!empty($data['accounts']['data'])) {
-                foreach ($data['accounts']['data'] as $page) {
-                    $pId = (string) $page['id'];
-                    $pName = $page['name'] ?? 'Dhansree Facebook Page';
-                    $pToken = $page['access_token'] ?? $token;
+            } else {
+                // Case 2: Auto-discover via /me, /me/accounts, and Business Portfolio
+                // 2a. Query /me without invalid 'access_token' field
+                $meRes = Http::get("https://graph.facebook.com/{$apiVersion}/me", [
+                    'access_token' => $token,
+                    'fields' => 'id,name,instagram_business_account{id,username,name,profile_picture_url}',
+                ]);
+
+                $meData = $meRes->successful() ? $meRes->json() : [];
+
+                // If /me returned an instagram_business_account, the token itself is a Page token!
+                if (!empty($meData['instagram_business_account'])) {
+                    $actualPageId = (string) $meData['id'];
+                    $pageName = $meData['name'] ?? 'Dhansree Facebook Page';
 
                     SocialPublishingAccount::updateOrCreate(
-                        ['platform' => 'FACEBOOK', 'account_id' => $pId],
+                        ['platform' => 'FACEBOOK', 'account_id' => $actualPageId],
                         [
-                            'account_name' => $pName,
-                            'access_token' => $pToken,
+                            'account_name' => $pageName,
+                            'access_token' => $token,
                             'token_expires_at' => null,
                             'is_connected' => true,
                         ]
                     );
-                    $connected[] = "Facebook: {$pName}";
+                    $connected[] = "Facebook: {$pageName}";
 
-                    $ig = $page['instagram_business_account'] ?? null;
-                    if (!empty($ig)) {
+                    $ig = $meData['instagram_business_account'];
+                    SocialPublishingAccount::updateOrCreate(
+                        ['platform' => 'INSTAGRAM', 'account_id' => (string) $ig['id']],
+                        [
+                            'account_name' => $ig['name'] ?? $ig['username'] ?? 'Dhansree Instagram',
+                            'username' => $ig['username'] ?? null,
+                            'profile_picture_url' => $ig['profile_picture_url'] ?? null,
+                            'access_token' => $token,
+                            'token_expires_at' => null,
+                            'is_connected' => true,
+                        ]
+                    );
+                    $connected[] = "Instagram: @" . ($ig['username'] ?? $ig['id']);
+                }
+
+                // 2b. Query /me/accounts (works for System User and User tokens)
+                if (empty($connected)) {
+                    $accRes = Http::get("https://graph.facebook.com/{$apiVersion}/me/accounts", [
+                        'access_token' => $token,
+                        'fields' => 'id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}',
+                    ]);
+
+                    $pages = $accRes->json('data', []);
+
+                    // 2c. If /me/accounts was empty, check Business Portfolios
+                    if (empty($pages)) {
+                        $bizIds = ['1287254687814783'];
+                        $bizRes = Http::get("https://graph.facebook.com/{$apiVersion}/me/businesses", [
+                            'access_token' => $token,
+                            'fields' => 'id,name',
+                        ]);
+                        if ($bizRes->successful()) {
+                            foreach ($bizRes->json('data', []) as $b) {
+                                if (!in_array((string) $b['id'], $bizIds, true)) {
+                                    $bizIds[] = (string) $b['id'];
+                                }
+                            }
+                        }
+
+                        foreach ($bizIds as $bId) {
+                            $owned = Http::get("https://graph.facebook.com/{$apiVersion}/{$bId}/owned_pages", [
+                                'access_token' => $token,
+                                'fields' => 'id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}',
+                            ]);
+                            if ($owned->successful() && !empty($owned->json('data'))) {
+                                $pages = array_merge($pages, $owned->json('data'));
+                            }
+                            $client = Http::get("https://graph.facebook.com/{$apiVersion}/{$bId}/client_pages", [
+                                'access_token' => $token,
+                                'fields' => 'id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}',
+                            ]);
+                            if ($client->successful() && !empty($client->json('data'))) {
+                                $pages = array_merge($pages, $client->json('data'));
+                            }
+                        }
+                    }
+
+                    foreach ($pages as $p) {
+                        $pId = (string) $p['id'];
+                        $pName = $p['name'] ?? 'Dhansree Facebook Page';
+                        $pToken = $p['access_token'] ?? $token;
+
                         SocialPublishingAccount::updateOrCreate(
-                            ['platform' => 'INSTAGRAM', 'account_id' => (string) $ig['id']],
+                            ['platform' => 'FACEBOOK', 'account_id' => $pId],
                             [
-                                'account_name' => $ig['name'] ?? $ig['username'] ?? 'Dhansree Instagram',
-                                'username' => $ig['username'] ?? null,
-                                'profile_picture_url' => $ig['profile_picture_url'] ?? null,
+                                'account_name' => $pName,
                                 'access_token' => $pToken,
                                 'token_expires_at' => null,
                                 'is_connected' => true,
                             ]
                         );
-                        $connected[] = "Instagram: @" . ($ig['username'] ?? $ig['id']);
+                        $connected[] = "Facebook: {$pName}";
+
+                        $ig = $p['instagram_business_account'] ?? null;
+                        if (!empty($ig)) {
+                            SocialPublishingAccount::updateOrCreate(
+                                ['platform' => 'INSTAGRAM', 'account_id' => (string) $ig['id']],
+                                [
+                                    'account_name' => $ig['name'] ?? $ig['username'] ?? 'Dhansree Instagram',
+                                    'username' => $ig['username'] ?? null,
+                                    'profile_picture_url' => $ig['profile_picture_url'] ?? null,
+                                    'access_token' => $pToken,
+                                    'token_expires_at' => null,
+                                    'is_connected' => true,
+                                ]
+                            );
+                            $connected[] = "Instagram: @" . ($ig['username'] ?? $ig['id']);
+                        }
                     }
                 }
             }
 
             if (empty($connected)) {
-                return redirect()->back()->with('error', "No Facebook Pages or Instagram accounts were found with this token. Please ensure this is a Page Access Token or a token with Page management access.");
+                return redirect()->back()->with('error', "Token verified, but no Facebook Pages were found linked to it. If you know your Facebook Page ID, please enter it in the 'Facebook Page ID' field alongside the token.");
             }
 
             return redirect()->route('admin.social-commerce.connections.index')
