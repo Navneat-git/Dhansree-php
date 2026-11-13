@@ -6,6 +6,7 @@ namespace App\Services\SocialCommerce;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAttribute;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\SocialMediaAsset;
@@ -294,14 +295,42 @@ class SocialProductService
 
             $brand = $socialProduct->supplier ? $socialProduct->supplier->name : 'Dhansree';
 
+            // Build rich multi-line description including fabric, colors, sizes, and styling advice
+            $descLines = [];
+            if (!empty($socialProduct->description)) {
+                $descLines[] = trim($socialProduct->description);
+                $descLines[] = "";
+            }
+            $descLines[] = "• Product: {$socialProduct->name}";
+            $descLines[] = "• Collection: {$socialProduct->category_name}";
+            if (!empty($socialProduct->fabric)) {
+                $descLines[] = "• Fabric: {$socialProduct->fabric}";
+            }
+            if (!empty($socialProduct->available_colors) && count($socialProduct->available_colors) > 0) {
+                $descLines[] = "• Available Colors: " . implode(', ', $socialProduct->available_colors);
+            }
+            if (!empty($socialProduct->available_sizes) && count($socialProduct->available_sizes) > 0) {
+                $descLines[] = "• Available Sizes: " . implode(', ', $socialProduct->available_sizes);
+            }
+            $descLines[] = "• Dispatch: Ready to dispatch within 24–48 hours";
+            $descLines[] = "• Delivery: Fast Pan-India express shipping with tracking";
+
+            $fullDescription = implode("\n", $descLines);
+            $shortDescription = Str::limit(
+                $socialProduct->description 
+                    ? $socialProduct->description 
+                    : "Exclusive {$socialProduct->name} from Dhansree. Handcrafted design in premium {$socialProduct->fabric}.",
+                250
+            );
+
             $webProduct = Product::create([
                 'name' => $socialProduct->name,
                 'slug' => $slug,
                 'status' => \App\Enums\ProductStatus::ACTIVE,
                 'category_id' => $category ? $category->id : null,
                 'brand' => $brand,
-                'short_description' => Str::limit($socialProduct->description ?? "Premium Women's Fashion from Dhansree", 250),
-                'description' => $socialProduct->description ?? "Exquisite {$socialProduct->name} crafted with fine {$socialProduct->fabric}.",
+                'short_description' => $shortDescription,
+                'description' => $fullDescription,
                 'published_at' => now(),
             ]);
 
@@ -320,14 +349,74 @@ class SocialProductService
                 'position' => 0,
             ]);
 
-            // Copy primary media image if exists
-            if ($socialProduct->primaryMedia && file_exists(storage_path('app/public/' . $socialProduct->primaryMedia->file_path))) {
+            // Add Product Attributes for "Fabric, Specifications & Care" tab
+            $attrPos = 0;
+            if (!empty($socialProduct->fabric)) {
+                ProductAttribute::create([
+                    'product_id' => $webProduct->id,
+                    'label' => 'Fabric',
+                    'value' => $socialProduct->fabric,
+                    'position' => $attrPos++,
+                ]);
+            }
+            if (!empty($socialProduct->category_name)) {
+                ProductAttribute::create([
+                    'product_id' => $webProduct->id,
+                    'label' => 'Collection',
+                    'value' => $socialProduct->category_name,
+                    'position' => $attrPos++,
+                ]);
+            }
+            if (!empty($socialProduct->available_colors) && count($socialProduct->available_colors) > 0) {
+                ProductAttribute::create([
+                    'product_id' => $webProduct->id,
+                    'label' => 'Available Colors',
+                    'value' => implode(', ', $socialProduct->available_colors),
+                    'position' => $attrPos++,
+                ]);
+            }
+            if (!empty($socialProduct->available_sizes) && count($socialProduct->available_sizes) > 0) {
+                ProductAttribute::create([
+                    'product_id' => $webProduct->id,
+                    'label' => 'Available Sizes',
+                    'value' => implode(', ', $socialProduct->available_sizes),
+                    'position' => $attrPos++,
+                ]);
+            }
+            ProductAttribute::create([
+                'product_id' => $webProduct->id,
+                'label' => 'Care Instructions',
+                'value' => 'Gentle hand wash or dry clean. Dry in shade.',
+                'position' => $attrPos++,
+            ]);
+            if (!empty($socialProduct->supplier_product_code)) {
+                ProductAttribute::create([
+                    'product_id' => $webProduct->id,
+                    'label' => 'Style Code',
+                    'value' => $socialProduct->supplier_product_code,
+                    'position' => $attrPos++,
+                ]);
+            }
+
+            // Copy ALL media asset images to live ProductImage
+            $mediaList = $socialProduct->mediaAssets()->where('media_type', 'IMAGE')->get();
+            if ($socialProduct->primaryMedia && !$mediaList->contains('id', $socialProduct->primaryMedia->id)) {
+                $mediaList->prepend($socialProduct->primaryMedia);
+            }
+
+            $imgPos = 0;
+            foreach ($mediaList as $media) {
                 ProductImage::create([
                     'product_id' => $webProduct->id,
-                    'path' => $socialProduct->primaryMedia->file_path,
-                    'is_primary' => true,
-                    'sort_order' => 0,
+                    'storage_key' => $media->file_path,
+                    'alt_text' => $webProduct->name . ' - Photo ' . ($imgPos + 1),
+                    'is_actual_product_image' => true,
+                    'position' => $imgPos,
+                    'width' => $media->width,
+                    'height' => $media->height,
+                    'byte_size' => $media->file_size_bytes,
                 ]);
+                $imgPos++;
             }
 
             // Mark SocialProduct as promoted
@@ -336,7 +425,7 @@ class SocialProductService
                 'web_product_id' => $webProduct->id,
             ]);
 
-            Log::info("SocialProduct {$socialProduct->product_code} successfully promoted to web Product #{$webProduct->id}");
+            Log::info("SocialProduct {$socialProduct->product_code} successfully promoted to web Product #{$webProduct->id} with {$imgPos} images and {$attrPos} attributes.");
 
             return $webProduct;
         });

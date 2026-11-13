@@ -264,6 +264,11 @@
                     <p class="text-[10px] text-slate-500 truncate" title="{{ $asset->supplier_group_name }}">
                         {{ $asset->supplier_group_name ?: 'Direct Upload' }}
                     </p>
+                    @if(!empty($asset->metadata['raw_description']))
+                        <p class="mt-1 text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded truncate border border-emerald-100" title="{{ $asset->metadata['raw_description'] }}">
+                            💬 {{ \Illuminate\Support\Str::limit($asset->metadata['raw_description'], 28) }}
+                        </p>
+                    @endif
                 </div>
 
                 <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
@@ -394,6 +399,59 @@
                         </div>
                     </div>
 
+                    <!-- WhatsApp Message / Product Description -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            WhatsApp Product Description / Supplier Message (Optional)
+                        </label>
+                        <textarea name="whatsapp_description" rows="3"
+                                  placeholder="Paste the supplier's WhatsApp text here (e.g. fabric details, sizes, pricing, cut, catalogue name...)"
+                                  class="w-full text-xs font-mono rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 p-2.5"></textarea>
+                        <p class="text-[10px] text-slate-400 mt-1">This text is saved with the photos and automatically used for generating captions &amp; live website product details.</p>
+                    </div>
+
+                    <!-- Optional Immediate Product Library Creation -->
+                    <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2.5" x-data="{ autoCreate: false }">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="auto_create_product" value="1" x-model="autoCreate"
+                                   class="rounded text-amber-500 focus:ring-amber-500 size-4">
+                            <span class="text-xs font-semibold text-slate-900">
+                                Also create Product in Product Library immediately with these uploaded photos
+                            </span>
+                        </label>
+                        <div x-show="autoCreate" x-cloak class="space-y-2.5 pt-2 border-t border-amber-200/60 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Product Name</label>
+                                <input type="text" name="product_name" placeholder="e.g. Royal Chanderi Embroidered Suit Set"
+                                       class="w-full text-xs rounded-lg border-slate-300 py-1.5 px-2.5">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Fabric</label>
+                                    <input type="text" name="fabric" placeholder="e.g. Pure Cotton, Silk"
+                                           class="w-full text-xs rounded-lg border-slate-300 py-1.5 px-2.5">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Special Offer Price (₹)</label>
+                                    <input type="number" step="0.01" name="special_offer_price" placeholder="e.g. 899"
+                                           class="w-full text-xs rounded-lg border-slate-300 py-1.5 px-2.5">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Available Colours</label>
+                                    <input type="text" name="available_colors" placeholder="Maroon, Mustard, Teal"
+                                           class="w-full text-xs rounded-lg border-slate-300 py-1.5 px-2.5">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Available Sizes</label>
+                                    <input type="text" name="available_sizes" placeholder="M, L, XL, XXL or Unstitched"
+                                           class="w-full text-xs rounded-lg border-slate-300 py-1.5 px-2.5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="open = false" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
                             Cancel
@@ -478,6 +536,16 @@
                                 @endforeach
                             </select>
                         </div>
+                    </div>
+
+                    <!-- WhatsApp Message / Product Description -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            WhatsApp Product Description / Supplier Message (Optional)
+                        </label>
+                        <textarea name="whatsapp_description" rows="3"
+                                  placeholder="Paste the supplier's WhatsApp text here (e.g. fabric details, sizes, pricing, cut, catalogue name...)"
+                                  class="w-full text-xs font-mono rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 p-2.5"></textarea>
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -580,6 +648,17 @@
                             <input type="text" name="available_sizes" placeholder="M, L, XL, XXL or Unstitched"
                                    class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
                         </div>
+                    </div>
+
+                    <!-- Description / WhatsApp Message Details -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">
+                            Product Description / WhatsApp Message
+                        </label>
+                        <textarea name="description" rows="3"
+                                  placeholder="Enter description, cut, work, or leave blank to automatically use WhatsApp description from the uploaded photos..."
+                                  class="w-full text-xs font-mono rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 p-2.5"></textarea>
+                        <p class="text-[10px] text-slate-400 mt-1">If left blank, it automatically inherits the WhatsApp message saved with these photos.</p>
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">

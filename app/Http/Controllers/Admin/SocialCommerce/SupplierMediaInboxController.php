@@ -91,6 +91,15 @@ class SupplierMediaInboxController extends Controller
             'supplier_name' => 'nullable|string|max:150',
             'supplier_group_name' => 'nullable|string|max:150',
             'category_name' => 'nullable|string|max:100',
+            'whatsapp_description' => 'nullable|string',
+            'auto_create_product' => 'nullable|boolean',
+            'product_name' => 'nullable|string|max:200',
+            'fabric' => 'nullable|string|max:150',
+            'purchase_price' => 'nullable|numeric|min:0',
+            'suggested_selling_price' => 'nullable|numeric|min:0',
+            'special_offer_price' => 'nullable|numeric|min:0',
+            'available_colors' => 'nullable|string',
+            'available_sizes' => 'nullable|string',
         ]);
 
         $adminUser = $request->attributes->get('admin_user');
@@ -105,6 +114,7 @@ class SupplierMediaInboxController extends Controller
             $supplierId = $supplier->id;
         }
 
+        $rawDescription = $request->input('whatsapp_description');
         $results = [];
         $files = $request->file('files');
 
@@ -114,7 +124,8 @@ class SupplierMediaInboxController extends Controller
                 supplierId: $supplierId ? (int) $supplierId : null,
                 supplierGroupName: $request->input('supplier_group_name'),
                 categoryName: $request->input('category_name'),
-                adminUserId: $adminUserId
+                adminUserId: $adminUserId,
+                rawDescription: $rawDescription
             );
             $results[] = $result;
         }
@@ -123,7 +134,53 @@ class SupplierMediaInboxController extends Controller
         $duplicateCount = count(array_filter($results, fn($r) => $r['status'] === 'duplicate'));
         $errorCount = count(array_filter($results, fn($r) => $r['status'] === 'error'));
 
+        // If user opted to automatically create product library item immediately
+        if ($request->boolean('auto_create_product') && ($createdCount > 0 || $duplicateCount > 0)) {
+            $assetIds = collect($results)
+                ->map(fn($r) => $r['asset']?->id)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            if (!empty($assetIds)) {
+                $productName = $request->input('product_name')
+                    ?: ($request->input('supplier_name') ? $request->input('supplier_name') . ' Collection' : 'Design ' . date('d M Y'));
+
+                $product = $this->supplierMediaService->convertAssetsToProduct(
+                    assetIds: $assetIds,
+                    data: [
+                        'name' => $productName,
+                        'category_name' => $request->input('category_name') ?: "Women's Suits",
+                        'supplier_id' => $supplierId,
+                        'fabric' => $request->input('fabric'),
+                        'purchase_price' => $request->input('purchase_price'),
+                        'suggested_selling_price' => $request->input('suggested_selling_price'),
+                        'special_offer_price' => $request->input('special_offer_price'),
+                        'available_colors' => $request->input('available_colors'),
+                        'available_sizes' => $request->input('available_sizes'),
+                        'description' => $rawDescription,
+                    ],
+                    admin: $adminUserId
+                );
+
+                $msg = "Uploaded {$createdCount} media files and created Product {$product->product_code} with WhatsApp description!";
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => $msg,
+                        'product_id' => $product->id,
+                        'redirect_url' => route('admin.social-commerce.products.show', $product),
+                    ]);
+                }
+                return redirect()->route('admin.social-commerce.products.show', $product)->with('success', $msg);
+            }
+        }
+
         $message = "Upload complete: {$createdCount} new media saved.";
+        if (!empty($rawDescription)) {
+            $message .= " WhatsApp description saved with assets.";
+        }
         if ($duplicateCount > 0) {
             $message .= " {$duplicateCount} duplicates skipped.";
         }
@@ -158,6 +215,7 @@ class SupplierMediaInboxController extends Controller
             'supplier_name' => 'nullable|string|max:150',
             'supplier_group_name' => 'nullable|string|max:150',
             'category_name' => 'nullable|string|max:100',
+            'whatsapp_description' => 'nullable|string',
         ]);
 
         $adminUser = $request->attributes->get('admin_user');
@@ -177,7 +235,8 @@ class SupplierMediaInboxController extends Controller
             supplierId: $supplierId ? (int) $supplierId : null,
             supplierGroupName: $request->input('supplier_group_name'),
             categoryName: $request->input('category_name'),
-            adminUserId: $adminUserId
+            adminUserId: $adminUserId,
+            rawDescription: $request->input('whatsapp_description')
         );
 
         $message = "ZIP import finished: {$summary['created']} files imported, {$summary['skipped_duplicate']} duplicates skipped, {$summary['errors']} failed.";

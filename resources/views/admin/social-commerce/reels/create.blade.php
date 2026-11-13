@@ -16,6 +16,9 @@
           templateCode: 'NEW_ARRIVALS',
           durationSeconds: 15,
           selectedItems: [],
+          addedProducts: [],
+          captionText: {{ json_encode(old('caption', $suggestedCaption)) }},
+          hashtagsText: {{ json_encode(old('hashtags', '#Dhansree #WomenFashion #LatestSuits #EthnicWear #FashionReels #IndianWear')) }},
           addProductMedia(prod, media) {
               this.selectedItems.push({
                   media_asset_id: media.id,
@@ -25,9 +28,19 @@
                   price_text: prod.special_offer_price_rupees ? '₹' + Math.round(prod.special_offer_price_rupees) : '',
                   display_seconds: 2.5
               });
+              if (!this.addedProducts.some(p => p.id === prod.id)) {
+                  this.addedProducts.push(prod);
+              }
+              // Automatically generate caption if currently blank
+              if (!this.captionText || this.captionText.trim() === '') {
+                  this.autoGenerateCaption(prod);
+              }
           },
           removeItem(idx) {
-              this.selectedItems.splice(idx, 1);
+              const removed = this.selectedItems.splice(idx, 1)[0];
+              if (removed && !this.selectedItems.some(item => item.social_product_id === removed.social_product_id)) {
+                  this.addedProducts = this.addedProducts.filter(p => p.id !== removed.social_product_id);
+              }
           },
           moveUp(idx) {
               if (idx > 0) {
@@ -42,6 +55,102 @@
                   this.selectedItems[idx] = this.selectedItems[idx + 1];
                   this.selectedItems[idx + 1] = temp;
               }
+          },
+          autoGenerateCaption(targetProd = null) {
+              const prod = targetProd || (this.addedProducts.length > 0 ? this.addedProducts[0] : null);
+              const lines = [];
+
+              // 1. Hook Header based on chosen Reel Template Style
+              switch(this.templateCode) {
+                  case 'TRENDING_DESIGNS':
+                      lines.push('🔥 Most Loved & Trending Now 🔥');
+                      lines.push('Elevate your ethnic wardrobe with this viral suit design!');
+                      break;
+                  case 'FESTIVE_COLLECTION':
+                      lines.push('👑 Royal Festive Edit 👑');
+                      lines.push('Handpicked festive perfection for special celebrations & weddings.');
+                      break;
+                  case 'SPECIAL_OFFERS':
+                      lines.push('💥 Special Price Drop Alert 💥');
+                      lines.push('Grab our signature designer collection at an unbeatable special price!');
+                      break;
+                  case 'LIMITED_STOCK':
+                      lines.push('⏳ Limited Stock Urgency ⏳');
+                      lines.push('Fastest fingers first! Highly requested design in limited pieces only.');
+                      break;
+                  case 'DAILY_FASHION':
+                      lines.push('🌸 Effortless Daily Elegance 🌸');
+                      lines.push('Breezy comfort meets modern everyday styling.');
+                      break;
+                  case 'MULTIPLE_DESIGNS':
+                      lines.push('🌟 Exclusive Catalog Showcase 🌟');
+                      lines.push('Swipe to explore our latest ethnic collection with premium fabrics!');
+                      break;
+                  case 'NEW_ARRIVALS':
+                  default:
+                      lines.push('✨ New Arrivals Alert ✨');
+                      lines.push('Beautiful handcrafted designs with elegant detailing just arrived!');
+                      break;
+              }
+              lines.push('');
+
+              if (prod) {
+                  lines.push('👗 ' + prod.name);
+                  if (prod.category_name) {
+                      lines.push('📁 Collection: ' + prod.category_name);
+                  }
+                  if (prod.fabric) {
+                      lines.push('🧵 Fabric: ' + prod.fabric);
+                  }
+                  if (prod.available_colors && prod.available_colors.length > 0) {
+                      lines.push('🎨 Available Colours: ' + (Array.isArray(prod.available_colors) ? prod.available_colors.join(', ') : prod.available_colors));
+                  }
+                  if (prod.available_sizes && prod.available_sizes.length > 0) {
+                      lines.push('📏 Sizes: ' + (Array.isArray(prod.available_sizes) ? prod.available_sizes.join(', ') : prod.available_sizes));
+                  }
+                  if (prod.description && prod.description.trim() !== '') {
+                      const cleanDesc = prod.description.replace(/\n+/g, ' ').substring(0, 160);
+                      lines.push('📝 Details: ' + cleanDesc + (prod.description.length > 160 ? '...' : ''));
+                  }
+                  if (prod.special_offer_price_rupees) {
+                      const offer = Math.round(prod.special_offer_price_rupees);
+                      if (prod.suggested_selling_price_rupees && prod.suggested_selling_price_rupees > prod.special_offer_price_rupees) {
+                          const mrp = Math.round(prod.suggested_selling_price_rupees);
+                          lines.push('💰 Special Price: ₹' + offer.toLocaleString('en-IN') + ' (MRP: ₹' + mrp.toLocaleString('en-IN') + ')');
+                      } else {
+                          lines.push('💰 Special Price: ₹' + offer.toLocaleString('en-IN'));
+                      }
+                  } else if (prod.suggested_selling_price_rupees) {
+                      lines.push('💰 Price: ₹' + Math.round(prod.suggested_selling_price_rupees).toLocaleString('en-IN'));
+                  }
+                  if (prod.product_code) {
+                      lines.push('✅ Product Code: ' + prod.product_code);
+                  }
+              } else {
+                  lines.push('👗 Premium Ethnic Fashion Collection');
+                  lines.push('📁 Handpicked Designer Women\'s Suits');
+                  lines.push('💰 Special Offer Pricing Available');
+              }
+
+              lines.push('🚚 Fast Shipping Pan India Available');
+              lines.push('');
+              lines.push('📲 DM or WhatsApp us to order');
+              lines.push('💬 WhatsApp: +919887776777');
+              lines.push('✨ Dhansree — STYLE. TECH. EVERYDAY.');
+
+              this.captionText = lines.join('\n');
+
+              // Generate tailored hashtags
+              const tags = ['#Dhansree', '#WomenFashion', '#LatestSuits', '#EthnicWear', '#FashionReels', '#IndianWear', '#DesignerSuits'];
+              if (prod && prod.category_name) {
+                  const catTag = '#' + prod.category_name.replace(/[^a-zA-Z0-9]/g, '');
+                  if (!tags.includes(catTag)) tags.push(catTag);
+              }
+              if (prod && prod.fabric) {
+                  const fabTag = '#' + prod.fabric.replace(/[^a-zA-Z0-9]/g, '') + 'Suits';
+                  if (!tags.includes(fabTag)) tags.push(fabTag);
+              }
+              this.hashtagsText = tags.join(' ');
           }
       }" class="space-y-6 max-w-5xl mx-auto">
     @csrf
@@ -201,20 +310,43 @@
 
             <!-- Caption & Hashtags Card -->
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-                <h3 class="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">
-                    Instagram &amp; Facebook Caption
-                </h3>
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">
+                            Instagram &amp; Facebook Caption
+                        </h3>
+                        <p class="text-[10px] text-slate-400">Generated from product details &amp; template</p>
+                    </div>
+                    <button type="button"
+                            @click="autoGenerateCaption()"
+                            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-xs transition-colors cursor-pointer"
+                            title="Auto-generate caption based on selected products & template">
+                        <span>✨</span> Auto-Generate
+                    </button>
+                </div>
+
+                <!-- Template change reminder if slides exist -->
+                <div x-show="selectedItems.length > 0" class="p-2 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between text-[11px] text-amber-900">
+                    <span class="flex items-center gap-1.5">
+                        <span>💡</span>
+                        <span>Tone matches: <strong class="font-semibold" x-text="templateCode.replace('_', ' ')"></strong></span>
+                    </span>
+                    <button type="button" @click="autoGenerateCaption()" class="font-bold underline hover:text-amber-950 text-[10px]">
+                        Refresh
+                    </button>
+                </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Reel Caption</label>
-                    <textarea name="caption" rows="8" placeholder="Enter engaging description or use auto-generated caption..."
-                              class="w-full text-xs font-mono rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 p-2.5 leading-relaxed">{{ old('caption', $suggestedCaption) }}</textarea>
+                    <textarea name="caption" rows="9" x-model="captionText"
+                              placeholder="Click '✨ Auto-Generate' or add a product slide to automatically populate caption with fashion details, pricing, and WhatsApp CTA..."
+                              class="w-full text-xs font-mono rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 p-2.5 leading-relaxed"></textarea>
+                    <p class="text-[10px] text-slate-400 mt-1">You can customize, add emojis, or rewrite anything manually before saving.</p>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Hashtags</label>
-                    <input type="text" name="hashtags"
-                           value="{{ old('hashtags', '#Dhansree #WomenFashion #LatestSuits #EthnicWear #FashionReels') }}"
+                    <input type="text" name="hashtags" x-model="hashtagsText"
                            class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
                 </div>
             </div>

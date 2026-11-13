@@ -151,8 +151,9 @@ class SupplierMediaService
         ?int $supplierId = null,
         ?string $groupName = null,
         ?string $categoryName = null,
-        ?AdminUser $admin = null,
-        string $originalClientName = ''
+        AdminUser|int|null $admin = null,
+        string $originalClientName = '',
+        ?string $rawDescription = null
     ): array {
         $isUploadedFile = $file instanceof UploadedFile;
         $realPath = $isUploadedFile ? $file->getRealPath() : $file;
@@ -235,8 +236,9 @@ class SupplierMediaService
             'metadata' => [
                 'original_name' => $clientName,
                 'uploaded_from' => 'admin_inbox',
+                'raw_description' => !empty($rawDescription) ? trim($rawDescription) : null,
             ],
-            'created_by_admin_user_id' => $admin?->id,
+            'created_by_admin_user_id' => $admin instanceof AdminUser ? $admin->id : $admin,
         ]);
 
         return [
@@ -293,7 +295,8 @@ class SupplierMediaService
         ?int $supplierId = null,
         ?string $groupName = null,
         ?string $categoryName = null,
-        ?AdminUser $admin = null
+        AdminUser|int|null $admin = null,
+        ?string $rawDescription = null
     ): array {
         $zip = new ZipArchive();
         $realPath = $zipFile->getRealPath();
@@ -330,12 +333,13 @@ class SupplierMediaService
             }
 
             $res = $this->storeMediaFile(
-                $file->getPathname(),
-                $supplierId,
-                $groupName,
-                $categoryName,
-                $admin,
-                $filename
+                file: $file->getPathname(),
+                supplierId: $supplierId,
+                groupName: $groupName,
+                categoryName: $categoryName,
+                admin: $admin,
+                originalClientName: $filename,
+                rawDescription: $rawDescription
             );
 
             $results['items'][] = $res;
@@ -399,9 +403,17 @@ class SupplierMediaService
         ?int $supplierId = null,
         ?string $supplierGroupName = null,
         ?string $categoryName = null,
-        ?int $adminUserId = null
+        AdminUser|int|null $adminUserId = null,
+        ?string $rawDescription = null
     ): array {
-        return $this->storeMediaFile($file, $supplierId, $supplierGroupName, $categoryName, $adminUserId);
+        return $this->storeMediaFile(
+            file: $file,
+            supplierId: $supplierId,
+            groupName: $supplierGroupName,
+            categoryName: $categoryName,
+            admin: $adminUserId,
+            rawDescription: $rawDescription
+        );
     }
 
     /**
@@ -412,9 +424,17 @@ class SupplierMediaService
         ?int $supplierId = null,
         ?string $supplierGroupName = null,
         ?string $categoryName = null,
-        ?int $adminUserId = null
+        AdminUser|int|null $adminUserId = null,
+        ?string $rawDescription = null
     ): array {
-        return $this->importFromZip($zipFile, $supplierId, $supplierGroupName, $categoryName, $adminUserId);
+        return $this->importFromZip(
+            zipFile: $zipFile,
+            supplierId: $supplierId,
+            groupName: $supplierGroupName,
+            categoryName: $categoryName,
+            admin: $adminUserId,
+            rawDescription: $rawDescription
+        );
     }
 
     /**
@@ -459,6 +479,9 @@ class SupplierMediaService
                 ? array_values(array_filter(array_map('trim', explode(',', $data['available_sizes']))))
                 : ($data['available_sizes'] ?? ['M', 'L', 'XL', 'XXL']);
 
+            $rawDescFallback = $firstAsset->metadata['raw_description'] ?? null;
+            $finalDescription = !empty($data['description']) ? trim((string) $data['description']) : $rawDescFallback;
+
             $product = SocialProduct::create([
                 'product_code' => $productCode,
                 'name' => $name,
@@ -471,7 +494,7 @@ class SupplierMediaService
                 'purchase_price_paise' => $purchaseRupees !== null ? (int) round($purchaseRupees * 100) : null,
                 'suggested_selling_price_paise' => $sellingRupees !== null ? (int) round($sellingRupees * 100) : null,
                 'special_offer_price_paise' => $offerRupees !== null ? (int) round($offerRupees * 100) : null,
-                'description' => $data['description'] ?? null,
+                'description' => $finalDescription,
                 'notes' => $data['notes'] ?? null,
                 'availability_status' => $data['availability_status'] ?? 'NEW',
                 'last_availability_confirmed_at' => now(),
