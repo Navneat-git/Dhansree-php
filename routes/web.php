@@ -560,6 +560,8 @@ Route::prefix('admin')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'index'])->name('index');
                 Route::get('/connect', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'connect'])->name('connect');
                 Route::get('/callback', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'callback'])->name('callback');
+                Route::post('/manual', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'connectManual'])->name('manual');
+                Route::post('/reset-auth', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'resetAuth'])->name('reset-auth');
                 Route::post('/{account}/disconnect', [\App\Http\Controllers\Admin\SocialCommerce\SocialMediaConnectionsController::class, 'disconnect'])->name('disconnect');
             });
 

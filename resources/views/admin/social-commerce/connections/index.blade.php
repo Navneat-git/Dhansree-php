@@ -174,6 +174,87 @@
 
     </div>
 
+    <!-- Alternative: Manual Connection via Page Access Token -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4" x-data="{ openManual: false }">
+        <div class="flex items-center justify-between cursor-pointer" @click="openManual = !openManual">
+            <div class="flex items-center gap-2.5">
+                <span class="size-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">
+                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                    </svg>
+                </span>
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-900">Alternative: Connect via Page Access Token</h4>
+                    <p class="text-xs text-slate-500">Bypass OAuth popup entirely by pasting a Page Access Token or System User Token.</p>
+                </div>
+            </div>
+            <button type="button" class="text-xs font-semibold text-blue-600 hover:text-blue-700" x-text="openManual ? 'Hide' : 'Show Form'"></button>
+        </div>
+
+        <div x-show="openManual" x-cloak class="pt-3 border-t border-slate-100 space-y-4">
+            <form method="POST" action="{{ route('admin.social-commerce.connections.manual') }}" class="space-y-3">
+                @csrf
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Facebook Page ID</label>
+                        <input type="text" name="page_id" required placeholder="e.g. 102938475610293"
+                               class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                        <p class="text-[11px] text-slate-400 mt-1">Found in Facebook Page &rarr; About &rarr; Page Transparency &rarr; Page ID.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Page Access Token</label>
+                        <input type="password" name="access_token" required placeholder="EAAB..."
+                               class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2 font-mono">
+                        <p class="text-[11px] text-slate-400 mt-1">Generated from Graph API Explorer or Meta Business Settings &rarr; System Users.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-xs text-slate-500">System will automatically detect and link the associated Instagram Business Account.</span>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors">
+                        Verify &amp; Connect
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Troubleshooting Guide for '0 Pages Selected' -->
+    <div class="bg-amber-50/80 rounded-2xl border border-amber-200 p-6 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-amber-950 flex items-center gap-2">
+                <svg class="size-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                Why does Meta show "0 Pages were selected or found"?
+            </h4>
+            <form method="POST" action="{{ route('admin.social-commerce.connections.reset-auth') }}" onsubmit="return confirm('Reset Meta session cache?');">
+                @csrf
+                <button type="submit" class="text-xs text-amber-800 hover:text-amber-950 font-semibold underline">
+                    Clear OAuth Cache
+                </button>
+            </form>
+        </div>
+
+        <p class="text-xs text-amber-900 leading-relaxed">
+            When you authorized Meta, Facebook cached an empty selection. Follow these 3 quick checks:
+        </p>
+
+        <ol class="list-decimal list-inside space-y-2 text-xs text-amber-900 leading-relaxed font-medium">
+            <li>
+                <strong>Clear Facebook's cached app grant:</strong> Go to
+                <a href="https://www.facebook.com/settings?tab=applications" target="_blank" class="underline text-blue-700 font-bold">Facebook &rarr; Settings &rarr; Apps and Websites</a>,
+                find your app, and click <strong>Remove</strong>. This forces Facebook to show the full selection dialog next time.
+            </li>
+            <li>
+                <strong>Page Admin Permissions:</strong> Confirm that your personal Facebook account (<span class="font-bold">Navneet Bhardwaj</span>) has <strong>Full Control / Admin access</strong> to the Dhansree Facebook Page.
+            </li>
+            <li>
+                <strong>Instagram Connected to Facebook Page:</strong> Open Instagram on your mobile device &rarr; <em>Edit Profile</em> &rarr; <em>Public Business Information</em> &rarr; <em>Page</em> &rarr; ensure the <strong>Dhansree Facebook Page</strong> is selected, and your account type is <strong>Professional (Business/Creator)</strong>.
+            </li>
+        </ol>
+    </div>
+
     <!-- Meta Developer Instructions Card -->
     <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-3">
         <h4 class="text-sm font-semibold text-slate-900">Meta Developer App Setup Details</h4>

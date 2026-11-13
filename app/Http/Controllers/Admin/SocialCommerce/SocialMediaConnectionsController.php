@@ -203,8 +203,33 @@ class SocialMediaConnectionsController extends Controller
             }
 
             if ($connectedCount === 0) {
+                // Fetch granted permissions for logging & diagnostics
+                $permsRes = Http::get("https://graph.facebook.com/{$apiVersion}/me/permissions", [
+                    'access_token' => $longToken,
+                ]);
+                $permsData = $permsRes->json('data', []);
+                $grantedPerms = collect($permsData)->where('status', 'granted')->pluck('permission')->all();
+                $declinedPerms = collect($permsData)->where('status', 'declined')->pluck('permission')->all();
+
+                Log::warning("Meta OAuth: 0 pages returned for user {$userName}", [
+                    'granted_permissions' => $grantedPerms,
+                    'declined_permissions' => $declinedPerms,
+                ]);
+
+                // Automatically revoke the cached grant from Facebook so next connect attempts force a clean consent prompt
+                try {
+                    Http::delete("https://graph.facebook.com/{$apiVersion}/me/permissions", [
+                        'access_token' => $longToken,
+                    ]);
+                    Log::info("Revoked cached Meta permissions for {$userName} to reset selection dialog.");
+                } catch (\Throwable $revEx) {
+                    Log::warning("Could not revoke permissions: " . $revEx->getMessage());
+                }
+
+                $errMsg = "Connected to Facebook as '{$userName}', but 0 Pages or Instagram accounts were selected or found. We have automatically reset the connection grant so you can re-select. Please click 'Connect Instagram Account' again. In the Facebook popup, make sure to check the box next to your Dhansree Page and Instagram account. (Alternatively, you can connect directly using a Page Access Token below).";
+
                 return redirect()->route('admin.social-commerce.connections.index')
-                    ->with('error', "Connected to Facebook as '{$userName}', but 0 Pages were selected or found. Please click Connect again, and in the Meta popup, make sure to check the box next to your Dhansree Page and Instagram account.");
+                    ->with('error', $errMsg);
             }
 
             $namesStr = implode(', ', $connectedNames);
@@ -215,6 +240,101 @@ class SocialMediaConnectionsController extends Controller
             return redirect()->route('admin.social-commerce.connections.index')
                 ->with('error', 'Connection failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Connect Facebook Page and Instagram Account manually via Page Access Token.
+     */
+    public function connectManual(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'page_id' => 'required|string',
+            'access_token' => 'required|string',
+        ]);
+
+        $pageId = trim((string) $request->input('page_id'));
+        $token = trim((string) $request->input('access_token'));
+        $apiVersion = SocialSetting::get('meta_api_version', 'v20.0');
+
+        try {
+            $response = Http::get("https://graph.facebook.com/{$apiVersion}/{$pageId}", [
+                'access_token' => $token,
+                'fields' => 'id,name,instagram_business_account{id,username,name,profile_picture_url}',
+            ]);
+
+            if (!$response->successful()) {
+                $err = $response->json('error.message', 'Invalid Page ID or Access Token.');
+                return redirect()->back()->with('error', "Meta API verification failed: {$err}");
+            }
+
+            $pageData = $response->json();
+            $pageName = $pageData['name'] ?? 'Dhansree Facebook Page';
+
+            // Save Facebook Page
+            SocialPublishingAccount::updateOrCreate(
+                ['platform' => 'FACEBOOK', 'account_id' => (string) $pageId],
+                [
+                    'account_name' => $pageName,
+                    'access_token' => $token,
+                    'token_expires_at' => null,
+                    'is_connected' => true,
+                ]
+            );
+
+            $connected = ["Facebook: {$pageName}"];
+
+            // Check linked Instagram account
+            $ig = $pageData['instagram_business_account'] ?? null;
+            if (!empty($ig)) {
+                SocialPublishingAccount::updateOrCreate(
+                    ['platform' => 'INSTAGRAM', 'account_id' => (string) $ig['id']],
+                    [
+                        'account_name' => $ig['name'] ?? $ig['username'] ?? 'Dhansree Instagram',
+                        'username' => $ig['username'] ?? null,
+                        'profile_picture_url' => $ig['profile_picture_url'] ?? null,
+                        'access_token' => $token,
+                        'token_expires_at' => null,
+                        'is_connected' => true,
+                    ]
+                );
+                $connected[] = "Instagram: @" . ($ig['username'] ?? $ig['id']);
+            }
+
+            $msg = "Successfully connected via token! (" . implode(', ', $connected) . ")";
+            if (empty($ig)) {
+                $msg .= " (Note: No linked Instagram Business Account was found on this Facebook Page. To publish to Instagram, link your Instagram Professional account to this Facebook Page in Instagram app settings).";
+            }
+
+            return redirect()->route('admin.social-commerce.connections.index')->with('success', $msg);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Manual connection failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Clear / revoke Meta OAuth session so the next login prompt forces fresh page selection.
+     */
+    public function resetAuth(): RedirectResponse
+    {
+        $accounts = SocialPublishingAccount::whereIn('platform', ['INSTAGRAM', 'FACEBOOK'])->get();
+        foreach ($accounts as $acc) {
+            if ($acc->access_token) {
+                try {
+                    $apiVersion = SocialSetting::get('meta_api_version', 'v20.0');
+                    Http::delete("https://graph.facebook.com/{$apiVersion}/me/permissions", [
+                        'access_token' => $acc->access_token,
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+            $acc->update([
+                'is_connected' => false,
+                'access_token' => null,
+                'token_expires_at' => null,
+            ]);
+        }
+
+        return redirect()->route('admin.social-commerce.connections.index')
+            ->with('success', "Meta connection reset. You can also visit https://www.facebook.com/settings?tab=applications and remove the app to ensure Facebook completely prompts for your Pages and Instagram accounts.");
     }
 
     /**
