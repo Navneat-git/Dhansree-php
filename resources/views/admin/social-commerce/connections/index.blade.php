@@ -196,16 +196,16 @@
                 @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Facebook Page ID</label>
-                        <input type="text" name="page_id" required placeholder="e.g. 102938475610293"
-                               class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
-                        <p class="text-[11px] text-slate-400 mt-1">Found in Facebook Page &rarr; About &rarr; Page Transparency &rarr; Page ID.</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Page Access Token</label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Page Access Token <span class="text-rose-500">*</span></label>
                         <input type="password" name="access_token" required placeholder="EAAB..."
                                class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2 font-mono">
-                        <p class="text-[11px] text-slate-400 mt-1">Generated from Graph API Explorer or Meta Business Settings &rarr; System Users.</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Generated from Graph API Explorer or Meta Business Suite.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Facebook Page ID <span class="text-slate-400 font-normal">(Optional)</span></label>
+                        <input type="text" name="page_id" placeholder="Auto-detected if left blank"
+                               class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                        <p class="text-[11px] text-slate-400 mt-1">Leave empty to auto-detect from token, or enter specific Page ID.</p>
                     </div>
                 </div>
 
