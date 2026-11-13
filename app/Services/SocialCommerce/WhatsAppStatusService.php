@@ -54,8 +54,11 @@ class WhatsAppStatusService
         $productCode = $options['product_code'] ?? ($product ? $product->product_code : null);
 
         // Price formatting
+        $showPrice = isset($options['show_price']) ? (bool) $options['show_price'] : true;
         $priceText = $options['price_text'] ?? null;
-        if ($priceText === null && $product) {
+        if (!$showPrice) {
+            $priceText = null;
+        } elseif ($priceText === null && $product) {
             if ($product->special_offer_price_rupees !== null) {
                 $priceText = 'Special: ₹' . number_format($product->special_offer_price_rupees, 0);
             } elseif ($product->suggested_selling_price_rupees !== null) {
@@ -130,46 +133,106 @@ class WhatsAppStatusService
         // Tagline (Centered)
         $this->drawText($canvas, $tagline, self::CANVAS_WIDTH / 2, 140, 22, $cream, self::FONT_REGULAR, 'center');
 
-        // 4. Render Bottom Information & CTA Card (1620 to 1920)
+        // 4. Render Bottom Information & CTA Card (1610 to 1920)
         imagefilledrectangle($canvas, 0, 1610, self::CANVAS_WIDTH, self::CANVAS_HEIGHT, $maroon);
         imagefilledrectangle($canvas, 0, 1610, self::CANVAS_WIDTH, 1616, $gold);
 
         // Product Category Badge (left)
         $categoryBadge = strtoupper($category) . ($productCode ? " • {$productCode}" : '');
-        $this->drawText($canvas, $categoryBadge, 60, 1660, 22, $gold, self::FONT_BOLD, 'left');
+        $this->drawText($canvas, $categoryBadge, 60, 1658, 22, $gold, self::FONT_BOLD, 'left');
 
-        // Product Title
-        $shortTitle = Str::limit($productName, 36);
-        $this->drawText($canvas, $shortTitle, 60, 1715, 34, $white, self::FONT_BOLD, 'left');
+        // Price Tag Badge (Dynamic width and unclipped placement on right side)
+        $badgeX1 = null;
+        if (!empty($priceText) && $showPrice) {
+            $estSize = 22;
+            if (function_exists('imagettfbbox') && file_exists(self::FONT_BOLD)) {
+                $bbox = imagettfbbox($estSize, 0, self::FONT_BOLD, $priceText);
+                $pW = abs($bbox[4] - $bbox[0]);
+            } else {
+                $pW = strlen($priceText) * 13;
+            }
+
+            // Dynamic badge width with 25px breathing room
+            $badgeWidth = min(400, max(200, (int) ($pW + 45)));
+            $badgeX2 = 1020;
+            $badgeX1 = $badgeX2 - $badgeWidth;
+            $badgeY1 = 1638;
+            $badgeY2 = 1718;
+
+            imagefilledrectangle($canvas, $badgeX1, $badgeY1, $badgeX2, $badgeY2, $gold);
+            imagefilledrectangle($canvas, $badgeX1 + 3, $badgeY1 + 3, $badgeX2 - 3, $badgeY2 - 3, $cream);
+
+            // Draw fitted price inside the badge
+            $this->drawFittedText(
+                $canvas,
+                $priceText,
+                (int) (($badgeX1 + $badgeX2) / 2),
+                1688,
+                $estSize,
+                $badgeWidth - 18,
+                $maroon,
+                self::FONT_BOLD,
+                'center'
+            );
+        }
+
+        // Product Title (constrained so it never collides with price badge, or spans full width if price is hidden)
+        $titleMaxWidth = $badgeX1 !== null ? ($badgeX1 - 90) : 960;
+        $this->drawFittedText(
+            $canvas,
+            $productName,
+            60,
+            1715,
+            32,
+            $titleMaxWidth,
+            $white,
+            self::FONT_BOLD,
+            'left'
+        );
 
         // Fabric (if present)
         if (!empty($fabric)) {
-            $this->drawText($canvas, "Fabric: {$fabric}", 60, 1760, 22, $cream, self::FONT_REGULAR, 'left');
+            $fabricText = "Fabric: {$fabric}";
+            $this->drawFittedText($canvas, $fabricText, 60, 1758, 22, 960, $cream, self::FONT_REGULAR, 'left');
         }
 
-        // Price Tag Badge (Pill on right side of bottom card)
-        if (!empty($priceText)) {
-            $badgeX1 = 760;
-            $badgeY1 = 1640;
-            $badgeX2 = 1020;
-            $badgeY2 = 1730;
-            imagefilledrectangle($canvas, $badgeX1, $badgeY1, $badgeX2, $badgeY2, $gold);
-            imagefilledrectangle($canvas, $badgeX1 + 3, $badgeY1 + 3, $badgeX2 - 3, $badgeY2 - 3, $cream);
-            $this->drawText($canvas, $priceText, (int)(($badgeX1 + $badgeX2) / 2), 1695, 28, $maroon, self::FONT_BOLD, 'center');
-        }
-
-        // WhatsApp CTA Button Bar (bottom strip: 1795 to 1890)
+        // WhatsApp CTA Button Bar (bottom strip: 1790 to 1885)
         $btnX1 = 50;
         $btnY1 = 1790;
         $btnX2 = 1030;
         $btnY2 = 1885;
         imagefilledrectangle($canvas, $btnX1, $btnY1, $btnX2, $btnY2, $green);
-        imagefilledrectangle($canvas, $btnX1 + 4, $btnY1 + 4, $btnX2 - 4, $btnY2 - 4, $green);
+        imagefilledrectangle($canvas, $btnX1 + 3, $btnY1 + 3, $btnX2 - 3, $btnY2 - 3, $green);
 
-        // Clean phone for CTA
-        $cleanPhone = preg_replace('/[^0-9]/', '', $whatsappNumber);
-        $fullCta = "💬 " . strtoupper($ctaText) . ": +{$cleanPhone}";
-        $this->drawText($canvas, $fullCta, self::CANVAS_WIDTH / 2, 1850, 32, $white, self::FONT_BOLD, 'center');
+        // Inner white luxury stroke
+        imagerectangle($canvas, $btnX1 + 2, $btnY1 + 2, $btnX2 - 2, $btnY2 - 2, $white);
+
+        // Clean phone for CTA (formatted as +91 98877 76777)
+        $cleanDigits = preg_replace('/[^0-9]/', '', $whatsappNumber);
+        $formattedPhone = strlen($cleanDigits) === 12 && str_starts_with($cleanDigits, '91')
+            ? '+91 ' . substr($cleanDigits, 2, 5) . ' ' . substr($cleanDigits, 7)
+            : ($cleanDigits ? "+{$cleanDigits}" : $whatsappNumber);
+
+        // Clean CTA text without unsupported emojis
+        $cleanCta = trim(str_replace(['💬', '📲', '📱', '👉', '✨'], '', (string)$ctaText));
+        if (empty($cleanCta)) {
+            $cleanCta = 'DM OR WHATSAPP TO ORDER';
+        }
+
+        $fullCta = strtoupper($cleanCta) . ': ' . $formattedPhone;
+
+        // Auto-scale font size so it strictly fits inside the 920px width of the button
+        $this->drawFittedText(
+            $canvas,
+            $fullCta,
+            self::CANVAS_WIDTH / 2,
+            1848,
+            23,
+            920,
+            $white,
+            self::FONT_BOLD,
+            'center'
+        );
 
         // Save output to storage
         $outputDir = storage_path('app/public/social-commerce/status');
@@ -234,6 +297,38 @@ class WhatsAppStatusService
         }
 
         return "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode($text);
+    }
+
+    /**
+     * Draw text, auto-reducing font size until it fits within $maxWidth.
+     */
+    protected function drawFittedText(
+        $image,
+        string $text,
+        float|int $x,
+        float|int $y,
+        int $preferredSize,
+        int $maxWidth,
+        $color,
+        string $fontFile,
+        string $align = 'left'
+    ): int {
+        $fontSize = $preferredSize;
+        if (function_exists('imagettftext') && file_exists($fontFile)) {
+            while ($fontSize > 11) {
+                $bbox = imagettfbbox($fontSize, 0, $fontFile, $text);
+                $w = abs($bbox[4] - $bbox[0]);
+                if ($w <= $maxWidth) {
+                    break;
+                }
+                $fontSize -= 1;
+            }
+            $this->drawText($image, $text, $x, $y, $fontSize, $color, $fontFile, $align);
+            return $fontSize;
+        }
+
+        $this->drawText($image, $text, $x, $y, $fontSize, $color, $fontFile, $align);
+        return $fontSize;
     }
 
     /**

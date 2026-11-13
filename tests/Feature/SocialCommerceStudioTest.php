@@ -71,6 +71,12 @@ class SocialCommerceStudioTest extends TestCase
             ->post($url, $data);
     }
 
+    protected function authPostJson(string $url, array $data = [])
+    {
+        return $this->withUnencryptedCookie(AdminSessionManager::getCookieName(), $this->adminToken)
+            ->postJson($url, $data);
+    }
+
     /**
      * Test 1: Verify all 9 submenus and core pages render 200 OK without errors.
      */
@@ -339,6 +345,26 @@ class SocialCommerceStudioTest extends TestCase
         $this->assertEquals(1080, $w);
         $this->assertEquals(1920, $h);
 
+        // Test rendering card with show_price = false
+        $noPriceCardPath = $statusService->renderStatusCard($asset, $product, [
+            'show_price' => false,
+            'whatsapp_number' => '+919887776777',
+            'cta_text' => 'DM OR WHATSAPP US TO ORDER',
+        ]);
+        $this->assertFileExists(storage_path('app/public/' . $noPriceCardPath));
+        [$noPriceW, $noPriceH] = getimagesize(storage_path('app/public/' . $noPriceCardPath));
+        $this->assertEquals(1080, $noPriceW);
+        $this->assertEquals(1920, $noPriceH);
+
+        // Test AJAX generate endpoint with show_price = false
+        $ajaxResponse = $this->authPostJson('/admin/social-commerce/whatsapp-status/generate', [
+            'asset_id' => $asset->id,
+            'product_id' => $product->id,
+            'show_price' => false,
+        ]);
+        $ajaxResponse->assertStatus(200);
+        $ajaxResponse->assertJson(['success' => true]);
+
         // Test Single Download endpoint
         $downloadRes = $this->authGet('/admin/social-commerce/whatsapp-status/download?path=' . urlencode($cardPath));
         $downloadRes->assertStatus(200);
@@ -350,6 +376,7 @@ class SocialCommerceStudioTest extends TestCase
 
         @unlink($samplePath);
         @unlink(storage_path('app/public/' . $cardPath));
+        @unlink(storage_path('app/public/' . $noPriceCardPath));
         @unlink($zipPath);
     }
 

@@ -101,6 +101,7 @@ class WhatsAppStatusStudioController extends Controller
             'whatsapp_number' => 'nullable|string',
             'cta_text' => 'nullable|string',
             'price_text' => 'nullable|string',
+            'show_price' => 'nullable|boolean',
             'custom_title' => 'nullable|string',
         ]);
 
@@ -115,6 +116,7 @@ class WhatsAppStatusStudioController extends Controller
                 'whatsapp_number' => $request->input('whatsapp_number') ?: SocialSetting::get('whatsapp_number', '+919887776777'),
                 'cta_text' => $request->input('cta_text') ?: SocialSetting::get('whatsapp_order_cta', 'WhatsApp to Order'),
                 'price_text' => $request->input('price_text'),
+                'show_price' => $request->has('show_price') ? $request->boolean('show_price') : true,
                 'product_name' => $request->input('custom_title'),
             ];
 

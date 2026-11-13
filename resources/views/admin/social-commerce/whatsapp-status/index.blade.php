@@ -25,6 +25,7 @@
     tagline: '{{ addslashes($tagline) }}',
     whatsappNumber: '{{ addslashes($whatsappNumber) }}',
     ctaText: '{{ addslashes($whatsappCta) }}',
+    showPrice: true,
     priceText: '{{ $selectedProduct ? ($selectedProduct->special_offer_price_rupees ? 'Special: ₹' . number_format($selectedProduct->special_offer_price_rupees, 0) : '₹' . number_format($selectedProduct->suggested_selling_price_rupees ?? 999, 0)) : 'Special: ₹899' }}',
     customTitle: '{{ $selectedProduct ? addslashes($selectedProduct->name) : 'Exclusive Women Fashion' }}',
     previewUrl: '{{ $previewUrl }}',
@@ -70,6 +71,7 @@
                 whatsapp_number: this.whatsappNumber,
                 cta_text: this.ctaText,
                 price_text: this.priceText,
+                show_price: this.showPrice,
                 custom_title: this.customTitle
             })
         })
@@ -174,9 +176,19 @@
                                class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Price Badge Text</label>
-                        <input type="text" x-model="priceText" @change="generateStatus()" placeholder="e.g. Special: ₹899"
-                               class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-700">Price Badge</label>
+                            <label class="inline-flex items-center cursor-pointer gap-1.5 select-none">
+                                <input type="checkbox" x-model="showPrice" @change="generateStatus()" class="sr-only peer">
+                                <span class="text-[11px] font-medium" :class="showPrice ? 'text-emerald-700 font-semibold' : 'text-slate-400'" x-text="showPrice ? 'Show Price' : 'Hide Price'"></span>
+                                <div class="relative w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+                        <div :class="!showPrice ? 'opacity-40 pointer-events-none' : ''" class="transition-opacity">
+                            <input type="text" x-model="priceText" @change="generateStatus()" placeholder="e.g. Special: ₹899"
+                                   class="w-full text-xs rounded-lg border-slate-300 focus:border-amber-500 focus:ring-amber-500 py-2">
+                            <p class="text-[10px] text-slate-400 mt-0.5" x-show="!showPrice">Price badge hidden on status card (ideal for reseller sharing).</p>
+                        </div>
                     </div>
                 </div>
 
