@@ -192,7 +192,10 @@
         </div>
 
         <div x-show="openManual" x-cloak class="pt-3 border-t border-slate-100 space-y-4">
-            <form method="POST" action="{{ route('admin.social-commerce.connections.manual') }}" class="space-y-3">
+            <form method="POST" action="{{ route('admin.social-commerce.connections.manual') }}"
+                  x-data="{ isVerifying: false }"
+                  @submit="isVerifying = true"
+                  class="space-y-3">
                 @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -211,8 +214,17 @@
 
                 <div class="flex items-center justify-between pt-1">
                     <span class="text-xs text-slate-500">System will automatically detect and link the associated Instagram Business Account.</span>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors">
-                        Verify &amp; Connect
+                    <button type="submit"
+                            :disabled="isVerifying"
+                            class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 disabled:opacity-85 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-1.5">
+                        <span x-show="!isVerifying">Verify &amp; Connect</span>
+                        <span x-show="isVerifying" x-cloak class="inline-flex items-center gap-1.5 font-bold">
+                            <svg class="animate-spin size-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Verifying with Meta...
+                        </span>
                     </button>
                 </div>
             </form>

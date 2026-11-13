@@ -78,6 +78,11 @@
                             <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
                                 {{ $item->caption_instagram ?: $item->caption_facebook }}
                             </p>
+                            @if($item->error_message)
+                                <p class="text-[10px] text-rose-700 mt-1 font-mono bg-rose-50 px-2 py-0.5 rounded border border-rose-200 line-clamp-2" title="{{ $item->error_message }}">
+                                    {{ Str::limit($item->error_message, 120) }}
+                                </p>
+                            @endif
                         </td>
 
                         <td class="py-3 px-4 whitespace-nowrap">
@@ -127,32 +132,98 @@
                                 @endif
 
                                 @if($item->status === 'AWAITING_APPROVAL' || $item->status === 'DRAFT')
-                                    <form method="POST" action="{{ route('admin.social-commerce.queue.approve', $item) }}">
+                                    <form method="POST" action="{{ route('admin.social-commerce.queue.approve', $item) }}"
+                                          x-data="{ isApproving: false }"
+                                          @submit="isApproving = true"
+                                          class="inline-flex items-center gap-1.5">
                                         @csrf
-                                        <button type="submit" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs">
-                                            Approve
+                                        <button type="submit"
+                                                :disabled="isApproving"
+                                                class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs inline-flex items-center gap-1.5 disabled:opacity-85 disabled:cursor-not-allowed transition-all">
+                                            <span x-show="!isApproving" class="inline-flex items-center gap-1">
+                                                Approve
+                                            </span>
+                                            <span x-show="isApproving" x-cloak class="inline-flex items-center gap-1.5 font-bold">
+                                                <svg class="animate-spin size-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Approving...
+                                            </span>
                                         </button>
+                                        <span x-show="isApproving" x-cloak class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 animate-pulse whitespace-nowrap">
+                                            <svg class="animate-spin size-3 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Approving...</span>
+                                        </span>
                                     </form>
                                 @endif
 
                                 @if($item->status === 'APPROVED' || $item->status === 'SCHEDULED')
-                                    <form method="POST" action="{{ route('admin.social-commerce.queue.publish-now', $item) }}">
+                                    <form method="POST" action="{{ route('admin.social-commerce.queue.publish-now', $item) }}"
+                                          x-data="{ isPublishing: false }"
+                                          @submit="isPublishing = true"
+                                          class="inline-flex items-center gap-1.5">
                                         @csrf
-                                        <button type="submit" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 shadow-xs flex items-center gap-1">
-                                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                                            </svg>
-                                            Publish Now
+                                        <button type="submit"
+                                                :disabled="isPublishing"
+                                                class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 shadow-xs flex items-center gap-1.5 disabled:opacity-85 disabled:cursor-not-allowed transition-all">
+                                            <span x-show="!isPublishing" class="inline-flex items-center gap-1">
+                                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                                                </svg>
+                                                Publish Now
+                                            </span>
+                                            <span x-show="isPublishing" x-cloak class="inline-flex items-center gap-1.5 font-bold">
+                                                <svg class="animate-spin size-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Publishing to Meta...
+                                            </span>
                                         </button>
+                                        <span x-show="isPublishing" x-cloak class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 animate-pulse whitespace-nowrap">
+                                            <svg class="animate-spin size-3 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Uploading &amp; publishing to Meta...</span>
+                                        </span>
                                     </form>
                                 @endif
 
                                 @if($item->status === 'FAILED' || $item->status === 'PARTIALLY_PUBLISHED')
-                                    <form method="POST" action="{{ route('admin.social-commerce.queue.retry', $item) }}">
+                                    <form method="POST" action="{{ route('admin.social-commerce.queue.retry', $item) }}"
+                                          x-data="{ isRetrying: false }"
+                                          @submit="isRetrying = true"
+                                          class="inline-flex items-center gap-1.5">
                                         @csrf
-                                        <button type="submit" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-xs">
-                                            Retry
+                                        <button type="submit"
+                                                :disabled="isRetrying"
+                                                class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-xs inline-flex items-center gap-1.5 disabled:opacity-85 disabled:cursor-not-allowed transition-all">
+                                            <span x-show="!isRetrying" class="inline-flex items-center gap-1">
+                                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                                </svg>
+                                                Retry
+                                            </span>
+                                            <span x-show="isRetrying" x-cloak class="inline-flex items-center gap-1.5 font-bold">
+                                                <svg class="animate-spin size-3.5 text-slate-950" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Retrying...
+                                            </span>
                                         </button>
+                                        <span x-show="isRetrying" x-cloak class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 animate-pulse whitespace-nowrap">
+                                            <svg class="animate-spin size-3 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>Retrying publish to Meta...</span>
+                                        </span>
                                     </form>
                                 @endif
 

@@ -53,25 +53,60 @@
                     Rendering Video ({{ $reel->progress }}%)...
                 </div>
             @else
-                <form method="POST" action="{{ route('admin.social-commerce.reels.render', $reel) }}">
+                <form method="POST" action="{{ route('admin.social-commerce.reels.render', $reel) }}"
+                      x-data="{ isRendering: false }"
+                      @submit="isRendering = true"
+                      class="inline-flex items-center gap-2">
                     @csrf
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                        </svg>
-                        {{ $reel->video_path ? 'Re-render Video (FFmpeg)' : 'Generate Video (FFmpeg)' }}
+                    <button type="submit"
+                            :disabled="isRendering"
+                            class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-85 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5">
+                        <span x-show="!isRendering" class="flex items-center gap-1.5">
+                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                            {{ $reel->video_path ? 'Re-render Video (FFmpeg)' : 'Generate Video (FFmpeg)' }}
+                        </span>
+                        <span x-show="isRendering" x-cloak class="flex items-center gap-1.5 font-bold">
+                            <svg class="animate-spin size-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Rendering Video...
+                        </span>
                     </button>
+                    <span x-show="isRendering" x-cloak class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-300 rounded-xl animate-pulse">
+                        <svg class="animate-spin size-3.5 text-slate-700 shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Generating frames &amp; audio...</span>
+                    </span>
                 </form>
             @endif
 
             @if($reel->status === 'DRAFT' || $reel->status === 'COMPLETED')
-                <form method="POST" action="{{ route('admin.social-commerce.reels.approve', $reel) }}">
+                <form method="POST" action="{{ route('admin.social-commerce.reels.approve', $reel) }}"
+                      x-data="{ isApproving: false }"
+                      @submit="isApproving = true"
+                      class="inline-flex items-center gap-2">
                     @csrf
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5">
-                        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                        </svg>
-                        Approve Reel for Publishing
+                    <button type="submit"
+                            :disabled="isApproving"
+                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-85 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5">
+                        <span x-show="!isApproving" class="flex items-center gap-1.5">
+                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            Approve Reel for Publishing
+                        </span>
+                        <span x-show="isApproving" x-cloak class="flex items-center gap-1.5 font-bold">
+                            <svg class="animate-spin size-4 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Approving Reel...
+                        </span>
                     </button>
                 </form>
             @endif
@@ -248,7 +283,10 @@
                     </button>
                 </div>
 
-                <form method="POST" action="{{ route('admin.social-commerce.reels.push-to-queue', $reel) }}" class="mt-4 space-y-4">
+                <form method="POST" action="{{ route('admin.social-commerce.reels.push-to-queue', $reel) }}"
+                      x-data="{ isPushing: false }"
+                      @submit="isPushing = true"
+                      class="mt-4 space-y-4">
                     @csrf
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-2">Publish To Platforms *</label>
@@ -275,8 +313,17 @@
                         <button type="button" @click="open = false" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-500 shadow-xs">
-                            Queue for Publishing
+                        <button type="submit"
+                                :disabled="isPushing"
+                                class="px-4 py-2 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-85 disabled:cursor-not-allowed shadow-xs inline-flex items-center gap-1.5">
+                            <span x-show="!isPushing">Queue for Publishing</span>
+                            <span x-show="isPushing" x-cloak class="inline-flex items-center gap-1.5 font-bold">
+                                <svg class="animate-spin size-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Adding to Queue...
+                            </span>
                         </button>
                     </div>
                 </form>
