@@ -85,9 +85,18 @@
                             </td>
 
                             <td class="py-3.5 px-4 font-mono">
-                                <div class="font-bold text-slate-900 font-sans">{{ $shipment->courier_name ?: 'Shiprocket' }}</div>
-                                @if($shipment->awb_code)
-                                    <div class="text-[11px] text-amber-700 font-semibold">{{ $shipment->awb_code }}</div>
+                                <div class="font-bold text-slate-900 font-sans flex items-center gap-1.5">
+                                    @if($shipment->provider === 'delhivery')
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-700">DELHIVERY</span>
+                                    @elseif($shipment->provider === 'shiprocket')
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700">SHIPROCKET</span>
+                                    @else
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700">BY HAND</span>
+                                    @endif
+                                    <span>{{ $shipment->courier_name ?: 'Courier' }}</span>
+                                </div>
+                                @if($shipment->awb)
+                                    <div class="text-[11px] text-amber-700 font-semibold mt-0.5">{{ $shipment->awb }}</div>
                                 @else
                                     <span class="text-[11px] text-slate-400">AWB Pending</span>
                                 @endif
@@ -117,12 +126,20 @@
                             </td>
 
                             <td class="py-3.5 px-4 text-right">
-                                @if($shipment->order)
-                                    <a href="{{ route('admin.orders.show', $shipment->order) }}"
-                                       class="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] shadow-2xs transition-colors">
-                                        View Order &rarr;
-                                    </a>
-                                @endif
+                                <div class="inline-flex items-center gap-1.5">
+                                    @if($shipment->awb && $shipment->provider === 'delhivery' && $shipment->order)
+                                        <a href="{{ route('admin.orders.shipment.label', ['order' => $shipment->order, 'shipment' => $shipment]) }}" target="_blank"
+                                           class="px-2 py-1 rounded border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] shadow-2xs transition-colors" title="Print Shipping Label PDF">
+                                            PDF Label
+                                        </a>
+                                    @endif
+                                    @if($shipment->order)
+                                        <a href="{{ route('admin.orders.show', $shipment->order) }}"
+                                           class="px-2.5 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[11px] shadow-2xs transition-colors">
+                                            View Order &rarr;
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

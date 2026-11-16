@@ -77,4 +77,9 @@ class Shipment extends Model
     {
         return $this->hasMany(ShippingWebhookEvent::class, 'shipment_id', 'id');
     }
+
+    public function getAwbCodeAttribute(): ?string
+    {
+        return $this->awb;
+    }
 }

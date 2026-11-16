@@ -308,6 +308,8 @@ Route::prefix('admin')->group(function () {
             Route::post('/{order}/status', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'updateStatus'])->name('status');
             Route::post('/{order}/notes', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'addNote'])->name('notes.store');
             Route::post('/{order}/shipment', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'createShipment'])->name('shipment.store');
+            Route::post('/{order}/shipments/{shipment}/delhivery-pickup', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'scheduleDelhiveryPickup'])->name('shipment.delhivery-pickup');
+            Route::get('/{order}/shipments/{shipment}/label', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'downloadShippingLabel'])->name('shipment.label');
             Route::post('/{order}/shipments/{shipment}/dispatch', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'dispatch'])->name('dispatch');
             Route::post('/{order}/local-delivery', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'createLocalDelivery'])->name('local-delivery');
             Route::post('/{order}/cancel', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'cancel'])->name('cancel');

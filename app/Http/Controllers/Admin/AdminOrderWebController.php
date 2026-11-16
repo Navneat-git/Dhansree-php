@@ -13,6 +13,7 @@ use App\Models\OrderStatusHistory;
 use App\Models\Shipment;
 use App\Models\StoreSettings;
 use App\Services\Orders\OrderFulfillmentService;
+use App\Services\Shipping\DelhiveryService;
 use App\Services\Shipping\ShiprocketService;
 use App\Support\Commerce\IndianStates;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class AdminOrderWebController extends Controller
     public function __construct(
         protected OrderFulfillmentService $fulfillmentService,
         protected ShiprocketService $shiprocketService,
+        protected DelhiveryService $delhiveryService,
     ) {}
 
     /**
@@ -116,13 +118,33 @@ class AdminOrderWebController extends Controller
         $availableCouriers = [];
         if (!$activeShipment && in_array($order->status, [OrderStatus::CONFIRMED, OrderStatus::PROCESSING], true)) {
             try {
-                $destPin = $order->shippingAddress?->postal_code ?? '302001';
-                $availableCouriers = $this->shiprocketService->checkServiceability(
-                    pickupPincode: '302001',
-                    deliveryPincode: $destPin,
-                    weightGrams: max(100, $order->shipping_weight_grams ?? 500),
-                    isCod: $order->payment_method->value === 'COD'
-                );
+                $store = StoreSettings::current();
+                $originPin = (string) ($store->shipping_origin_postal_code ?? '302039');
+                $destPin = (string) ($order->shippingAddress?->postal_code ?? '302001');
+                $weightGrams = max(100, $order->shipping_weight_grams ?? 500);
+                $isCod = $order->payment_method->value === 'COD';
+
+                // 1. Delhivery Couriers (Direct Account - DHANSREE)
+                if ($this->delhiveryService->isEnabled()) {
+                    $delhiveryCouriers = $this->delhiveryService->checkServiceability(
+                        pickupPincode: $originPin,
+                        deliveryPincode: $destPin,
+                        weightGrams: $weightGrams,
+                        isCod: $isCod
+                    );
+                    $availableCouriers = array_merge($availableCouriers, $delhiveryCouriers);
+                }
+
+                // 2. Shiprocket Couriers (if enabled)
+                if ($this->shiprocketService->isEnabled()) {
+                    $srCouriers = $this->shiprocketService->checkServiceability(
+                        pickupPincode: $originPin,
+                        deliveryPincode: $destPin,
+                        weightGrams: $weightGrams,
+                        isCod: $isCod
+                    );
+                    $availableCouriers = array_merge($availableCouriers, $srCouriers);
+                }
             } catch (Throwable $e) {
                 Log::warning('Could not fetch couriers for order preview', ['error' => $e->getMessage()]);
             }
@@ -209,18 +231,20 @@ class AdminOrderWebController extends Controller
     }
 
     /**
-     * Book courier and generate AWB via Shiprocket.
+     * Book courier and generate AWB via Delhivery or Shiprocket.
      */
     public function createShipment(Request $request, Order $order): RedirectResponse
     {
         $admin = auth('admin')->user();
-        $courierId = $request->input('courier_id') ? (int) $request->input('courier_id') : null;
+        $courierId = $request->input('courier_id');
+        $provider = $request->input('provider');
 
         try {
             $shipment = $this->fulfillmentService->createShipmentForOrder(
                 $order,
                 $courierId,
-                $admin?->id
+                $admin?->id,
+                $provider
             );
 
             return back()->with('success', "Courier booked! AWB: {$shipment->awb} ({$shipment->courier_name}).");
@@ -232,6 +256,60 @@ class AdminOrderWebController extends Controller
 
             return back()->with('error', "Booking failed: {$e->getMessage()}");
         }
+    }
+
+    /**
+     * Schedule or reschedule Delhivery pickup agent.
+     */
+    public function scheduleDelhiveryPickup(Request $request, Order $order, Shipment $shipment): RedirectResponse
+    {
+        $validated = $request->validate([
+            'pickup_date' => 'nullable|date|after_or_equal:today',
+            'pickup_time' => 'nullable|string',
+        ]);
+
+        try {
+            $result = $this->fulfillmentService->scheduleDelhiveryPickup(
+                $shipment,
+                $validated['pickup_date'] ?? null,
+                $validated['pickup_time'] ?? null,
+                auth('admin')->id()
+            );
+
+            if ($result['success']) {
+                return back()->with('success', "Delhivery pickup scheduled! Date: {$result['pickup_date']} at {$result['pickup_time']} (ID: {$result['pickup_id']}).");
+            }
+
+            return back()->with('error', "Delhivery pickup failed: {$result['message']}");
+        } catch (Throwable $e) {
+            return back()->with('error', "Pickup scheduling error: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Download or view courier shipping label PDF.
+     */
+    public function downloadShippingLabel(Order $order, Shipment $shipment): \Symfony\Component\HttpFoundation\Response
+    {
+        if ($shipment->provider === 'delhivery') {
+            $pdf = $this->delhiveryService->getShippingLabelPdf($shipment->awb);
+            if ($pdf) {
+                return response($pdf, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => "inline; filename=\"delhivery-label-{$shipment->awb}.pdf\"",
+                ]);
+            }
+            return back()->with('error', 'Could not generate Delhivery shipping label. Please ensure the shipment is confirmed on Delhivery.');
+        }
+
+        if ($shipment->provider === 'shiprocket') {
+            $labelUrl = $this->shiprocketService->generateLabel($shipment->provider_shipment_id);
+            if ($labelUrl) {
+                return redirect()->away($labelUrl);
+            }
+        }
+
+        return back()->with('error', 'Shipping label not available for this courier provider.');
     }
 
     /**

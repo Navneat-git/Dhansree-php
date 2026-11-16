@@ -24,6 +24,7 @@ use App\Models\ShipmentItem;
 use App\Models\StoreSettings;
 use App\Services\Email\EmailService;
 use App\Services\Inventory\InventoryReservationService;
+use App\Services\Shipping\DelhiveryService;
 use App\Services\Shipping\ShiprocketService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -33,19 +34,21 @@ class OrderFulfillmentService
 {
     public function __construct(
         protected ShiprocketService $shiprocketService,
+        protected DelhiveryService $delhiveryService,
         protected InventoryReservationService $reservationService,
         protected EmailService $emailService,
     ) {}
 
     /**
-     * Create shipment and book courier for an order.
+     * Create shipment and book courier for an order (Delhivery or Shiprocket).
      */
     public function createShipmentForOrder(
         Order $order,
-        ?int $courierId = null,
-        ?int $adminUserId = null
+        int|string|null $courierId = null,
+        ?int $adminUserId = null,
+        ?string $provider = null
     ): Shipment {
-        return DB::transaction(function () use ($order, $courierId, $adminUserId) {
+        return DB::transaction(function () use ($order, $courierId, $adminUserId, $provider) {
             if (!in_array($order->status, [OrderStatus::CONFIRMED, OrderStatus::PROCESSING], true)) {
                 throw new InvalidArgumentException("Order {$order->order_number} must be in CONFIRMED or PROCESSING status to book shipment.");
             }
@@ -85,9 +88,115 @@ class OrderFulfillmentService
             $totalWeightGrams = max(100, $itemsWeight + $packagingWeight);
 
             $shipmentRef = $order->order_number . '-S1';
-            $pickupLocation = !empty($store->shiprocket_pickup_location) ? $store->shiprocket_pickup_location : 'Jaipur';
-
             $now = now();
+
+            // Determine Provider (Delhivery or Shiprocket)
+            if ($provider === 'delhivery') {
+                $isDelhivery = true;
+            } elseif ($provider === 'shiprocket') {
+                $isDelhivery = false;
+            } elseif (is_string($courierId) && str_starts_with($courierId, 'delhivery')) {
+                $isDelhivery = true;
+            } elseif (is_numeric($courierId)) {
+                // Numeric courier IDs are Shiprocket company IDs
+                $isDelhivery = false;
+            } else {
+                // Default: prefer Delhivery if enabled, else Shiprocket
+                $isDelhivery = $this->delhiveryService->isEnabled();
+            }
+
+            if ($isDelhivery) {
+                $shippingMode = ($courierId === 'delhivery_express') ? 'Express' : 'Surface';
+                $pickupLocation = $this->delhiveryService->getPickupLocation();
+
+                // 1. Create Shipment Record
+                $shipment = Shipment::create([
+                    'order_id' => $order->id,
+                    'active_order_id' => $order->id,
+                    'provider' => 'delhivery',
+                    'reference' => $shipmentRef,
+                    'status' => ShipmentStatus::PENDING,
+                    'payment_mode' => $paymentMode,
+                    'cod_amount_paise' => $codAmountPaise,
+                    'declared_value_paise' => $order->total_paise,
+                    'shipping_cost_paise' => $order->shipping_paise,
+                    'weight_grams' => $totalWeightGrams,
+                    'length_cm' => $lengthCm,
+                    'breadth_cm' => $breadthCm,
+                    'height_cm' => $heightCm,
+                    'location_id' => $locationId,
+                    'pickup_location' => $pickupLocation,
+                    'destination_postal_code' => $shippingAddress->postal_code,
+                    'created_by_admin_user_id' => $adminUserId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                // 2. Create Shipment Items
+                foreach ($order->items as $item) {
+                    ShipmentItem::create([
+                        'shipment_id' => $shipment->id,
+                        'order_item_id' => $item->id,
+                        'variant_id' => $item->variant_id,
+                        'sku' => $item->sku,
+                        'product_name' => $item->product_name,
+                        'variant_title' => $item->variant_title,
+                        'quantity' => $item->quantity,
+                        'unit_weight_grams' => $item->variant?->weight_grams ?? 300,
+                    ]);
+                }
+
+                // 3. Book on Delhivery API
+                $delhiveryData = $this->delhiveryService->createShipment($order, $shipment, [
+                    'shipping_mode' => $shippingMode,
+                ]);
+
+                $shipment->update([
+                    'status' => ShipmentStatus::AWB_ASSIGNED,
+                    'awb' => $delhiveryData['awb'],
+                    'provider_order_id' => (string) ($delhiveryData['order_id'] ?? $shipmentRef),
+                    'provider_shipment_id' => (string) $delhiveryData['awb'],
+                    'courier_name' => $delhiveryData['courier_name'],
+                    'courier_id' => is_string($courierId) ? $courierId : 'delhivery_' . strtolower($shippingMode),
+                    'tracking_url' => $delhiveryData['tracking_url'],
+                    'awb_requested_at' => $now,
+                ]);
+
+                // 4. Automatically schedule Delhivery courier pickup
+                $pickupRes = $this->delhiveryService->schedulePickup(
+                    pickupDate: null,
+                    pickupTime: null,
+                    packageCount: 1,
+                    pickupLocationName: $pickupLocation
+                );
+
+                $pickupNote = '';
+                if ($pickupRes['success']) {
+                    $shipment->update([
+                        'pickup_scheduled_at' => $now,
+                        'provider_status' => "Pickup scheduled (ID: {$pickupRes['pickup_id']}) for {$pickupRes['pickup_date']}",
+                    ]);
+                    $pickupNote = " | Delhivery pickup scheduled for {$pickupRes['pickup_date']} at {$pickupRes['pickup_time']} (PR ID: {$pickupRes['pickup_id']})";
+                }
+
+                // 5. Update Order status to PROCESSING if currently CONFIRMED
+                if ($order->status === OrderStatus::CONFIRMED) {
+                    $order->update(['status' => OrderStatus::PROCESSING]);
+                    OrderStatusHistory::create([
+                        'order_id' => $order->id,
+                        'from_status' => OrderStatus::CONFIRMED,
+                        'to_status' => OrderStatus::PROCESSING,
+                        'actor_type' => $adminUserId ? OrderActorType::ADMIN : OrderActorType::SYSTEM,
+                        'actor_admin_user_id' => $adminUserId,
+                        'note' => "Courier booked with {$delhiveryData['courier_name']} (AWB: {$delhiveryData['awb']}){$pickupNote}",
+                        'created_at' => $now,
+                    ]);
+                }
+
+                return $shipment;
+            }
+
+            $pickupLocation = !empty($store->shiprocket_pickup_location) ? $store->shiprocket_pickup_location : 'Jaipur';
 
             // 1. Create Shipment Record
             $shipment = Shipment::create([
@@ -136,7 +245,8 @@ class OrderFulfillmentService
 
             // 4. Assign AWB
             $providerShipmentId = $srOrder['shipment_id'] ?? $shipment->id;
-            $awbData = $this->shiprocketService->assignAwb($providerShipmentId, $courierId);
+            $srCourierId = is_numeric($courierId) ? (int) $courierId : null;
+            $awbData = $this->shiprocketService->assignAwb($providerShipmentId, $srCourierId);
 
             $shipment->update([
                 'status' => ShipmentStatus::AWB_ASSIGNED,
@@ -163,6 +273,44 @@ class OrderFulfillmentService
 
             return $shipment;
         });
+    }
+
+    /**
+     * Explicitly schedule or reschedule Delhivery pickup for a shipment.
+     */
+    public function scheduleDelhiveryPickup(
+        Shipment $shipment,
+        ?string $pickupDate = null,
+        ?string $pickupTime = null,
+        ?int $adminUserId = null
+    ): array {
+        $location = $shipment->pickup_location ?: $this->delhiveryService->getPickupLocation();
+        $result = $this->delhiveryService->schedulePickup(
+            $pickupDate,
+            $pickupTime,
+            1,
+            $location
+        );
+
+        if ($result['success']) {
+            $now = now();
+            $shipment->update([
+                'pickup_scheduled_at' => $now,
+                'provider_status' => "Pickup scheduled (ID: {$result['pickup_id']}) for {$result['pickup_date']}",
+            ]);
+
+            OrderStatusHistory::create([
+                'order_id' => $shipment->order_id,
+                'from_status' => $shipment->order->status,
+                'to_status' => $shipment->order->status,
+                'actor_type' => $adminUserId ? OrderActorType::ADMIN : OrderActorType::SYSTEM,
+                'actor_admin_user_id' => $adminUserId,
+                'note' => "Delhivery pickup scheduled for {$result['pickup_date']} at {$result['pickup_time']} (PR ID: {$result['pickup_id']})",
+                'created_at' => $now,
+            ]);
+        }
+
+        return $result;
     }
 
     /**

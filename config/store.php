@@ -66,6 +66,16 @@ return [
         'webhook_token' => env('SHIPROCKET_WEBHOOK_TOKEN', ''),
         'api_base_url' => env('SHIPROCKET_API_BASE_URL', 'https://apiv2.shiprocket.in/v1/external'),
     ],
+    'delhivery_enabled' => env('DELHIVERY_ENABLED', false),
+    'delhivery' => [
+        'api_token' => env('DELHIVERY_API_TOKEN', ''),
+        'client_name' => env('DELHIVERY_CLIENT_NAME', 'DHANSREE'),
+        'pickup_location' => env('DELHIVERY_PICKUP_LOCATION', 'DHANSHREE TRENDS B2C'),
+        'mode' => env('DELHIVERY_MODE', 'production'),
+        'api_base_url' => env('DELHIVERY_API_BASE_URL', env('DELHIVERY_MODE', 'production') === 'staging'
+            ? 'https://staging-express.delhivery.com'
+            : 'https://track.delhivery.com'),
+    ],
 
     /*
     |---------------------------------------------------------------------------
