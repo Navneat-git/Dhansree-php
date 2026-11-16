@@ -432,7 +432,37 @@ class DelhiveryService
 
         $packages = $res['packages'] ?? [];
         if (empty($packages) || empty($packages[0]['waybill'])) {
-            $errorMsg = $res['rmk'] ?? $packages[0]['remarks'][0] ?? 'Delhivery did not return a valid waybill number.';
+            $rawRemarks = [];
+            if (!empty($packages[0]['remarks'])) {
+                $rawRemarks = is_array($packages[0]['remarks']) ? $packages[0]['remarks'] : [$packages[0]['remarks']];
+            }
+            $allRemarksText = implode(' ', $rawRemarks);
+            if (!empty($res['rmk'])) {
+                $allRemarksText .= ' ' . (string) $res['rmk'];
+            }
+
+            // Check for wallet/balance exhaustion on prepaid Delhivery accounts
+            if (stripos($allRemarksText, 'insufficient balance') !== false || stripos($allRemarksText, 'recharge your wallet') !== false) {
+                throw new RuntimeException(
+                    "Insufficient Delhivery Wallet Balance. Your Delhivery account is on Prepaid/Wallet billing and requires funds to cover shipment manifestation charges. Please log into one.delhivery.com (Finances > Wallet), recharge your wallet, and try booking again."
+                );
+            }
+
+            // Extract inner message if wrapped in exception '...'
+            $errorMsg = null;
+            if (!empty($rawRemarks[0])) {
+                if (preg_match("/exception '([^']+)'/i", $rawRemarks[0], $match)) {
+                    $errorMsg = $match[1];
+                } else {
+                    $errorMsg = $rawRemarks[0];
+                }
+            }
+
+            if (!$errorMsg && !empty($res['rmk'])) {
+                $errorMsg = (string) $res['rmk'];
+            }
+
+            $errorMsg = $errorMsg ?: 'Delhivery did not return a valid waybill number.';
             throw new RuntimeException("Delhivery shipment booking failed: {$errorMsg}");
         }
 
