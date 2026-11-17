@@ -573,17 +573,22 @@ class DelhiveryService
 
     /**
      * Download or retrieve printable PDF shipping label from Delhivery.
+     *
+     * @return array{pdf: string|null, url: string|null}
      */
-    public function getShippingLabelPdf(string $waybill): ?string
+    public function getShippingLabel(string $waybill): array
     {
         if ($this->isMock()) {
-            return null;
+            return [
+                'pdf' => "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF",
+                'url' => "https://example.com/mock-labels/{$waybill}.pdf",
+            ];
         }
 
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Token ' . $this->apiToken,
-                'Accept' => 'application/pdf, application/json',
+                'Accept' => 'application/json, application/pdf',
             ])
             ->timeout(20)
             ->get($this->apiBaseUrl . '/api/p/packing_slip', [
@@ -591,19 +596,51 @@ class DelhiveryService
                 'pdf' => 'true',
             ]);
 
-            if ($response->successful()) {
-                return $response->body();
+            if (!$response->successful()) {
+                Log::warning('Delhivery shipping label fetch failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return ['pdf' => null, 'url' => null];
             }
 
-            Log::warning('Delhivery shipping label fetch failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-            return null;
+            $body = $response->body();
+
+            // 1. Direct binary PDF
+            if (str_starts_with($body, '%PDF')) {
+                return ['pdf' => $body, 'url' => null];
+            }
+
+            // 2. Delhivery returns JSON with signed S3 download link in `packages[0]['pdf_download_link']`
+            $data = $response->json();
+            $s3Url = $data['packages'][0]['pdf_download_link'] ?? null;
+
+            if ($s3Url) {
+                // Fetch binary PDF from S3 so we can stream it directly with proper headers
+                $pdfResponse = Http::timeout(25)->get($s3Url);
+                if ($pdfResponse->successful() && str_starts_with($pdfResponse->body(), '%PDF')) {
+                    return ['pdf' => $pdfResponse->body(), 'url' => $s3Url];
+                }
+
+                // If S3 fetch fails, return the S3 URL as a redirect fallback
+                return ['pdf' => null, 'url' => $s3Url];
+            }
+
+            Log::warning('Delhivery shipping label response missing pdf_download_link', ['response' => $data]);
+            return ['pdf' => null, 'url' => null];
         } catch (\Throwable $e) {
             Log::error('Delhivery shipping label exception', ['error' => $e->getMessage()]);
-            return null;
+            return ['pdf' => null, 'url' => null];
         }
+    }
+
+    /**
+     * Backward-compatible helper to get raw PDF bytes.
+     */
+    public function getShippingLabelPdf(string $waybill): ?string
+    {
+        $label = $this->getShippingLabel($waybill);
+        return $label['pdf'];
     }
 
     /**

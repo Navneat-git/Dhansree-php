@@ -260,4 +260,22 @@ class DelhiveryShippingTest extends TestCase
         $this->assertNotNull($shipment->pickup_scheduled_at);
         $this->assertStringContainsString('Pickup scheduled', (string) $shipment->provider_status);
     }
+
+    public function test_admin_can_download_delhivery_shipping_label_pdf(): void
+    {
+        $order = $this->createOrder();
+
+        $this->asAdmin()->post("/admin/orders/{$order->id}/shipment", [
+            'courier_id' => 'delhivery_surface',
+            'provider' => 'delhivery',
+        ]);
+
+        $shipment = $order->shipments()->where('active_order_id', $order->id)->firstOrFail();
+
+        $response = $this->asAdmin()->get("/admin/orders/{$order->id}/shipments/{$shipment->id}/label");
+
+        $response->assertStatus(200);
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
 }

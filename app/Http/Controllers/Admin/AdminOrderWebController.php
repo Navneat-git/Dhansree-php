@@ -292,13 +292,18 @@ class AdminOrderWebController extends Controller
     public function downloadShippingLabel(Order $order, Shipment $shipment): \Symfony\Component\HttpFoundation\Response
     {
         if ($shipment->provider === 'delhivery') {
-            $pdf = $this->delhiveryService->getShippingLabelPdf($shipment->awb);
-            if ($pdf) {
-                return response($pdf, 200, [
+            $label = $this->delhiveryService->getShippingLabel($shipment->awb);
+            if (!empty($label['pdf'])) {
+                return response($label['pdf'], 200, [
                     'Content-Type' => 'application/pdf',
                     'Content-Disposition' => "inline; filename=\"delhivery-label-{$shipment->awb}.pdf\"",
                 ]);
             }
+
+            if (!empty($label['url'])) {
+                return redirect()->away($label['url']);
+            }
+
             return back()->with('error', 'Could not generate Delhivery shipping label. Please ensure the shipment is confirmed on Delhivery.');
         }
 
