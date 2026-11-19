@@ -251,6 +251,9 @@ class AdminBulkInvoiceTest extends TestCase
         $printResponse->assertSee('08CCUPS2872J1ZO');
         $printResponse->assertSee('TAX INVOICE');
         $printResponse->assertSee('ORIGINAL FOR RECIPIENT');
+        $printResponse->assertSee('Bandhan Bank');
+        $printResponse->assertSee('20100080581870');
+        $printResponse->assertSee('BDBL0001886');
         $printResponse->assertSee('This is a system generated invoice and does not require a physical signature.');
     }
 

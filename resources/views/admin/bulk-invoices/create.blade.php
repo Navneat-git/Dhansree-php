@@ -634,7 +634,7 @@
                         <div>
                             <label for="bank_name" class="block text-xs font-semibold text-slate-700 mb-1">Bank Name</label>
                             <input type="text" name="bank_name" id="bank_name"
-                                   value="{{ old('bank_name', 'ICICI Bank') }}"
+                                   value="{{ old('bank_name', 'Bandhan Bank') }}"
                                    class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-slate-50/50">
                         </div>
                         <div>
@@ -646,25 +646,26 @@
                         <div>
                             <label for="bank_account_number" class="block text-xs font-semibold text-slate-700 mb-1">Account Number</label>
                             <input type="text" name="bank_account_number" id="bank_account_number"
-                                   value="{{ old('bank_account_number', '123405001234') }}"
+                                   value="{{ old('bank_account_number', '20100080581870') }}"
                                    class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-slate-50/50">
                         </div>
                         <div>
                             <label for="bank_ifsc_code" class="block text-xs font-semibold text-slate-700 mb-1">IFSC Code</label>
                             <input type="text" name="bank_ifsc_code" id="bank_ifsc_code"
-                                   value="{{ old('bank_ifsc_code', 'ICIC0001234') }}"
+                                   value="{{ old('bank_ifsc_code', 'BDBL0001886') }}"
                                    class="w-full px-3 py-2 text-xs font-mono uppercase rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-slate-50/50">
                         </div>
                         <div>
                             <label for="bank_branch" class="block text-xs font-semibold text-slate-700 mb-1">Branch</label>
                             <input type="text" name="bank_branch" id="bank_branch"
-                                   value="{{ old('bank_branch', 'Murlipura Branch, Jaipur') }}"
+                                   value="{{ old('bank_branch', 'Jaipur, Tonk Road') }}"
                                    class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-slate-50/50">
                         </div>
                         <div>
                             <label for="bank_upi_id" class="block text-xs font-semibold text-slate-700 mb-1">UPI ID</label>
                             <input type="text" name="bank_upi_id" id="bank_upi_id"
-                                   value="{{ old('bank_upi_id', 'dhansreetrends@icici') }}"
+                                   value="{{ old('bank_upi_id') }}"
+                                   placeholder="e.g. UPI ID / VPA (Optional)"
                                    class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-slate-50/50">
                         </div>
                     </div>

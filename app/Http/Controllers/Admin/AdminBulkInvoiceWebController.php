@@ -536,11 +536,11 @@ class AdminBulkInvoiceWebController extends Controller
             'grand_total_paise' => $grandTotalPaise,
 
             // Bank details
-            'bank_name' => $validated['bank_name'] ?? 'ICICI Bank',
+            'bank_name' => $validated['bank_name'] ?? 'Bandhan Bank',
             'bank_account_name' => $validated['bank_account_name'] ?? ($store?->legal_name ?? 'Dhanshree Trends'),
-            'bank_account_number' => $validated['bank_account_number'] ?? null,
-            'bank_ifsc_code' => $validated['bank_ifsc_code'] ?? null,
-            'bank_branch' => $validated['bank_branch'] ?? 'Jaipur',
+            'bank_account_number' => $validated['bank_account_number'] ?? '20100080581870',
+            'bank_ifsc_code' => $validated['bank_ifsc_code'] ?? 'BDBL0001886',
+            'bank_branch' => $validated['bank_branch'] ?? 'Jaipur, Tonk Road',
             'bank_upi_id' => $validated['bank_upi_id'] ?? null,
 
             // Notes & terms

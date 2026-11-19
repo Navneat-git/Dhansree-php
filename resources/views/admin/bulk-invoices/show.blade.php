@@ -371,6 +371,9 @@
                     </h2>
                     <div class="text-xs space-y-1.5 text-slate-600">
                         <p><span class="text-slate-400">Bank:</span> <strong class="text-slate-800">{{ $invoice->bank_name }}</strong></p>
+                        @if($invoice->bank_branch)
+                            <p><span class="text-slate-400">Branch:</span> <strong class="text-slate-800">{{ $invoice->bank_branch }}</strong></p>
+                        @endif
                         <p><span class="text-slate-400">A/C Name:</span> <strong class="text-slate-800">{{ $invoice->bank_account_name }}</strong></p>
                         <p><span class="text-slate-400">A/C Number:</span> <span class="font-mono font-bold text-slate-900">{{ $invoice->bank_account_number }}</span></p>
                         <p><span class="text-slate-400">IFSC Code:</span> <span class="font-mono font-bold text-slate-900">{{ $invoice->bank_ifsc_code }}</span></p>

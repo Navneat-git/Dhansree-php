@@ -342,11 +342,11 @@
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-[11px]">
                     <p class="font-bold uppercase tracking-wider text-slate-700 text-[10px]">Bank Remittance / NEFT / RTGS Details:</p>
                     <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 pt-0.5 text-slate-600">
-                        <p><span class="text-slate-400">Bank Name:</span> <strong>{{ $invoice->bank_name ?: 'ICICI Bank' }}</strong></p>
-                        <p><span class="text-slate-400">Branch:</span> <strong>{{ $invoice->bank_branch ?: 'Jaipur' }}</strong></p>
+                        <p><span class="text-slate-400">Bank Name:</span> <strong>{{ $invoice->bank_name ?: 'Bandhan Bank' }}</strong></p>
+                        <p><span class="text-slate-400">Branch:</span> <strong>{{ $invoice->bank_branch ?: 'Jaipur, Tonk Road' }}</strong></p>
                         <p><span class="text-slate-400">A/C Name:</span> <strong>{{ $invoice->bank_account_name ?: ($invoice->seller_legal_name ?: 'Dhanshree Trends') }}</strong></p>
-                        <p><span class="text-slate-400">A/C No:</span> <strong class="mono text-slate-900">{{ $invoice->bank_account_number ?: '123405001234' }}</strong></p>
-                        <p><span class="text-slate-400">IFSC Code:</span> <strong class="mono text-slate-900">{{ $invoice->bank_ifsc_code ?: 'ICIC0001234' }}</strong></p>
+                        <p><span class="text-slate-400">A/C No:</span> <strong class="mono text-slate-900">{{ $invoice->bank_account_number ?: '20100080581870' }}</strong></p>
+                        <p><span class="text-slate-400">IFSC Code:</span> <strong class="mono text-slate-900">{{ $invoice->bank_ifsc_code ?: 'BDBL0001886' }}</strong></p>
                         @if($invoice->bank_upi_id)
                             <p><span class="text-slate-400">UPI ID:</span> <strong class="mono text-slate-900">{{ $invoice->bank_upi_id }}</strong></p>
                         @endif
