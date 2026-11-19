@@ -205,6 +205,14 @@
                 </svg>
                 Orders
             </a>
+            <a href="{{ route('admin.bulk-invoices.index') }}"
+               class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/bulk-invoices*') ? 'bg-slate-800 text-white font-semibold border-l-2 border-amber-500' : 'text-slate-300 hover:bg-slate-900 hover:text-white' }}">
+                <svg class="size-4.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                <span>Bulk &amp; B2B Invoices</span>
+                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">GST</span>
+            </a>
             <a href="{{ url('/admin/shipments') }}"
                class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/shipments*') ? 'bg-slate-800 text-white font-semibold border-l-2 border-amber-500' : 'text-slate-300 hover:bg-slate-900 hover:text-white' }}">
                 <svg class="size-4.5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">

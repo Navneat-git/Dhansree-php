@@ -301,6 +301,19 @@ Route::prefix('admin')->group(function () {
             Route::delete('/{purchase}', [\App\Http\Controllers\Admin\AdminWholesalePurchaseWebController::class, 'destroy'])->name('destroy');
         });
 
+        // Bulk & Wholesale B2B Invoices
+        Route::prefix('bulk-invoices')->name('admin.bulk-invoices.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'store'])->name('store');
+            Route::get('/{bulkInvoice}', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'show'])->name('show');
+            Route::get('/{bulkInvoice}/invoice', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'invoice'])->name('invoice');
+            Route::get('/{bulkInvoice}/edit', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'edit'])->name('edit');
+            Route::put('/{bulkInvoice}', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'update'])->name('update');
+            Route::post('/{bulkInvoice}/payment', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'updatePayment'])->name('payment');
+            Route::delete('/{bulkInvoice}', [\App\Http\Controllers\Admin\AdminBulkInvoiceWebController::class, 'destroy'])->name('destroy');
+        });
+
         // Orders & Fulfillment
         Route::prefix('orders')->name('admin.orders.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'index'])->name('index');
