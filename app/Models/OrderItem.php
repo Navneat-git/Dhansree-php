@@ -61,4 +61,36 @@ class OrderItem extends Model
     {
         return $this->hasMany(ShipmentItem::class, 'order_item_id', 'id');
     }
+
+    public function getSubtotalRupeesAttribute(): float
+    {
+        return ($this->unit_price_paise * $this->quantity) / 100;
+    }
+
+    public function getLineTotalRupeesAttribute(): float
+    {
+        return ($this->line_total_paise ?? ($this->unit_price_paise * $this->quantity)) / 100;
+    }
+
+    public function getUnitPriceRupeesAttribute(): float
+    {
+        return ($this->unit_price_paise ?? 0) / 100;
+    }
+
+    public function getTaxRupeesAttribute(): float
+    {
+        return ($this->tax_paise ?? 0) / 100;
+    }
+
+    public function getTaxRateBpsAttribute(): int
+    {
+        return $this->gst_rate_bps ?? 0;
+    }
+
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        return $this->product?->primary_image_url
+            ?? $this->variant?->product?->primary_image_url
+            ?? null;
+    }
 }

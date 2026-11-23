@@ -65,6 +65,11 @@ class Order extends Model
         return $this->discount_paise / 100;
     }
 
+    public function getCouponDiscountRupeesAttribute(): float
+    {
+        return ($this->discount_paise ?? 0) / 100;
+    }
+
     public function getShippingRupeesAttribute(): float
     {
         return $this->shipping_paise / 100;
@@ -73,6 +78,28 @@ class Order extends Model
     public function getTaxRupeesAttribute(): float
     {
         return $this->tax_paise / 100;
+    }
+
+    public function getCgstRupeesAttribute(): float
+    {
+        return ($this->cgst_paise ?? 0) / 100;
+    }
+
+    public function getSgstRupeesAttribute(): float
+    {
+        return ($this->sgst_paise ?? 0) / 100;
+    }
+
+    public function getIgstRupeesAttribute(): float
+    {
+        return ($this->igst_paise ?? 0) / 100;
+    }
+
+    public function getIsInterstateAttribute(): bool
+    {
+        return ($this->supply_type?->value ?? '') === 'INTER_STATE'
+            || ($this->supply_type ?? null) === \App\Enums\GstSupplyType::INTER_STATE
+            || ($this->igst_paise > 0);
     }
 
     public function coupon(): BelongsTo

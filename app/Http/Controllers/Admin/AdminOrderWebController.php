@@ -102,7 +102,8 @@ class AdminOrderWebController extends Controller
     public function show(Order $order): View
     {
         $order->load([
-            'items.variant.product',
+            'items.product.images',
+            'items.variant.product.images',
             'shippingAddress',
             'billingAddress',
             'payments',
