@@ -93,7 +93,7 @@ class AdminMetaAdStudioController extends Controller
             'angle' => 'nullable|string',
             'custom_instructions' => 'nullable|string|max:500',
             'utm_campaign' => 'nullable|string|max:100',
-            'image_url' => 'nullable|string|url',
+            'image_url' => 'nullable|string',
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
@@ -117,44 +117,81 @@ class AdminMetaAdStudioController extends Controller
      */
     public function save(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'product_id' => 'required|integer|exists:products,id',
-            'campaign_name' => 'nullable|string|max:191',
-            'ad_name' => 'nullable|string|max:191',
-            'angle' => 'required|string|max:50',
-            'primary_text' => 'required|string',
-            'headline' => 'required|string|max:255',
-            'description' => 'nullable|string|max:255',
-            'cta' => 'nullable|string|max:50',
-            'destination_url' => 'required|string',
-            'utm_campaign' => 'nullable|string|max:100',
-            'creative_image_url' => 'nullable|string',
-            'ai_provider' => 'nullable|string|max:50',
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|integer|exists:products,id',
+                'campaign_name' => 'nullable|string|max:191',
+                'ad_name' => 'nullable|string|max:191',
+                'angle' => 'nullable|string|max:50',
+                'primary_text' => 'nullable|string',
+                'headline' => 'nullable|string|max:255',
+                'description' => 'nullable|string|max:255',
+                'cta' => 'nullable|string|max:50',
+                'destination_url' => 'nullable|string',
+                'utm_campaign' => 'nullable|string|max:100',
+                'creative_image_url' => 'nullable|string',
+                'ai_provider' => 'nullable|string|max:50',
+            ]);
 
-        $creative = MetaAdCreative::create([
-            'product_id' => $validated['product_id'],
-            'campaign_name' => $validated['campaign_name'] ?: 'Dhansree Meta Campaign',
-            'ad_name' => $validated['ad_name'] ?: ($validated['angle'] . ' - ' . date('d M Y')),
-            'angle' => $validated['angle'],
-            'primary_text' => $validated['primary_text'],
-            'headline' => $validated['headline'],
-            'description' => $validated['description'] ?? 'Cash on Delivery | Free Shipping',
-            'cta' => $validated['cta'] ?? 'Shop Now',
-            'destination_url' => $validated['destination_url'],
-            'utm_source' => 'meta',
-            'utm_medium' => 'paid_social',
-            'utm_campaign' => $validated['utm_campaign'] ?? 'dhansree_meta_ads',
-            'utm_content' => $validated['angle'],
-            'creative_image_url' => $validated['creative_image_url'] ?? null,
-            'ai_provider' => $validated['ai_provider'] ?? 'smart_ai',
-        ]);
+            $product = Product::findOrFail($validated['product_id']);
+            $angle = $validated['angle'] ?? 'festive';
+            $utmCampaign = !empty($validated['utm_campaign']) ? $validated['utm_campaign'] : 'dhansree_meta_ads';
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ad creative saved successfully to your library!',
-            'creative' => $creative->load('product'),
-        ]);
+            // Destination URL fallback
+            $productUrl = url('/product/' . ($product->slug ?: $product->id));
+            $destinationUrl = !empty($validated['destination_url'])
+                ? $validated['destination_url']
+                : $this->copyService->buildDestinationUrl($productUrl, $product->slug ?: (string) $product->id, $utmCampaign, $angle);
+
+            // Copy fallbacks if missing
+            $primaryText = !empty($validated['primary_text'])
+                ? $validated['primary_text']
+                : $this->copyService->generateSmartCopy($product, $angle)['primary_text'];
+
+            $headline = !empty($validated['headline'])
+                ? $validated['headline']
+                : $product->name;
+
+            $creative = MetaAdCreative::create([
+                'product_id' => $product->id,
+                'campaign_name' => !empty($validated['campaign_name']) ? $validated['campaign_name'] : 'Dhansree Meta Campaign',
+                'ad_name' => !empty($validated['ad_name']) ? $validated['ad_name'] : (ucfirst($angle) . ' - ' . date('d M Y')),
+                'angle' => $angle,
+                'primary_text' => $primaryText,
+                'headline' => $headline,
+                'description' => $validated['description'] ?? 'Cash on Delivery | Free Shipping',
+                'cta' => $validated['cta'] ?? 'Shop Now',
+                'destination_url' => $destinationUrl,
+                'utm_source' => 'meta',
+                'utm_medium' => 'paid_social',
+                'utm_campaign' => $utmCampaign,
+                'utm_content' => $angle,
+                'creative_image_url' => !empty($validated['creative_image_url']) ? $validated['creative_image_url'] : $product->primary_image_url,
+                'ai_provider' => $validated['ai_provider'] ?? 'smart_ai',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ad creative saved successfully to your library!',
+                'creative' => $creative->load('product'),
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([
+                'success' => false,
+                'message' => $ve->getMessage(),
+                'errors' => $ve->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Meta Ad Creative save failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save creative: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

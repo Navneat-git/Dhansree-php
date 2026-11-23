@@ -619,7 +619,7 @@
                             <td class="py-3 px-4 text-right whitespace-nowrap">
                                 <div class="inline-flex items-center gap-1.5">
                                     <button type="button"
-                                            @click="copyText(`{{ addslashes($item->full_copy_bundle) }}`, 'Complete Ad Package copied!')"
+                                            @click="copyText({{ Js::from($item->full_copy_bundle) }}, 'Complete Ad Package copied!')"
                                             class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-2xs transition-colors">
                                         Copy Package
                                     </button>
@@ -780,12 +780,14 @@ function metaAdStudio(config) {
             this.loading = true;
 
             try {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const res = await fetch('/admin/meta-ads/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': token,
                     },
                     body: JSON.stringify({
                         product_id: this.selectedProductId,
@@ -793,20 +795,21 @@ function metaAdStudio(config) {
                         angle: 'all',
                         custom_instructions: this.customInstructions,
                         utm_campaign: this.utmCampaign,
-                        image_url: this.selectedImage,
+                        image_url: this.selectedImage || undefined,
                     })
                 });
 
-                const json = await res.json();
-                if (json.success && json.data?.angles) {
+                const json = await res.json().catch(() => null);
+                if (res.ok && json?.success && json.data?.angles) {
                     this.angles = json.data.angles;
                     this.product = json.data.product;
                     this.showToast('✨ High-converting ad copy generated!');
                 } else {
-                    this.showToast('Error generating ad copy.');
+                    const errorMsg = json?.message || 'Error generating ad copy.';
+                    this.showToast(errorMsg);
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Ad generator error:', err);
                 this.showToast('Error connecting to ad generator.');
             } finally {
                 this.loading = false;
@@ -814,41 +817,65 @@ function metaAdStudio(config) {
         },
 
         async saveCreative() {
-            if (!this.currentAd || !this.selectedProductId) return;
+            if (!this.selectedProductId) {
+                this.showToast('Please select a product first.');
+                return;
+            }
+            if (!this.currentAd) {
+                this.showToast('No active ad copy to save. Please generate or select an angle.');
+                return;
+            }
+
             this.saveLoading = true;
 
             try {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const angleLabel = this.currentAd.angle_label || this.currentAngle || 'Ad';
+                const prodName = this.product?.name || '';
+                const fallbackDestUrl = this.product?.url 
+                    ? (this.product.url + '?utm_source=meta&utm_medium=paid_social&utm_campaign=' + encodeURIComponent(this.utmCampaign) + '&utm_content=' + encodeURIComponent(this.currentAngle))
+                    : '';
+
+                const payload = {
+                    product_id: this.selectedProductId,
+                    campaign_name: this.utmCampaign || 'Dhansree Meta Campaign',
+                    ad_name: angleLabel + (prodName ? ' - ' + prodName.substring(0, 30) : ''),
+                    angle: this.currentAngle,
+                    primary_text: this.currentAd.primary_text || '',
+                    headline: this.currentAd.headline || prodName,
+                    description: this.currentAd.description || 'Cash on Delivery | Free Shipping',
+                    cta: this.currentAd.cta || 'Shop Now',
+                    destination_url: this.currentAd.destination_url || fallbackDestUrl,
+                    utm_campaign: this.utmCampaign,
+                    creative_image_url: this.selectedImage || this.product?.primary_image_url || '',
+                    ai_provider: this.provider,
+                };
+
                 const res = await fetch('/admin/meta-ads/save', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': token,
                     },
-                    body: JSON.stringify({
-                        product_id: this.selectedProductId,
-                        angle: this.currentAngle,
-                        primary_text: this.currentAd.primary_text,
-                        headline: this.currentAd.headline,
-                        description: this.currentAd.description,
-                        cta: this.currentAd.cta || 'Shop Now',
-                        destination_url: this.currentAd.destination_url,
-                        utm_campaign: this.utmCampaign,
-                        creative_image_url: this.selectedImage || this.product?.primary_image_url,
-                        ai_provider: this.provider,
-                    })
+                    body: JSON.stringify(payload)
                 });
 
-                const json = await res.json();
-                if (json.success) {
+                const json = await res.json().catch(() => null);
+                if (res.ok && json?.success) {
                     this.showToast('💾 Ad package saved to your library!');
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
-                    this.showToast('Could not save creative.');
+                    let errorMsg = json?.message;
+                    if (json?.errors) {
+                        errorMsg = Object.values(json.errors).flat().join(' ');
+                    }
+                    this.showToast(errorMsg || 'Could not save creative.');
                 }
             } catch (err) {
-                console.error(err);
-                this.showToast('Error saving creative.');
+                console.error('Save creative error:', err);
+                this.showToast('Error saving creative to library.');
             } finally {
                 this.saveLoading = false;
             }

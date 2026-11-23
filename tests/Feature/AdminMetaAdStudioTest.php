@@ -161,6 +161,31 @@ class AdminMetaAdStudioTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_save_creative_with_minimal_payload(): void
+    {
+        $this->assertNotNull($this->product);
+
+        // Minimal payload without campaign_name or ad_name or destination_url
+        $response = $this->asAdmin()->postJson('/admin/meta-ads/save', [
+            'product_id' => $this->product->id,
+            'angle' => 'comfort',
+            'primary_text' => 'Breathe-easy pure cotton kurtis.',
+            'headline' => 'All Day Everyday Comfort',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $this->assertDatabaseHas('meta_ad_creatives', [
+            'product_id' => $this->product->id,
+            'angle' => 'comfort',
+            'campaign_name' => 'Dhansree Meta Campaign',
+            'cta' => 'Shop Now',
+        ]);
+    }
+
     public function test_admin_can_delete_saved_creative(): void
     {
         $creative = MetaAdCreative::create([
