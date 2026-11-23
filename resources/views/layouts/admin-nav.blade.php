@@ -119,7 +119,17 @@
                 <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">Meta</span>
             </a>
 
-            <!-- 9. Settings -->
+            <!-- 9. Meta Ad Studio -->
+            <a href="{{ route('admin.meta-ads.index') }}"
+               class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/meta-ads*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
+                <svg class="size-4 shrink-0 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                <span>Meta Ad Studio</span>
+                <span class="ml-auto text-[9px] font-bold px-1 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">AI Copy</span>
+            </a>
+
+            <!-- 10. Settings -->
             <a href="{{ route('admin.social-commerce.settings.index') }}"
                class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors {{ request()->is('admin/social-commerce/settings*') ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-300 hover:bg-slate-900/80 hover:text-white' }}">
                 <svg class="size-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
@@ -283,6 +293,15 @@
                 </svg>
                 <span>Video Studio</span>
                 <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Reels &amp; Ads</span>
+            </a>
+
+            <a href="{{ route('admin.meta-ads.index') }}"
+               class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors {{ request()->is('admin/meta-ads*') ? 'bg-slate-800 text-white font-semibold border-l-2 border-blue-500' : 'text-slate-300 hover:bg-slate-900 hover:text-white' }}">
+                <svg class="size-4.5 shrink-0 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                <span>Meta Ad Studio</span>
+                <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">Shop Now</span>
             </a>
             @endif
 

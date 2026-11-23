@@ -456,6 +456,16 @@ Route::prefix('admin')->group(function () {
             Route::post('/migrate-db', [\App\Http\Controllers\Admin\AdminVideoStudioWebController::class, 'migrateDb'])->name('migrate-db');
         });
 
+        // Meta Ad Studio (AI Ad Copy & Creative Generator with 'Shop Now' CTA)
+        Route::prefix('meta-ads')->name('admin.meta-ads.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'index'])->name('index');
+            Route::get('/product-data/{product}', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'productData'])->name('product-data');
+            Route::post('/generate', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'generate'])->name('generate');
+            Route::post('/save', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'save'])->name('save');
+            Route::delete('/{creative}', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'destroy'])->name('destroy');
+            Route::post('/settings', [\App\Http\Controllers\Admin\AdminMetaAdStudioController::class, 'updateSettings'])->name('settings.update');
+        });
+
 
         // Payments & Reconciliation
         Route::prefix('payments')->name('admin.payments.')->group(function () {
