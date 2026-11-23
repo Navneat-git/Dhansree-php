@@ -20,7 +20,7 @@
             <div class="space-y-2">
                 <h2 class="font-serif text-2xl sm:text-3xl text-rich-black font-medium">A little room for something lovely</h2>
                 <p class="text-xs sm:text-sm text-rich-black/60 max-w-sm mx-auto">
-                    Your bag is empty. Explore our latest handcrafted ethnic styles or smart living gadgets.
+                    Your bag is empty. Explore our latest handcrafted kurtas, suit sets, and ethnic wear.
                 </p>
             </div>
 
@@ -39,13 +39,9 @@
                     <span>←</span>
                     <span>Continue Shopping</span>
                 </a>
-                <a href="{{ url('/') }}"
+                <a href="{{ url('/women-fashion') }}"
                    class="w-full sm:w-auto px-6 py-3 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold uppercase tracking-wider hover:bg-maroon-50 transition-colors">
-                    🌸 Shop Women's Fashion
-                </a>
-                <a href="{{ url('/smart-living') }}"
-                   class="w-full sm:w-auto px-6 py-3 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold uppercase tracking-wider hover:bg-maroon-50 transition-colors">
-                    ⚡ Shop Smart Living
+                    Shop Ethnic Collections ➔
                 </a>
             </div>
         </div>

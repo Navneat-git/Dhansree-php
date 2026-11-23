@@ -289,49 +289,22 @@
         <nav class="hidden lg:block border-t border-light-gold/50 bg-ivory/80">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-center gap-8 xl:gap-12 h-12">
-                    @if(!($isSmartLivingHub ?? false))
-                        <!-- Women Fashion Hub Nav Links -->
-                        <a href="{{ url('/kurta-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('kurta-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
-                            Kurta Sets
-                        </a>
-                        <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-two-piece-sets-co-ord*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
-                            Co-ord Sets
-                        </a>
-                        <a href="{{ url('/women-suit-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-suit-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
-                            Suit Sets
-                        </a>
-                        <a href="{{ url('/women-fashion') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-fashion*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
-                            All Ethnic Wear
-                        </a>
-
-                        <!-- Cross-hub link to Smart Living -->
-                        <a href="{{ url('/smart-living') }}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gold-200/70 text-maroon-900 border border-gold-400/80 hover:bg-gold-300 hover:border-gold-500 transition-all shadow-xs ml-4">
-                            <span class="text-amber-600">⚡</span>
-                            <span>Smart Living &amp; Gadgets</span>
-                            <span class="text-xs">➔</span>
-                        </a>
-                    @else
-                        <!-- Smart Living Hub Nav Links -->
-                        <a href="{{ url('/smart-gadgets') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('smart-gadgets*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
-                            Smart Gadgets
-                        </a>
-                        <a href="{{ url('/mobile-accessories') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('mobile-accessories*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
-                            Mobile Accessories
-                        </a>
-                        <a href="{{ url('/home-and-lifestyle') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('home-and-lifestyle*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
-                            Home &amp; Lifestyle
-                        </a>
-                        <a href="{{ url('/car-accessories') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-amber-800 transition-colors py-2 border-b-2 {{ request()->is('car-accessories*') ? 'border-amber-800 text-amber-800' : 'border-transparent text-rich-black/80 hover:border-amber-800/40' }}">
-                            Car Accessories
-                        </a>
-
-                        <!-- Cross-hub link to Women's Fashion -->
-                        <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-maroon-50 text-maroon-800 border border-maroon-200 hover:bg-maroon-100 transition-all shadow-xs ml-4">
-                            <span class="text-maroon-700">🌸</span>
-                            <span>Women's Ethnic Fashion</span>
-                            <span class="text-xs">➔</span>
-                        </a>
-                    @endif
+                    <!-- Women Fashion Nav Links -->
+                    <a href="{{ url('/kurta-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('kurta-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        Kurta Sets
+                    </a>
+                    <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-two-piece-sets-co-ord*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        Co-ord Sets
+                    </a>
+                    <a href="{{ url('/women-suit-set') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-suit-set*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        Suit Sets
+                    </a>
+                    <a href="{{ url('/anarkali-kurta-sets') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('anarkali-kurta-sets*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        Anarkali Sets
+                    </a>
+                    <a href="{{ url('/women-fashion') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-fashion*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        All Ethnic Wear
+                    </a>
                 </div>
             </div>
         </nav>
@@ -376,43 +349,17 @@
                 </button>
             </div>
 
-            <!-- Hub Switcher in Mobile Drawer -->
-            <div class="p-4 bg-gold-200/30 border-b border-light-gold/60 space-y-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-rich-black/60">Browse Category Hub</p>
-                <div class="grid grid-cols-2 gap-2 text-xs font-medium">
-                    <a href="{{ url('/') }}"
-                       class="py-2 px-3 text-center rounded-lg border {{ !($isSmartLivingHub ?? false) ? 'bg-maroon-800 text-white border-maroon-800 font-semibold' : 'bg-white text-rich-black border-light-gold' }}">
-                        🌸 Ethnic Wear
-                    </a>
-                    <a href="{{ url('/smart-living') }}"
-                       class="py-2 px-3 text-center rounded-lg border {{ ($isSmartLivingHub ?? false) ? 'bg-tech-dark text-white border-tech-dark font-semibold' : 'bg-white text-rich-black border-light-gold' }}">
-                        ⚡ Smart Tech
-                    </a>
-                </div>
-            </div>
-
             <div class="flex-1 px-4 py-6 space-y-6">
-                @if(!($isSmartLivingHub ?? false))
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase tracking-wider text-maroon-800 mb-3">Women's Ethnic Fashion</h3>
-                        <div class="space-y-3">
-                            <a href="{{ url('/kurta-set') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Kurta Sets</a>
-                            <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Co-ord Sets</a>
-                            <a href="{{ url('/women-suit-set') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Suit Sets</a>
-                            <a href="{{ url('/women-fashion') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">View All Collections</a>
-                        </div>
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-maroon-800 mb-3">Women's Ethnic Fashion</h3>
+                    <div class="space-y-3">
+                        <a href="{{ url('/kurta-set') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Kurta Sets</a>
+                        <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Co-ord Sets</a>
+                        <a href="{{ url('/women-suit-set') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Suit Sets</a>
+                        <a href="{{ url('/anarkali-kurta-sets') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Anarkali Sets</a>
+                        <a href="{{ url('/women-fashion') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">All Ethnic Collections</a>
                     </div>
-                @else
-                    <div>
-                        <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-800 mb-3">Smart Living &amp; Tech</h3>
-                        <div class="space-y-3">
-                            <a href="{{ url('/smart-gadgets') }}" class="block text-sm text-rich-black hover:text-amber-800 font-medium">Smart Gadgets</a>
-                            <a href="{{ url('/mobile-accessories') }}" class="block text-sm text-rich-black hover:text-amber-800 font-medium">Mobile Accessories</a>
-                            <a href="{{ url('/home-and-lifestyle') }}" class="block text-sm text-rich-black hover:text-amber-800 font-medium">Home &amp; Lifestyle</a>
-                            <a href="{{ url('/car-accessories') }}" class="block text-sm text-rich-black hover:text-amber-800 font-medium">Car Accessories</a>
-                        </div>
-                    </div>
-                @endif
+                </div>
 
                 <a href="{{ auth('customer')->check() ? route('storefront.account.dashboard') : route('storefront.account.login') }}"
                    class="flex items-center gap-2.5 py-2.5 px-3 rounded-xl bg-gold-200/50 border border-gold-400 text-maroon-900 text-xs font-semibold">
@@ -481,7 +428,7 @@
                     <input type="text"
                            name="q"
                            x-ref="searchInput"
-                           placeholder="Search kurties, suit sets, smart gadgets, chargers..."
+                           placeholder="Search kurties, suit sets, anarkalis, co-ords..."
                            class="w-full text-sm sm:text-base bg-transparent border-none outline-none focus:ring-0 text-rich-black placeholder-rich-black/40">
                     <button type="submit"
                             class="px-4 py-2 rounded-lg bg-maroon-800 text-white text-xs font-semibold hover:bg-maroon-900 transition-colors shrink-0 shadow-xs">
@@ -503,8 +450,8 @@
                         <a href="{{ url('/search?q=kurta') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-maroon-800 hover:text-maroon-800 transition-colors">Cotton Kurta</a>
                         <a href="{{ url('/search?q=co-ord') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-maroon-800 hover:text-maroon-800 transition-colors">Floral Co-ord</a>
                         <a href="{{ url('/search?q=suit') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-maroon-800 hover:text-maroon-800 transition-colors">Suit Set with Dupatta</a>
-                        <a href="{{ url('/search?q=cable') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-amber-800 hover:text-amber-800 transition-colors">60W Fast Charging Cable</a>
-                        <a href="{{ url('/search?q=iron') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-amber-800 hover:text-amber-800 transition-colors">Portable Travel Steamer</a>
+                        <a href="{{ url('/search?q=anarkali') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-maroon-800 hover:text-maroon-800 transition-colors">Anarkali Kurta Set</a>
+                        <a href="{{ url('/search?q=pure+cotton') }}" class="px-3 py-1.5 rounded-full bg-white border border-light-gold hover:border-maroon-800 hover:text-maroon-800 transition-colors">Pure Cotton</a>
                     </div>
                 </div>
             </div>
@@ -931,7 +878,7 @@
     <!-- Luxury Store Footer -->
     <footer class="bg-warm-beige text-rich-black pt-16 pb-12 border-t border-light-gold">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 pb-12 border-b border-light-gold">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 pb-12 border-b border-light-gold">
                 
                 <!-- Col 1: Brand Info -->
                 <div class="lg:col-span-2 space-y-4">
@@ -941,7 +888,7 @@
                              class="h-8 sm:h-9 w-auto object-contain">
                     </a>
                     <p class="text-xs text-rich-black/70 leading-relaxed max-w-sm">
-                        Curating timeless ethnic elegance for women across India. From handcrafted cotton kurties and festive suit sets to smart lifestyle essentials, Dhansree brings authenticity, quality, and direct-to-consumer value.
+                        Curating timeless ethnic elegance for women across India. From handcrafted cotton kurties and festive suit sets to chic co-ord sets, Dhansree brings authenticity, quality, and direct-to-consumer value.
                     </p>
                     <div class="text-xs text-rich-black/75 space-y-1.5 pt-1">
                         <p><strong>Customer Care:</strong> <a href="mailto:info@dhansree.com" class="hover:text-maroon-800 underline">info@dhansree.com</a></p>
@@ -1005,30 +952,19 @@
                     @endif
                 </div>
 
-                <!-- Col 2: Women Fashion Hub -->
+                <!-- Col 2: Women Fashion -->
                 <div class="space-y-3">
                     <h4 class="text-xs font-bold uppercase tracking-widest text-maroon-800">Women Fashion</h4>
                     <ul class="space-y-2 text-xs text-rich-black/75">
                         <li><a href="{{ url('/kurta-set') }}" class="hover:text-maroon-800 transition-colors">Women Kurta Sets</a></li>
                         <li><a href="{{ url('/women-two-piece-sets-co-ord') }}" class="hover:text-maroon-800 transition-colors">Co-ord Sets</a></li>
                         <li><a href="{{ url('/women-suit-set') }}" class="hover:text-maroon-800 transition-colors">Suit Sets with Dupatta</a></li>
+                        <li><a href="{{ url('/anarkali-kurta-sets') }}" class="hover:text-maroon-800 transition-colors">Anarkali Sets</a></li>
                         <li><a href="{{ url('/women-fashion') }}" class="hover:text-maroon-800 transition-colors">All Ethnic Wear</a></li>
                     </ul>
                 </div>
 
-                <!-- Col 3: Smart Living Hub -->
-                <div class="space-y-3">
-                    <h4 class="text-xs font-bold uppercase tracking-widest text-amber-800">Smart Living</h4>
-                    <ul class="space-y-2 text-xs text-rich-black/75">
-                        <li><a href="{{ url('/smart-gadgets') }}" class="hover:text-amber-800 transition-colors">Smart Tech Gadgets</a></li>
-                        <li><a href="{{ url('/mobile-accessories') }}" class="hover:text-amber-800 transition-colors">Fast Cables &amp; Chargers</a></li>
-                        <li><a href="{{ url('/home-and-lifestyle') }}" class="hover:text-amber-800 transition-colors">Home &amp; Lifestyle</a></li>
-                        <li><a href="{{ url('/car-accessories') }}" class="hover:text-amber-800 transition-colors">Car Accessories</a></li>
-                        <li><a href="{{ url('/smart-living') }}" class="text-amber-700 font-semibold hover:underline">Explore Tech Hub ➔</a></li>
-                    </ul>
-                </div>
-
-                <!-- Col 4: Support & Policies -->
+                <!-- Col 3: Support & Policies -->
                 <div class="space-y-3">
                     <h4 class="text-xs font-bold uppercase tracking-widest text-rich-black">Help &amp; Legal</h4>
                     <ul class="space-y-2 text-xs text-rich-black/75">

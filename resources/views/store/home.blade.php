@@ -85,7 +85,7 @@
             (object)['type' => 'PRODUCT_RAIL', 'is_visible' => true, 'heading' => $featuredBlock?->heading, 'eyebrow' => $featuredBlock?->eyebrow, 'primary_path' => $featuredBlock?->primary_path, 'primary_label' => $featuredBlock?->primary_label],
             (object)['type' => 'HERO', 'is_visible' => true, 'heading' => $heroBlock?->heading, 'eyebrow' => $heroBlock?->eyebrow, 'body' => $heroBlock?->body, 'primary_label' => $heroBlock?->primary_label, 'primary_path' => $heroBlock?->primary_path, 'secondary_label' => $heroBlock?->secondary_label, 'secondary_path' => $heroBlock?->secondary_path, 'image_url' => $heroBlock?->image_url],
             (object)['type' => 'TILE_GRID', 'is_visible' => true, 'tile_source' => 'CATEGORIES', 'heading' => 'Shop By Category', 'eyebrow' => 'Handpicked Collections', 'featured_per_view' => 3, 'homeBlockItems' => collect()],
-            (object)['type' => 'PROMO_BANNER', 'is_visible' => true, 'image_url' => null, 'heading' => null, 'eyebrow' => null, 'body' => null, 'primary_path' => '/smart-living', 'primary_label' => null, 'secondary_label' => null],
+            (object)['type' => 'PROMO_BANNER', 'is_visible' => false, 'image_url' => null, 'heading' => null, 'eyebrow' => null, 'body' => null, 'primary_path' => '/women-fashion', 'primary_label' => null, 'secondary_label' => null],
             (object)['type' => 'FEATURES', 'is_visible' => true],
             (object)['type' => 'INSTAGRAM', 'is_visible' => (bool) ($instagramBlock ? $instagramBlock->is_visible : true), 'heading' => $instagramBlock?->heading, 'eyebrow' => $instagramBlock?->eyebrow, 'body' => $instagramBlock?->body, 'primary_label' => $instagramBlock?->primary_label, 'primary_path' => $instagramBlock?->primary_path],
         ]);
@@ -720,37 +720,37 @@
                     </picture>
                 </a>
             @else
-                <div class="rounded-2xl bg-tech-dark text-white p-8 sm:p-12 border border-tech-border relative overflow-hidden shadow-xl">
-                    <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-amber-600/10 blur-3xl pointer-events-none"></div>
-                    <div class="absolute -left-20 -top-20 w-80 h-80 rounded-full bg-gold-500/10 blur-3xl pointer-events-none"></div>
+                <div class="rounded-2xl bg-gradient-to-r from-maroon-900 to-maroon-800 text-white p-8 sm:p-12 border border-gold-400/30 relative overflow-hidden shadow-xl">
+                    <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-gold-500/10 blur-3xl pointer-events-none"></div>
+                    <div class="absolute -left-20 -top-20 w-80 h-80 rounded-full bg-maroon-700/20 blur-3xl pointer-events-none"></div>
 
                     <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                         <div class="lg:col-span-8 space-y-4">
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold tracking-wider uppercase border border-amber-500/30">
-                                <span>⚡</span>
-                                <span>{{ $block->eyebrow ?: 'Direct-To-Customer Tech Hub' }}</span>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold-400/20 text-gold-300 text-xs font-semibold tracking-wider uppercase border border-gold-400/30">
+                                <span>🌸</span>
+                                <span>{{ $block->eyebrow ?: 'Jaipur Handcrafted Fashion' }}</span>
                             </div>
 
                             <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white">
                                 @if($block->heading)
                                     {{ $block->heading }}
                                 @else
-                                    Upgrade Your Daily Routine.<br>
-                                    <span class="text-gold-300 italic font-medium">Smart Gadgets &amp; Mobile Accessories.</span>
+                                    Artisanal Grace.<br>
+                                    <span class="text-gold-300 italic font-medium">Pure Cotton Kurties &amp; Suit Sets.</span>
                                 @endif
                             </h2>
 
-                            <p class="text-sm text-white/70 max-w-xl leading-relaxed">
-                                {{ $block->body ?: 'Alongside our ethnic fashion, explore our dedicated tech collection featuring 60W fast cables, compact travel garment steamers, phone holders, and smart lifestyle utilities — quality tested and shipped directly to you.' }}
+                            <p class="text-sm text-white/80 max-w-xl leading-relaxed">
+                                {{ $block->body ?: 'Immerse yourself in authentic Jaipur craftsmanship with breathable cotton fabrics, intricate hand-block prints, and flattering silhouettes tailored for festive moments and everyday comfort.' }}
                             </p>
 
                             <div class="pt-2 flex flex-wrap gap-4">
-                                <a href="{{ url($block->primary_path ?: '/smart-living') }}"
+                                <a href="{{ url($block->primary_path ?: '/women-fashion') }}"
                                    class="px-8 py-3.5 rounded-lg bg-gold-500 text-rich-black text-xs font-bold uppercase tracking-wider hover:bg-gold-400 transition-all shadow-md">
-                                    {{ $block->primary_label ?: 'Explore Smart Living Hub ➔' }}
+                                    {{ $block->primary_label ?: 'Explore Ethnic Collection ➔' }}
                                 </a>
                                 @if($block->secondary_label)
-                                <a href="{{ url($block->secondary_path ?: '/smart-gadgets') }}"
+                                <a href="{{ url($block->secondary_path ?: '/kurta-set') }}"
                                    class="px-6 py-3.5 rounded-lg border border-white/30 text-white text-xs font-semibold uppercase tracking-wider hover:bg-white/10 transition-all">
                                     {{ $block->secondary_label }}
                                 </a>
@@ -760,25 +760,25 @@
 
                         <div class="lg:col-span-4 flex justify-center">
                             <div class="grid grid-cols-2 gap-3 max-w-xs w-full">
-                                <div class="bg-tech-card rounded-xl p-4 border border-tech-border text-center space-y-1">
-                                    <span class="text-2xl">🔌</span>
-                                    <h4 class="text-xs font-bold text-white">60W Fast Cables</h4>
-                                    <p class="text-[0.625rem] text-white/50">Multi-connector kit</p>
+                                <div class="bg-maroon-950/60 rounded-xl p-4 border border-gold-400/20 text-center space-y-1">
+                                    <span class="text-2xl">🌸</span>
+                                    <h4 class="text-xs font-bold text-white">Pure Cotton</h4>
+                                    <p class="text-[0.625rem] text-white/70">Breathable weaves</p>
                                 </div>
-                                <div class="bg-tech-card rounded-xl p-4 border border-tech-border text-center space-y-1">
-                                    <span class="text-2xl">💨</span>
-                                    <h4 class="text-xs font-bold text-white">Travel Steamers</h4>
-                                    <p class="text-[0.625rem] text-white/50">2-in-1 Dry &amp; Spray</p>
+                                <div class="bg-maroon-950/60 rounded-xl p-4 border border-gold-400/20 text-center space-y-1">
+                                    <span class="text-2xl">✨</span>
+                                    <h4 class="text-xs font-bold text-white">Festive Suits</h4>
+                                    <p class="text-[0.625rem] text-white/70">With mulmul dupatta</p>
                                 </div>
-                                <div class="bg-tech-card rounded-xl p-4 border border-tech-border text-center space-y-1">
-                                    <span class="text-2xl">📱</span>
-                                    <h4 class="text-xs font-bold text-white">Accessories</h4>
-                                    <p class="text-[0.625rem] text-white/50">Cases &amp; Mounts</p>
+                                <div class="bg-maroon-950/60 rounded-xl p-4 border border-gold-400/20 text-center space-y-1">
+                                    <span class="text-2xl">👗</span>
+                                    <h4 class="text-xs font-bold text-white">Chic Co-ords</h4>
+                                    <p class="text-[0.625rem] text-white/70">Sizes S to XXL</p>
                                 </div>
-                                <div class="bg-tech-card rounded-xl p-4 border border-tech-border text-center space-y-1">
-                                    <span class="text-2xl">⚡</span>
+                                <div class="bg-maroon-950/60 rounded-xl p-4 border border-gold-400/20 text-center space-y-1">
+                                    <span class="text-2xl">🚚</span>
                                     <h4 class="text-xs font-bold text-white">Direct Value</h4>
-                                    <p class="text-[0.625rem] text-white/50">Zero Middlemen</p>
+                                    <p class="text-[0.625rem] text-white/70">Jaipur to you</p>
                                 </div>
                             </div>
                         </div>

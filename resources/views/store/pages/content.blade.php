@@ -45,7 +45,7 @@
             <h3 class="font-serif text-lg font-semibold text-rich-black">Have any questions or need assistance?</h3>
             <p class="text-xs text-rich-black/60">Our customer support team is available Monday through Saturday, 10 AM – 7 PM IST.</p>
         </div>
-        <a href="mailto:care@dhansree.com" class="px-5 py-2.5 rounded-lg bg-maroon-800 text-white text-xs font-semibold hover:bg-maroon-900 transition-colors shadow-xs shrink-0">
+        <a href="mailto:{{ $store->email_support ?: 'info@dhansree.com' }}" class="px-5 py-2.5 rounded-lg bg-maroon-800 text-white text-xs font-semibold hover:bg-maroon-900 transition-colors shadow-xs shrink-0">
             Email Support
         </a>
     </div>

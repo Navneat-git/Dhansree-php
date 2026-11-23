@@ -43,8 +43,8 @@
     
     <!-- Breadcrumbs -->
     <nav class="flex items-center gap-2 text-xs text-rich-black/50 mb-6">
-        <a href="{{ $isSmartLivingHub ? url('/smart-living') : url('/') }}" class="hover:text-maroon-800 transition-colors">
-            {{ $isSmartLivingHub ? 'Smart Living' : 'Home' }}
+        <a href="{{ url('/') }}" class="hover:text-maroon-800 transition-colors">
+            Home
         </a>
         <span>/</span>
         @if($category->parent)

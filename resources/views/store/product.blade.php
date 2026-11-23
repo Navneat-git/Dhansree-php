@@ -458,14 +458,19 @@
 
     <!-- Breadcrumbs -->
     <nav class="flex items-center gap-2 text-xs text-rich-black/50 mb-8 overflow-x-auto whitespace-nowrap w-full max-w-full min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <a href="{{ $isSmartLivingHub ? url('/smart-living') : url('/') }}" class="hover:text-maroon-800 transition-colors shrink-0">
-            {{ $isSmartLivingHub ? 'Smart Living' : 'Home' }}
+        <a href="{{ url('/') }}" class="hover:text-maroon-800 transition-colors shrink-0">
+            Home
         </a>
         <span>/</span>
-        @if($product->category)
+        @if($product->category && $product->category->is_visible && !$isSmartLivingHub)
             <a href="{{ url('/' . $product->category->slug) }}" class="hover:text-maroon-800 transition-colors shrink-0">
                 {{ $product->category->name }}
             </a>
+            <span>/</span>
+        @elseif($product->category)
+            <span class="text-rich-black/70 shrink-0">
+                {{ $product->category->name }}
+            </span>
             <span>/</span>
         @endif
         <span class="text-rich-black/80 font-medium truncate max-w-xs shrink-0">{{ $product->name }}</span>

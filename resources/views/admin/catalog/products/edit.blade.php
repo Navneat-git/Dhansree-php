@@ -74,6 +74,14 @@
                 </form>
             @endif
 
+            <button type="button"
+                    onclick="copyProductLink('{{ url('/product/' . $product->slug) }}', this)"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold transition-colors shadow-2xs"
+                    title="Copy direct product link to send to customer">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span class="btn-text">Copy Link</span>
+            </button>
+
             <a href="{{ url('/product/' . $product->slug) }}" target="_blank"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-semibold transition-colors shadow-2xs">
                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
@@ -2043,6 +2051,37 @@ function productVideosManager() {
             }
         }
     };
+}
+
+function copyProductLink(url, btn) {
+    const textSpan = btn.querySelector('.btn-text');
+    const origText = textSpan ? textSpan.innerText : 'Copy Link';
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => {
+            if (textSpan) textSpan.innerText = 'Copied!';
+            btn.classList.add('text-emerald-700', 'border-emerald-400', 'bg-emerald-50');
+            setTimeout(() => {
+                if (textSpan) textSpan.innerText = origText;
+                btn.classList.remove('text-emerald-700', 'border-emerald-400', 'bg-emerald-50');
+            }, 2000);
+        });
+    } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            if (textSpan) textSpan.innerText = 'Copied!';
+            setTimeout(() => { if (textSpan) textSpan.innerText = origText; }, 2000);
+        } catch (e) {
+            prompt('Copy product link:', url);
+        }
+        document.body.removeChild(textarea);
+    }
 }
 </script>
 @endsection

@@ -22,21 +22,16 @@ class StorefrontTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('DHANSREE');
         $response->assertSee('Ethnic Elegance');
-        $response->assertSee('Smart Living &amp; Gadgets', false);
+        $response->assertDontSee('Smart Living &amp; Gadgets', false);
         $response->assertSee('Festive Signature Edit');
     }
 
-    public function test_smart_living_hub_renders_tech_essentials(): void
+    public function test_smart_living_hub_redirects_to_homepage(): void
     {
         $response = $this->get('/smart-living');
 
-        $response->assertStatus(200);
-        $response->assertSee('Better Products');
-        $response->assertSee('Smarter Living');
-        $response->assertSee("Women's Ethnic Wear", false);
-        $response->assertSee('Direct-to-Customer Value');
-        $response->assertDontSee('All Products');
-        $response->assertDontSee('Filter by category');
+        $response->assertStatus(301);
+        $response->assertRedirect('/');
     }
 
     public function test_category_page_renders_with_products(): void
@@ -87,10 +82,10 @@ class StorefrontTest extends TestCase
         $sizeFilterResponse->assertSee('Size:');
         $sizeFilterResponse->assertSee('M');
 
-        // 6. Categories without Size/Color options (e.g. smart-gadgets) dynamically omit them
+        // 6. Non-fashion category URLs redirect to homepage (isolated from public browse)
         $gadgetResponse = $this->get('/smart-gadgets');
-        $gadgetResponse->assertStatus(200);
-        $gadgetResponse->assertDontSee('<h3 class="text-xs font-bold uppercase tracking-wider text-rich-black/80">Size</h3>', false);
+        $gadgetResponse->assertStatus(301);
+        $gadgetResponse->assertRedirect('/');
     }
 
     public function test_product_detail_page_renders_with_schema_and_sizing(): void

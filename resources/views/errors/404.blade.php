@@ -48,9 +48,9 @@
                class="px-6 py-3 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold uppercase tracking-wider hover:bg-maroon-50 transition-all">
                 Shop Kurta Sets
             </a>
-            <a href="{{ url('/smart-living') }}"
+            <a href="{{ url('/women-fashion') }}"
                class="px-6 py-3 rounded-lg border border-light-gold bg-white text-rich-black text-xs font-semibold uppercase tracking-wider hover:border-maroon-800 hover:text-maroon-800 transition-all shadow-2xs">
-                Smart Living Hub ➔
+                All Ethnic Wear ➔
             </a>
         </div>
 

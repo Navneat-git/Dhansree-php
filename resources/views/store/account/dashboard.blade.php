@@ -96,7 +96,7 @@
                 <div class="space-y-1">
                     <p class="font-medium text-sm text-rich-black">You haven't placed any orders yet</p>
                     <p class="text-xs text-rich-black/60 max-w-sm mx-auto">
-                        Explore our handcrafted festive kurtas, coord sets, and smart living essentials.
+                        Explore our handcrafted festive kurtas, coord sets, and elegant suit sets.
                     </p>
                 </div>
                 <a href="{{ url('/shop') }}" class="inline-block px-5 py-2.5 rounded-xl bg-maroon-700 hover:bg-maroon-800 text-white text-xs font-semibold tracking-wide transition-colors">

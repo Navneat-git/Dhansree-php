@@ -89,7 +89,9 @@
                                         <span class="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-mono border border-slate-200/60">/{{ $root->slug }}</span>
                                     </div>
                                     <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                                        <span>{{ $root->products_count }} products</span>
+                                        <a href="{{ route('admin.products.index', ['category_id' => $root->id]) }}" class="text-amber-800 hover:text-amber-900 hover:underline font-semibold" title="View and share products in this category">
+                                            {{ $root->products_count }} products &rarr;
+                                        </a>
                                         <span>&bull;</span>
                                         <span>{{ count($root->tree_children ?? []) }} subcategories</span>
                                     </div>
@@ -122,8 +124,9 @@
                                             <a href="{{ route('admin.categories.edit', $child) }}" class="text-sm font-semibold text-slate-800 hover:text-amber-600 transition-colors truncate">
                                                 {{ $child->name }}
                                             </a>
-                                            <span class="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono border border-slate-200/60">/{{ $child->slug }}</span>
-                                            <span class="text-xs text-slate-500">({{ $child->products_count }} products)</span>
+                                            <a href="{{ route('admin.products.index', ['category_id' => $child->id]) }}" class="text-xs text-amber-800 hover:text-amber-900 hover:underline font-semibold" title="View and share products in this subcategory">
+                                                ({{ $child->products_count }} products &rarr;)
+                                            </a>
                                         </div>
 
                                         <div class="flex items-center gap-2 shrink-0">

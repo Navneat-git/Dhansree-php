@@ -71,22 +71,11 @@ class StorefrontController extends Controller
     }
 
     /**
-     * Hub 2: Smart Living & Modern Tech Essentials Dedicated Landing Page
+     * Legacy Smart Living Hub: Permanently redirect to Women's Ethnic Fashion homepage
      */
-    public function smartLiving(): View
+    public function smartLiving(): RedirectResponse
     {
-        $data = $this->catalogService->getSmartLivingHubData();
-
-        return view('store.smart-living', [
-            'categories' => $data['categories'],
-            'products' => $data['products'],
-            'womenCategories' => $data['womenCategories'],
-            'featuredWomenProduct' => $data['featuredWomenProduct'] ?? null,
-            'store' => $data['store'],
-            'isSmartLivingHub' => true,
-            'seoTitle' => 'Smart Living & Tech Essentials | Dhansree Trends Direct',
-            'seoDescription' => 'Discover innovative smart gadgets, fast chargers, multi-cables, and home essentials. Quality-tested tech accessories at direct customer prices.',
-        ]);
+        return redirect()->to('/', 301);
     }
 
     /**
@@ -98,6 +87,11 @@ class StorefrontController extends Controller
         $redirect = $this->seoRedirectService->findRedirect('/' . $slug);
         if ($redirect) {
             return redirect()->to($redirect->destination_path, $redirect->status_code ?? 301);
+        }
+
+        // 2. Redirect non-women's fashion categories to homepage (only direct product links remain accessible)
+        if (in_array($slug, CatalogBrowsingService::SMART_LIVING_SLUGS, true)) {
+            return redirect()->to('/', 301);
         }
 
         $data = $this->catalogService->getCategoryPageData($slug, $request->all());
@@ -281,7 +275,6 @@ class StorefrontController extends Controller
         // Core Static Pages
         $staticRoutes = [
             ['url' => url('/'), 'priority' => '1.0', 'freq' => 'daily'],
-            ['url' => url('/smart-living'), 'priority' => '0.9', 'freq' => 'daily'],
             ['url' => url('/faq'), 'priority' => '0.7', 'freq' => 'weekly'],
             ['url' => url('/about'), 'priority' => '0.6', 'freq' => 'monthly'],
             ['url' => url('/contact'), 'priority' => '0.6', 'freq' => 'monthly'],

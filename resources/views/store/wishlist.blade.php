@@ -44,13 +44,13 @@
             </div>
 
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <a href="{{ url('/') }}"
+                <a href="{{ url('/women-fashion') }}"
                    class="w-full sm:w-auto px-6 py-3 rounded-lg bg-maroon-800 text-white text-xs font-semibold uppercase tracking-wider hover:bg-maroon-900 transition-colors shadow-sm">
-                    🌸 Explore Women's Fashion
+                    Explore Ethnic Fashion
                 </a>
-                <a href="{{ url('/smart-living') }}"
+                <a href="{{ url('/kurta-set') }}"
                    class="w-full sm:w-auto px-6 py-3 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-semibold uppercase tracking-wider hover:bg-maroon-50 transition-colors">
-                    ⚡ Explore Smart Living
+                    Shop Kurta Sets ➔
                 </a>
             </div>
         </div>

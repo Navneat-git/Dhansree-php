@@ -15,7 +15,7 @@
             @if($query !== '')
                 Found {{ $products->total() }} matching {{ Str::plural('item', $products->total()) }}
             @else
-                Find ethnic kurtas, co-ords, suit sets, and smart living gadgets.
+                Find handcrafted ethnic kurtas, co-ords, suit sets, and regal anarkalis.
             @endif
         </p>
 
@@ -24,7 +24,7 @@
             <input type="text"
                    name="q"
                    value="{{ $query }}"
-                   placeholder="Search products, fabrics, styles, gadgets..."
+                   placeholder="Search kurtas, suit sets, fabrics, ethnic styles..."
                    class="w-full px-4 py-3 pr-12 rounded-xl border border-light-gold bg-white text-xs text-rich-black placeholder-rich-black/40 focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 outline-none shadow-xs">
             <button type="submit"
                     class="absolute right-2 top-4 p-1.5 text-rich-black/50 hover:text-maroon-800"
@@ -52,8 +52,11 @@
                 <a href="{{ url('/women-two-piece-sets-co-ord') }}" class="px-4 py-2 rounded-full border border-light-gold bg-ivory hover:border-maroon-800 hover:text-maroon-800 transition-colors">
                     Co-ords
                 </a>
-                <a href="{{ url('/smart-living') }}" class="px-4 py-2 rounded-full border border-light-gold bg-ivory hover:border-amber-800 hover:text-amber-800 transition-colors">
-                    Smart Living
+                <a href="{{ url('/women-suit-set') }}" class="px-4 py-2 rounded-full border border-light-gold bg-ivory hover:border-maroon-800 hover:text-maroon-800 transition-colors">
+                    Suit Sets
+                </a>
+                <a href="{{ url('/anarkali-kurta-sets') }}" class="px-4 py-2 rounded-full border border-light-gold bg-ivory hover:border-maroon-800 hover:text-maroon-800 transition-colors">
+                    Anarkali Sets
                 </a>
             </div>
         </div>
