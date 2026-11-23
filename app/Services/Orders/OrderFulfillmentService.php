@@ -9,6 +9,7 @@ use App\Enums\OrderActorType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentConfirmationSource;
 use App\Enums\PaymentStatus;
+use App\Enums\ShipmentEventSource;
 use App\Enums\ShipmentPaymentMode;
 use App\Enums\ShipmentStatus;
 use App\Models\InventoryLevel;
@@ -21,11 +22,13 @@ use App\Models\OrderStatusHistory;
 use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
+use App\Models\ShipmentTrackingEvent;
 use App\Models\StoreSettings;
 use App\Services\Email\EmailService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Shipping\DelhiveryService;
 use App\Services\Shipping\ShiprocketService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -787,6 +790,265 @@ class OrderFulfillmentService
         }
 
         return ['status' => 'success', 'action' => 'status_updated'];
+    }
+
+    /**
+     * Synchronize live courier tracking status with provider (Delhivery or Shiprocket)
+     * and update Shipment and Order status accordingly.
+     *
+     * @return array{success: bool, status: string, action?: string, message?: string}
+     */
+    public function syncShipmentTracking(Shipment $shipment): array
+    {
+        if (empty($shipment->awb)) {
+            return [
+                'success' => false,
+                'status' => $shipment->status->value,
+                'message' => 'Shipment does not have an AWB assigned yet.',
+            ];
+        }
+
+        if ($shipment->provider === 'delhivery') {
+            return $this->syncDelhiveryTracking($shipment);
+        }
+
+        if ($shipment->provider === 'shiprocket') {
+            return [
+                'success' => true,
+                'status' => $shipment->status->value,
+                'message' => 'Shiprocket tracking is synchronized via automated webhooks.',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'status' => $shipment->status->value,
+            'message' => "Automatic tracking sync not supported for provider '{$shipment->provider}'.",
+        ];
+    }
+
+    /**
+     * Fetch live Delhivery tracking, record scans, and update shipment & order statuses.
+     *
+     * @return array{success: bool, status: string, action?: string, message?: string}
+     */
+    public function syncDelhiveryTracking(Shipment $shipment): array
+    {
+        $awb = trim((string) $shipment->awb);
+        $res = $this->delhiveryService->trackPackage($awb);
+
+        if (empty($res) || !isset($res['ShipmentData']) || empty($res['ShipmentData'])) {
+            $error = $res['error'] ?? 'No tracking data returned by Delhivery';
+            Log::warning("Delhivery tracking sync: No data for AWB {$awb}", ['response' => $res]);
+            return [
+                'success' => false,
+                'status' => $shipment->status->value,
+                'message' => is_string($error) ? $error : 'No tracking data found for AWB.',
+            ];
+        }
+
+        $shipmentInfo = $res['ShipmentData'][0]['Shipment'] ?? null;
+        if (!$shipmentInfo) {
+            return [
+                'success' => false,
+                'status' => $shipment->status->value,
+                'message' => 'Malformed tracking response from Delhivery.',
+            ];
+        }
+
+        $statusObj = $shipmentInfo['Status'] ?? [];
+        $rawStatus = strtoupper(trim((string) ($statusObj['Status'] ?? '')));
+        $statusType = strtoupper(trim((string) ($statusObj['StatusType'] ?? '')));
+        $instructions = trim((string) ($statusObj['Instructions'] ?? ''));
+        $statusDateTimeStr = $statusObj['StatusDateTime'] ?? null;
+        $statusLocation = trim((string) ($statusObj['StatusLocation'] ?? ''));
+        $statusCode = trim((string) ($statusObj['StatusCode'] ?? ''));
+        $scans = $shipmentInfo['Scans'] ?? [];
+
+        $order = $shipment->order;
+        $now = now();
+        $occurredAt = $statusDateTimeStr ? Carbon::parse($statusDateTimeStr) : $now;
+
+        $displayStatus = $statusObj['Status'] ?? 'In Transit';
+        if ($instructions && !str_contains($displayStatus, $instructions)) {
+            $displayStatus .= " ({$instructions})";
+        }
+
+        $shipment->update([
+            'provider_status' => $displayStatus,
+            'last_synced_at' => $now,
+        ]);
+
+        // Process Scan History into shipment_tracking_events
+        foreach ($scans as $scan) {
+            $detail = $scan['ScanDetail'] ?? [];
+            if (empty($detail)) {
+                continue;
+            }
+            $sTimeStr = $detail['ScanDateTime'] ?? $detail['StatusDateTime'] ?? null;
+            $sTime = $sTimeStr ? Carbon::parse($sTimeStr) : $now;
+            $sInstruction = trim((string) ($detail['Instructions'] ?? ''));
+            $sLocation = trim((string) ($detail['ScannedLocation'] ?? ''));
+            $sCode = trim((string) ($detail['StatusCode'] ?? ''));
+            $sScan = trim((string) ($detail['Scan'] ?? ''));
+
+            $hash = hash('sha256', $shipment->id . '_' . $sTime->toIso8601String() . '_' . $sCode . '_' . $sInstruction);
+
+            ShipmentTrackingEvent::firstOrCreate(
+                [
+                    'shipment_id' => $shipment->id,
+                    'dedupe_hash' => $hash,
+                ],
+                [
+                    'source' => ShipmentEventSource::SYNC,
+                    'occurred_at' => $sTime,
+                    'provider_status_code' => $sCode ?: null,
+                    'provider_status' => $sScan ?: $sInstruction,
+                    'mapped_status' => $this->mapDelhiveryStatusToShipmentStatus($sScan, $sInstruction, $detail['ScanType'] ?? null),
+                    'activity' => $sInstruction ?: $sScan,
+                    'location' => $sLocation ?: null,
+                    'created_at' => $now,
+                ]
+            );
+        }
+
+        // 1. DELIVERED Check
+        // Delhivery uses StatusType='DL', Status='Delivered', or Instructions='Delivered to consignee'
+        $isDelivered = ($statusType === 'DL')
+            || (str_contains($rawStatus, 'DELIVERED') && !str_contains($rawStatus, 'RTO'))
+            || (str_contains(strtoupper($instructions), 'DELIVERED') && !str_contains(strtoupper($instructions), 'RTO'));
+
+        if ($isDelivered) {
+            $shipment->update([
+                'status' => ShipmentStatus::DELIVERED,
+                'delivered_at' => $occurredAt,
+            ]);
+
+            // Transition Order to DELIVERED
+            if ($order && $order->status !== OrderStatus::DELIVERED) {
+                $this->markDelivered($order, $shipment, null);
+            }
+
+            return [
+                'success' => true,
+                'status' => 'DELIVERED',
+                'action' => 'marked_delivered',
+                'message' => "Shipment marked as DELIVERED (Delivered on {$occurredAt->timezone('Asia/Kolkata')->format('d M Y, h:i A')}). Order status updated to DELIVERED.",
+            ];
+        }
+
+        // 2. OUT FOR DELIVERY Check
+        if (str_contains(strtoupper($instructions), 'OUT FOR DELIVERY') || str_contains($rawStatus, 'OUT FOR DELIVERY') || str_contains($rawStatus, 'OUT_FOR_DELIVERY') || str_starts_with($statusCode, 'X-DDD')) {
+            $shipment->update([
+                'status' => ShipmentStatus::OUT_FOR_DELIVERY,
+            ]);
+
+            return [
+                'success' => true,
+                'status' => 'OUT_FOR_DELIVERY',
+                'action' => 'out_for_delivery',
+                'message' => "Shipment is OUT FOR DELIVERY ({$displayStatus}).",
+            ];
+        }
+
+        // 3. RTO / Return Check
+        if ($statusType === 'RT' || str_contains($rawStatus, 'RTO') || str_contains(strtoupper($instructions), 'RTO') || str_contains(strtoupper($instructions), 'RETURN')) {
+            $targetStatus = str_contains($rawStatus, 'DELIVERED') ? ShipmentStatus::RTO_DELIVERED : ShipmentStatus::RTO_IN_TRANSIT;
+            $shipment->update([
+                'status' => $targetStatus,
+            ]);
+
+            return [
+                'success' => true,
+                'status' => $targetStatus->value,
+                'action' => 'rto',
+                'message' => "Shipment in Return to Origin ({$displayStatus}).",
+            ];
+        }
+
+        // 4. IN TRANSIT / DISPATCHED Check
+        if (str_contains($rawStatus, 'IN TRANSIT') || str_contains($rawStatus, 'DISPATCHED') || str_contains($rawStatus, 'PENDING') || str_contains($rawStatus, 'PICKED UP') || $statusType === 'UD') {
+            // If shipment was still in PENDING/CREATED/AWB_ASSIGNED, advance it to SHIPPED
+            if (in_array($shipment->status, [ShipmentStatus::PENDING, ShipmentStatus::CREATED, ShipmentStatus::AWB_ASSIGNED, ShipmentStatus::PICKUP_SCHEDULED], true)) {
+                $this->dispatchShipment($shipment, null);
+            }
+
+            $shipment->update([
+                'status' => ShipmentStatus::IN_TRANSIT,
+            ]);
+
+            return [
+                'success' => true,
+                'status' => 'IN_TRANSIT',
+                'action' => 'in_transit',
+                'message' => "Shipment is IN TRANSIT ({$displayStatus}).",
+            ];
+        }
+
+        return [
+            'success' => true,
+            'status' => $shipment->status->value,
+            'action' => 'status_updated',
+            'message' => "Shipment status refreshed: {$displayStatus}.",
+        ];
+    }
+
+    /**
+     * Map Delhivery scan/status text to ShipmentStatus enum.
+     */
+    protected function mapDelhiveryStatusToShipmentStatus(?string $scan, ?string $instruction, ?string $scanType): ShipmentStatus
+    {
+        $raw = strtoupper(trim(($scan ?? '') . ' ' . ($instruction ?? '')));
+        $type = strtoupper(trim($scanType ?? ''));
+
+        if ($type === 'DL' || (str_contains($raw, 'DELIVERED') && !str_contains($raw, 'RTO'))) {
+            return ShipmentStatus::DELIVERED;
+        }
+        if (str_contains($raw, 'OUT FOR DELIVERY')) {
+            return ShipmentStatus::OUT_FOR_DELIVERY;
+        }
+        if ($type === 'RT' || str_contains($raw, 'RTO') || str_contains($raw, 'RETURN')) {
+            return str_contains($raw, 'DELIVERED') ? ShipmentStatus::RTO_DELIVERED : ShipmentStatus::RTO_IN_TRANSIT;
+        }
+        if (str_contains($raw, 'IN TRANSIT') || str_contains($raw, 'DISPATCHED') || str_contains($raw, 'ARRIVED') || str_contains($raw, 'RECEIVED') || $type === 'UD') {
+            return ShipmentStatus::IN_TRANSIT;
+        }
+
+        return ShipmentStatus::SHIPPED;
+    }
+
+    /**
+     * Handle incoming Delhivery tracking webhooks.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{status: string, action?: string, reason?: string, message?: string}
+     */
+    public function handleDelhiveryWebhook(array $payload): array
+    {
+        $awb = $payload['waybill'] ?? $payload['awb'] ?? $payload['wbn'] ?? null;
+        if (!$awb && isset($payload['Shipment']['AWB'])) {
+            $awb = $payload['Shipment']['AWB'];
+        }
+        if (!$awb && isset($payload['ShipmentData'][0]['Shipment']['AWB'])) {
+            $awb = $payload['ShipmentData'][0]['Shipment']['AWB'];
+        }
+
+        if (!$awb) {
+            return ['status' => 'ignored', 'reason' => 'No AWB found in webhook payload'];
+        }
+
+        $shipment = Shipment::where('awb', trim((string) $awb))->first();
+        if (!$shipment) {
+            return ['status' => 'ignored', 'reason' => "Shipment not found for AWB {$awb}"];
+        }
+
+        $syncResult = $this->syncDelhiveryTracking($shipment);
+
+        return [
+            'status' => $syncResult['success'] ? 'success' : 'failed',
+            'action' => $syncResult['action'] ?? 'status_synced',
+            'message' => $syncResult['message'] ?? '',
+        ];
     }
 }
 

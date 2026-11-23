@@ -49,6 +49,8 @@ Route::post('/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook']
 Route::post('/api/webhooks/razorpay', [CheckoutController::class, 'razorpayWebhook']);
 Route::post('/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle'])->name('webhooks.shiprocket');
 Route::post('/api/webhooks/shiprocket', [\App\Http\Controllers\Webhooks\ShiprocketWebhookController::class, 'handle']);
+Route::post('/webhooks/delhivery', [\App\Http\Controllers\Webhooks\DelhiveryWebhookController::class, 'handle'])->name('webhooks.delhivery');
+Route::post('/api/webhooks/delhivery', [\App\Http\Controllers\Webhooks\DelhiveryWebhookController::class, 'handle']);
 
 // ─── Newsletter Subscription & Unsubscribe ──────────────────────────────────
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
@@ -322,6 +324,7 @@ Route::prefix('admin')->group(function () {
             Route::post('/{order}/notes', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'addNote'])->name('notes.store');
             Route::post('/{order}/shipment', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'createShipment'])->name('shipment.store');
             Route::post('/{order}/shipments/{shipment}/delhivery-pickup', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'scheduleDelhiveryPickup'])->name('shipment.delhivery-pickup');
+            Route::post('/{order}/shipments/{shipment}/sync-tracking', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'syncShipmentTracking'])->name('shipment.sync-tracking');
             Route::get('/{order}/shipments/{shipment}/label', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'downloadShippingLabel'])->name('shipment.label');
             Route::post('/{order}/shipments/{shipment}/dispatch', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'dispatch'])->name('dispatch');
             Route::post('/{order}/local-delivery', [\App\Http\Controllers\Admin\AdminOrderWebController::class, 'createLocalDelivery'])->name('local-delivery');

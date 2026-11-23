@@ -417,29 +417,76 @@
                                 </div>
                             </div>
 
-                            <!-- Delhivery Actions & Pickup Status -->
+                            <!-- Delhivery Actions & Live Tracking Status -->
                             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
                                 <div class="space-y-1">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs text-slate-500">Pickup Agent Status:</span>
-                                        @if($activeShipment->pickup_scheduled_at)
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                                <svg class="size-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                                {{ $activeShipment->provider_status ?: 'Pickup Scheduled' }}
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="text-xs text-slate-500">Live Delhivery Status:</span>
+                                        @if($activeShipment->status->value === 'DELIVERED')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                <svg class="size-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                                Delivered to Customer
+                                            </span>
+                                        @elseif($activeShipment->status->value === 'OUT_FOR_DELIVERY')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                🚚 Out for Delivery
+                                            </span>
+                                        @elseif(in_array($activeShipment->status->value, ['IN_TRANSIT', 'SHIPPED'], true))
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                                📦 In Transit
+                                            </span>
+                                        @elseif(str_contains($activeShipment->status->value, 'RTO'))
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                                                ↩ Return to Origin (RTO)
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                                Pickup Not Yet Scheduled
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
+                                                {{ $activeShipment->status->value }}
                                             </span>
                                         @endif
+
+                                        @if($activeShipment->provider_status && $activeShipment->provider_status !== $activeShipment->status->value)
+                                            <span class="text-xs font-medium text-slate-700">({{ $activeShipment->provider_status }})</span>
+                                        @endif
                                     </div>
-                                    @if($activeShipment->shipped_at)
-                                        <div class="text-[11px] text-slate-500">Handed over to Delhivery agent on {{ $activeShipment->shipped_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') }}</div>
-                                    @endif
+
+                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
+                                        @if($activeShipment->delivered_at)
+                                            <span class="text-emerald-700 font-semibold">Delivered: {{ $activeShipment->delivered_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') }}</span>
+                                        @elseif($activeShipment->shipped_at)
+                                            <span>Dispatched: {{ $activeShipment->shipped_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') }}</span>
+                                        @endif
+
+                                        @if($activeShipment->last_synced_at)
+                                            <span>&bull; Synced with Delhivery {{ $activeShipment->last_synced_at->timezone('Asia/Kolkata')->diffForHumans() }}</span>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2">
                                     @if($activeShipment->awb)
+                                        <!-- Sync Live Status Button -->
+                                        <form method="POST" action="{{ route('admin.orders.shipment.sync-tracking', ['order' => $order, 'shipment' => $activeShipment]) }}"
+                                              x-data="{ isSyncing: false }"
+                                              @submit="isSyncing = true"
+                                              class="inline-flex">
+                                            @csrf
+                                            <button type="submit"
+                                                    :disabled="isSyncing"
+                                                    title="Fetch latest status directly from Delhivery tracking API"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold border border-slate-300 shadow-2xs transition-colors disabled:opacity-75">
+                                                <svg class="size-3.5 text-slate-600" :class="isSyncing ? 'animate-spin' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                                                <span x-text="isSyncing ? 'Syncing...' : 'Sync Live Status'"></span>
+                                            </button>
+                                        </form>
+
+                                        <!-- Track on Delhivery link -->
+                                        <a href="https://www.delhivery.com/track/package/{{ $activeShipment->awb }}" target="_blank"
+                                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-2xs transition-colors">
+                                            <span>Track on Delhivery</span>
+                                            <svg class="size-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
+
                                         <a href="{{ route('admin.orders.shipment.label', ['order' => $order, 'shipment' => $activeShipment]) }}" target="_blank"
                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition-colors">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -478,6 +525,37 @@
                                     @endif
                                 </div>
                             </div>
+
+                            <!-- Live Scan Milestones Timeline -->
+                            @if($activeShipment->trackingEvents->isNotEmpty())
+                                <div class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200" x-data="{ expanded: false }">
+                                    <div class="flex items-center justify-between cursor-pointer" @click="expanded = !expanded">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="size-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+                                            <span class="text-xs font-bold text-slate-900">Delhivery Tracking Milestones ({{ $activeShipment->trackingEvents->count() }} Scans)</span>
+                                            <span class="text-[11px] text-slate-500">&bull; Latest: {{ $activeShipment->trackingEvents->first()->activity ?? 'Scanned' }} ({{ $activeShipment->trackingEvents->first()->occurred_at?->timezone('Asia/Kolkata')->format('d M, h:i A') }})</span>
+                                        </div>
+                                        <button type="button" class="text-xs font-semibold text-blue-600 hover:underline" x-text="expanded ? 'Hide History' : 'Show Full Scan History'"></button>
+                                    </div>
+
+                                    <div x-show="expanded" x-collapse class="mt-4 pt-3 border-t border-slate-200 space-y-3">
+                                        <ol class="relative border-l border-slate-300 ml-2 space-y-4 text-xs">
+                                            @foreach($activeShipment->trackingEvents as $event)
+                                                <li class="ml-4">
+                                                    <div class="absolute -left-1.5 mt-1.5 size-3 rounded-full {{ $event->mapped_status?->value === 'DELIVERED' ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-blue-500' }}"></div>
+                                                    <div class="flex flex-wrap items-center justify-between gap-1">
+                                                        <span class="font-bold text-slate-900">{{ $event->activity ?: $event->provider_status }}</span>
+                                                        <time class="text-[11px] text-slate-500">{{ $event->occurred_at?->timezone('Asia/Kolkata')->format('d M Y, h:i A') }}</time>
+                                                    </div>
+                                                    @if($event->location)
+                                                        <p class="text-[11px] text-slate-600 mt-0.5">{{ $event->location }}</p>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ol>
+                                    </div>
+                                </div>
+                            @endif
                         @else
                             <!-- Shiprocket courier info -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">

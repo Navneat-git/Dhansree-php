@@ -171,12 +171,13 @@ class DelhiveryShippingTest extends TestCase
             'position' => 1,
         ]);
 
+        $isCod = ($order->payment_method->value === 'COD');
         \App\Models\Payment::create([
             'order_id' => $order->id,
-            'provider_reference' => 'PAY-' . strtoupper(uniqid()),
+            'provider_reference' => $isCod ? null : 'PAY-' . strtoupper(uniqid()),
             'status' => \App\Enums\PaymentStatus::PENDING,
             'method' => $order->payment_method,
-            'provider' => 'razorpay',
+            'provider' => $isCod ? 'cod' : 'razorpay',
             'amount_paise' => 249900,
             'currency' => 'INR',
             'created_at' => now(),
@@ -278,4 +279,154 @@ class DelhiveryShippingTest extends TestCase
         $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
+
+    protected function createTestShipment(Order $order, array $attributes = []): Shipment
+    {
+        $now = now();
+        return Shipment::create(array_merge([
+            'order_id' => $order->id,
+            'active_order_id' => $order->id,
+            'location_id' => $this->location->id,
+            'reference' => 'SHP-' . strtoupper(uniqid()),
+            'status' => ShipmentStatus::AWB_ASSIGNED,
+            'provider' => 'delhivery',
+            'provider_shipment_id' => 'DEL-SHP-' . strtoupper(uniqid()),
+            'courier_name' => 'Delhivery Surface',
+            'awb' => 'DEL' . random_int(10000000, 99999999),
+            'tracking_url' => 'https://www.delhivery.com/track/package/test',
+            'payment_mode' => $order->payment_method->value === 'COD' ? \App\Enums\ShipmentPaymentMode::COD : \App\Enums\ShipmentPaymentMode::PREPAID,
+            'cod_amount_paise' => $order->payment_method->value === 'COD' ? $order->total_paise : null,
+            'declared_value_paise' => $order->total_paise,
+            'weight_grams' => 600,
+            'length_cm' => 20,
+            'breadth_cm' => 15,
+            'height_cm' => 5,
+            'pickup_location' => 'Jaipur Main Warehouse',
+            'destination_postal_code' => '302001',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], $attributes));
+    }
+
+    public function test_admin_can_sync_delhivery_shipment_tracking(): void
+    {
+        $order = $this->createOrder();
+
+        $this->asAdmin()->post("/admin/orders/{$order->id}/shipment", [
+            'courier_id' => 'delhivery_surface',
+            'provider' => 'delhivery',
+        ]);
+
+        $shipment = $order->shipments()->where('active_order_id', $order->id)->firstOrFail();
+
+        $response = $this->asAdmin()
+            ->from("/admin/orders/{$order->id}")
+            ->post("/admin/orders/{$order->id}/shipments/{$shipment->id}/sync-tracking");
+        $response->assertRedirect("/admin/orders/{$order->id}");
+        $response->assertSessionHas('success');
+
+        $shipment->refresh();
+        $this->assertNotNull($shipment->last_synced_at);
+        $this->assertStringContainsString('In Transit', (string) $shipment->provider_status);
+    }
+
+    public function test_delhivery_tracking_sync_marks_cod_order_as_delivered_and_paid(): void
+    {
+        $order = $this->createOrder([
+            'payment_method' => \App\Enums\PaymentMethod::COD,
+            'payment_status' => \App\Enums\PaymentStatus::PENDING,
+            'payment_due_at' => null,
+            'status' => OrderStatus::SHIPPED,
+        ]);
+
+        $shipment = $this->createTestShipment($order, [
+            'status' => ShipmentStatus::SHIPPED,
+            'shipped_at' => now()->subDays(2),
+            'awb' => '73975210000055',
+        ]);
+
+        // Mock DelhiveryService to return Delivered status
+        $mockService = \Mockery::mock(DelhiveryService::class);
+        $mockService->shouldReceive('trackPackage')->with('73975210000055')->andReturn([
+            'ShipmentData' => [
+                [
+                    'Shipment' => [
+                        'AWB' => '73975210000055',
+                        'Status' => [
+                            'Status' => 'Delivered',
+                            'StatusType' => 'DL',
+                            'Instructions' => 'Delivered to consignee',
+                            'StatusDateTime' => now()->toISOString(),
+                            'StatusLocation' => 'Bangalore Hub',
+                            'StatusCode' => 'DL-01',
+                        ],
+                        'Scans' => [
+                            [
+                                'ScanDetail' => [
+                                    'Instructions' => 'Delivered to consignee',
+                                    'Scan' => 'Delivered',
+                                    'ScanDateTime' => now()->toISOString(),
+                                    'ScanType' => 'DL',
+                                    'ScannedLocation' => 'Bangalore Hub',
+                                    'StatusCode' => 'DL-01',
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]);
+        $this->app->instance(DelhiveryService::class, $mockService);
+
+        $fulfillmentService = $this->app->make(\App\Services\Orders\OrderFulfillmentService::class);
+        $result = $fulfillmentService->syncShipmentTracking($shipment);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('DELIVERED', $result['status']);
+
+        $order->refresh();
+        $shipment->refresh();
+
+        $this->assertEquals(OrderStatus::DELIVERED, $order->status);
+        $this->assertEquals(ShipmentStatus::DELIVERED, $shipment->status);
+        $this->assertEquals(\App\Enums\PaymentStatus::PAID, $order->payment_status);
+    }
+
+    public function test_delhivery_webhook_endpoint_triggers_tracking_sync(): void
+    {
+        $order = $this->createOrder();
+        $shipment = $this->createTestShipment($order, [
+            'status' => ShipmentStatus::SHIPPED,
+            'shipped_at' => now()->subDay(),
+        ]);
+
+        $response = $this->postJson('/webhooks/delhivery', [
+            'waybill' => $shipment->awb,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 'success']);
+
+        $shipment->refresh();
+        $this->assertNotNull($shipment->last_synced_at);
+    }
+
+    public function test_sync_shipment_tracking_artisan_command(): void
+    {
+        $order = $this->createOrder();
+        $shipment = $this->createTestShipment($order, [
+            'status' => ShipmentStatus::SHIPPED,
+            'shipped_at' => now()->subDay(),
+        ]);
+
+        $exitCode = \Illuminate\Support\Facades\Artisan::call('shipments:sync-tracking', [
+            '--shipment' => $shipment->id,
+        ]);
+
+        $this->assertEquals(0, $exitCode);
+        $shipment->refresh();
+        $this->assertNotNull($shipment->last_synced_at);
+    }
 }
+
+

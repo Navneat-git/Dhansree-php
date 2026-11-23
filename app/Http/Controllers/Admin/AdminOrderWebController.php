@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\ShipmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderNote;
@@ -106,6 +107,7 @@ class AdminOrderWebController extends Controller
             'billingAddress',
             'payments',
             'shipments.items',
+            'shipments.trackingEvents',
             'notes.authorAdminUser',
             'statusHistory.actorAdminUser',
         ]);
@@ -114,6 +116,20 @@ class AdminOrderWebController extends Controller
             ->where('active_order_id', $order->id)
             ->latest('id')
             ->first();
+
+        // Automatically sync live tracking with courier if shipment has AWB and is not in final status
+        if ($activeShipment && !empty($activeShipment->awb) && !in_array($activeShipment->status, [ShipmentStatus::DELIVERED, ShipmentStatus::CANCELLED, ShipmentStatus::RTO_DELIVERED], true)) {
+            $lastSynced = $activeShipment->last_synced_at;
+            if (!$lastSynced || $lastSynced->diffInMinutes(now()) >= 2) {
+                try {
+                    $this->fulfillmentService->syncShipmentTracking($activeShipment);
+                    $activeShipment->refresh();
+                    $order->refresh();
+                } catch (Throwable $e) {
+                    Log::warning("Auto tracking sync on order view failed: {$e->getMessage()}");
+                }
+            }
+        }
 
         $availableCouriers = [];
         if (!$activeShipment && in_array($order->status, [OrderStatus::CONFIRMED, OrderStatus::PROCESSING], true)) {
@@ -283,6 +299,30 @@ class AdminOrderWebController extends Controller
             return back()->with('error', "Delhivery pickup failed: {$result['message']}");
         } catch (Throwable $e) {
             return back()->with('error', "Pickup scheduling error: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Manually synchronize live courier tracking status with Delhivery.
+     */
+    public function syncShipmentTracking(Order $order, Shipment $shipment): RedirectResponse
+    {
+        try {
+            $result = $this->fulfillmentService->syncShipmentTracking($shipment);
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->with('error', $result['message'] ?? 'Could not synchronize tracking status with courier.');
+        } catch (Throwable $e) {
+            Log::error('Shipment tracking sync failed', [
+                'shipment' => $shipment->id,
+                'awb' => $shipment->awb,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', "Tracking sync error: {$e->getMessage()}");
         }
     }
 

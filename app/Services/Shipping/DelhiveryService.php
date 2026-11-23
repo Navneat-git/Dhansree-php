@@ -650,9 +650,33 @@ class DelhiveryService
     {
         if ($this->isMock()) {
             return [
-                'success' => true,
-                'status' => 'In Transit',
-                'scans' => [],
+                'ShipmentData' => [
+                    [
+                        'Shipment' => [
+                            'AWB' => trim($waybill),
+                            'Status' => [
+                                'Status' => 'In Transit',
+                                'StatusType' => 'UD',
+                                'Instructions' => 'In Transit to destination hub',
+                                'StatusDateTime' => now()->toISOString(),
+                                'StatusLocation' => 'Jaipur Hub',
+                                'StatusCode' => 'X-IT',
+                            ],
+                            'Scans' => [
+                                [
+                                    'ScanDetail' => [
+                                        'Instructions' => 'Manifested and Dispatched',
+                                        'Scan' => 'In Transit',
+                                        'ScanDateTime' => now()->subDay()->toISOString(),
+                                        'ScanType' => 'UD',
+                                        'ScannedLocation' => 'Jaipur Hub',
+                                        'StatusCode' => 'X-MF',
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
             ];
         }
 

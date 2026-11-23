@@ -9,4 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('feeds:generate')->dailyAt('02:00')->withoutOverlapping();
+Schedule::command('shipments:sync-tracking')->everyTenMinutes()->withoutOverlapping();
 
