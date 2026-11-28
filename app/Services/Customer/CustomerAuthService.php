@@ -72,6 +72,21 @@ class CustomerAuthService
             }
         }
 
+        // Guard against bot attacks across different emails from the same IP
+        if ($ip) {
+            $recentIpChallenges = CustomerLoginChallenge::where('ip_address', $ip)
+                ->where('last_sent_at', '>=', $now->copy()->subHour())
+                ->count();
+
+            if ($recentIpChallenges >= 6) {
+                Log::warning("Customer OTP rate-limit reached for IP [{$ip}] ({$recentIpChallenges} attempts in 1 hr). Blocking OTP dispatch to prevent spam bouncebacks.");
+                return [
+                    'message' => self::OTP_REQUEST_MESSAGE,
+                    'resendAfterSeconds' => self::OTP_RESEND_COOLDOWN_SECONDS,
+                ];
+            }
+        }
+
         $code = sprintf('%06d', random_int(0, 999999));
         $codeHash = $this->hasher->hash($code);
 

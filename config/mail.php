@@ -116,4 +116,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Dhansree')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Global "Bcc" Addresses for Admin Visibility
+    |--------------------------------------------------------------------------
+    |
+    | Automatically receive a copy of every transactional email dispatched to
+    | customers via SMTP to keep the store owner fully aware of communications.
+    |
+    */
+
+    'bcc' => env('MAIL_BCC_ADDRESSES', 'info@dhansree.com,dhansreetrends@gmail.com'),
+
 ];

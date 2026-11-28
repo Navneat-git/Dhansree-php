@@ -410,13 +410,25 @@ class EmailService
             $fromAddress = config('mail.from.address', 'info@dhansree.com');
             $fromName = config('mail.from.name', 'Dhansree');
 
-            Mail::send([], [], function ($message) use ($recipient, $rendered, $fromAddress, $fromName) {
+            // Collect BCC addresses to keep store owner notified of all customer emails
+            $bccConfig = config('mail.bcc', env('MAIL_BCC_ADDRESSES', 'info@dhansree.com,dhansreetrends@gmail.com'));
+            $bccList = is_array($bccConfig) ? $bccConfig : array_filter(array_map('trim', explode(',', (string) $bccConfig)));
+
+            $bccRecipients = array_values(array_filter($bccList, function ($email) use ($recipient) {
+                return !empty($email) && strtolower($email) !== strtolower($recipient);
+            }));
+
+            Mail::send([], [], function ($message) use ($recipient, $rendered, $fromAddress, $fromName, $bccRecipients) {
                 $message->to($recipient)
                     ->from($fromAddress, $fromName)
                     ->replyTo($fromAddress, $fromName)
                     ->subject($rendered['subject'])
                     ->html($rendered['html'])
                     ->text($rendered['text']);
+
+                if (!empty($bccRecipients)) {
+                    $message->bcc($bccRecipients);
+                }
             });
 
             $emailMessage->update([

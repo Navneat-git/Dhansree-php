@@ -73,15 +73,15 @@ Route::redirect('/register', '/account/register');
 Route::redirect('/signup', '/account/register');
 
 Route::prefix('account')->name('storefront.account.')->group(function () {
-    // Guest Auth Routes
+    // Guest Auth Routes (Rate-limited to prevent bot OTP floods and delivery bounces)
     Route::get('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp'])->name('send-otp');
+    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp'])->middleware('throttle:5,1')->name('send-otp');
     Route::get('/register', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'register'])->name('register.submit');
+    Route::post('/register', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'register'])->middleware('throttle:5,1')->name('register.submit');
     Route::get('/auth/{provider}', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'redirectToProvider'])->name('social');
     Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'handleProviderCallback'])->name('social.callback');
     Route::get('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'showVerify'])->name('verify');
-    Route::post('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp'])->name('verify.submit');
+    Route::post('/login/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp'])->middleware('throttle:10,1')->name('verify.submit');
     Route::post('/logout', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'logout'])->name('logout');
 
     // Authenticated Customer Area
@@ -103,8 +103,8 @@ Route::prefix('account')->name('storefront.account.')->group(function () {
 
 // JSON API Storefront Endpoints for Customer Account
 Route::prefix('store/account')->group(function () {
-    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp']);
-    Route::post('/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp']);
+    Route::post('/login', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'sendOtp'])->middleware('throttle:5,1');
+    Route::post('/verify', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
     Route::post('/logout', [\App\Http\Controllers\Storefront\CustomerAuthController::class, 'logout']);
 
     Route::middleware('customer.auth')->group(function () {
