@@ -6,11 +6,16 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CheckoutController;
+use App\Http\Controllers\Storefront\CatalogueController;
 use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\StorefrontController;
 
 // ─── Storefront Hubs ────────────────────────────────────────────────────────
 Route::get('/', [StorefrontController::class, 'home'])->name('store.home');
+Route::get('/catalogue', [CatalogueController::class, 'index'])->name('store.catalogue');
+Route::get('/catalog', [CatalogueController::class, 'index']);
+Route::get('/women-catalogue', [CatalogueController::class, 'index']);
+Route::post('/catalogue/check-pincode', [CatalogueController::class, 'checkPincode'])->name('store.catalogue.pincode');
 Route::get('/smart-living', [StorefrontController::class, 'smartLiving'])->name('store.smart-living');
 
 // ─── Shopping Bag / Cart ───────────────────────────────────────────────────

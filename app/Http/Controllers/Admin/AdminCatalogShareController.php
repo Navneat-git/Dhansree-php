@@ -60,12 +60,22 @@ class AdminCatalogShareController extends Controller
             $storeBaseUrl = 'https://dhansree.com';
         }
 
+        $catalogueUrl = rtrim($storeBaseUrl, '/') . '/catalogue';
+        $catalogueShareMsg = "Namaste! 🌸 Explore our latest Women's Festive Fashion Digital Catalogue with prices, available sizes (M-3XL), and delivery details:\n\n"
+            . "👉 {$catalogueUrl}\n\n"
+            . "🚚 FREE Home Delivery across India\n"
+            . "💵 Cash on Delivery (COD) Available\n"
+            . "⏱️ 3-5 Days Delivery via Delhivery Express\n\n"
+            . "Please let us know your favorite style or size, and we will assist you immediately!";
+
         return view('admin.catalog.share', [
             'categories' => $categories,
             'collections' => $collections,
             'products' => $products,
             'coupons' => $coupons,
             'storeBaseUrl' => rtrim($storeBaseUrl, '/'),
+            'catalogueUrl' => $catalogueUrl,
+            'catalogueShareMsg' => $catalogueShareMsg,
         ]);
     }
 }

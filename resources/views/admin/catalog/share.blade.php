@@ -74,6 +74,33 @@
         
         <!-- LEFT: Form Controls & Builder (7 cols) -->
         <div class="lg:col-span-7 space-y-6">
+
+            <!-- Featured: WhatsApp Ad Digital Catalogue Quick Share Banner -->
+            <div class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 rounded-2xl p-5 text-white shadow-md border border-emerald-600/40 space-y-3">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 uppercase tracking-wider">
+                        <span>✨ New Customer Request Page</span>
+                    </span>
+                    <span class="text-[11px] text-emerald-200/80 font-mono">{{ $catalogueUrl }}</span>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold text-white">Women's Fashion Digital Catalogue with Price &amp; Delivery</h3>
+                    <p class="text-xs text-emerald-100/80 mt-1 leading-relaxed">
+                        Specially prepared for WhatsApp ads &amp; customer inquiries. Shows all 24 women's styles with transparent prices, MRP, sizes M–3XL, Delhivery Express delivery options, and instant Buy Now buttons.
+                    </p>
+                </div>
+                <div class="pt-1 flex items-center gap-2 flex-wrap">
+                    <a href="{{ $catalogueUrl }}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors flex items-center gap-1.5">
+                        <span>👁️ Open Live Catalogue</span>
+                    </a>
+                    <button type="button" @click="navigator.clipboard.writeText('{{ $catalogueUrl }}'); showToast('Copied!', 'Catalogue link copied! Share it with your WhatsApp customers.');" class="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-xs">
+                        <span>📋 Copy Catalogue Link</span>
+                    </button>
+                    <a href="https://wa.me/?text={{ rawurlencode($catalogueShareMsg) }}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm">
+                        <span>💬 Share on WhatsApp</span>
+                    </a>
+                </div>
+            </div>
             
             <!-- Card 1: Customer Info & Meeting Context -->
             <div class="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 space-y-4">
