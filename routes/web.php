@@ -309,6 +309,7 @@ Route::prefix('admin')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'listings'])->name('index');
             Route::get('/listings', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'listings'])->name('listings');
             Route::get('/export', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'export'])->name('export');
+            Route::get('/flipkart-template', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'downloadFlipkartTemplate'])->name('flipkart-template');
             Route::get('/copy', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'copyTsv'])->name('copy');
             Route::post('/products/{product}/values', [\App\Http\Controllers\Admin\AdminMarketplaceWebController::class, 'saveProductValues'])->name('products.values');
         });

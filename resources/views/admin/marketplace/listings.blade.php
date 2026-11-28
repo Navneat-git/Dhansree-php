@@ -50,6 +50,15 @@
                 </template>
             </button>
 
+            @if($selectedTemplate?->platform === 'FLIPKART')
+                <!-- Flipkart Official Excel Template (.xls) Download -->
+                <a href="{{ route('admin.marketplace.flipkart-template') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Download Flipkart Excel (.xls)</span>
+                </a>
+            @endif
+
             <!-- Export CSV Button -->
             <a href="{{ route('admin.marketplace.export', ['template' => $selectedTemplate?->id, 'category_id' => $filters['category_id'] ?? null, 'q' => $filters['search'] ?? null]) }}"
                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-xs transition-all">
@@ -81,6 +90,20 @@
             </a>
         @endforeach
     </div>
+
+    @if($selectedTemplate?->platform === 'FLIPKART')
+        <!-- Flipkart Upload Guidance Banner -->
+        <div class="rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-xs text-blue-900 space-y-1.5">
+            <div class="flex items-center gap-2 font-bold text-blue-950">
+                <svg class="w-4 h-4 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                <span>Flipkart Seller Hub Bulk Upload Format:</span>
+            </div>
+            <p class="leading-relaxed text-blue-800">
+                Flipkart bulk upload (under <strong>"Manual-filling Excel Template"</strong>) strictly requires their official multi-sheet <strong>.xls Excel spreadsheet</strong> and <strong>rejects raw .csv files</strong>.
+                Click <strong>"Download Flipkart Excel (.xls)"</strong> above to get the ready-to-upload template pre-filled with all 206 products & variants, allowed dropdowns, and JPEG image links.
+            </p>
+        </div>
+    @endif
 
     <!-- Stats & Filter Bar -->
     <div class="rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs space-y-4">

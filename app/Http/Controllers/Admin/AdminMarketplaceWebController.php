@@ -85,6 +85,24 @@ class AdminMarketplaceWebController extends Controller
     }
 
     /**
+     * Download pre-filled Flipkart Bulk Listing Template (.xls)
+     */
+    public function downloadFlipkartTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = storage_path('app/marketplace/flipkart_women_kurta_set_template.xls');
+        if (!file_exists($path)) {
+            abort(404, 'Flipkart bulk template file not found.');
+        }
+
+        $date = now()->format('dm-Hi');
+        $filename = "C_salwar-kurta-dupatta_6403496b84624b0a_{$date}FK_DHANSREE.xls";
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel',
+        ]);
+    }
+
+    /**
      * Get TSV for clipboard copy.
      */
     public function copyTsv(Request $request): Response
