@@ -153,15 +153,42 @@ Route::post('/instagram/posts/{id}/like', [\App\Http\Controllers\Storefront\Inst
 Route::get('/sitemap.xml', [StorefrontController::class, 'sitemap'])->name('store.sitemap');
 Route::get('/robots.txt', [StorefrontController::class, 'robots'])->name('store.robots');
 
-// ─── Media Route (Local storage with CDN fallback) ─────────────────────────
+// ─── Media Route (Local storage with CDN fallback & JPEG support) ───────────
 Route::get('/media/{path}', function (string $path) {
-    // 1. Laravel public storage disk (storage/app/public/media/...)
+    $requestedExt = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+    // 1. Direct local file check
     $localFile = storage_path('app/public/media/' . $path);
     if (file_exists($localFile)) {
+        $mime = match ($requestedExt) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => 'image/webp',
+        };
         return response()->file($localFile, [
-            'Content-Type' => 'image/webp',
+            'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=31536000',
         ]);
+    }
+
+    // 1b. If .jpeg/.jpg requested but only .webp exists on disk (Marketplace compatibility)
+    if (in_array($requestedExt, ['jpeg', 'jpg'], true)) {
+        $webpPath = preg_replace('/\.(jpeg|jpg)$/i', '.webp', $path);
+        $webpFile = storage_path('app/public/media/' . $webpPath);
+        if (file_exists($webpFile) && function_exists('imagecreatefromwebp')) {
+            $im = @imagecreatefromwebp($webpFile);
+            if ($im) {
+                @imagejpeg($im, $localFile, 92);
+                ob_start();
+                imagejpeg($im, null, 92);
+                imagedestroy($im);
+                $jpegData = ob_get_clean();
+                return response($jpegData, 200, [
+                    'Content-Type' => 'image/jpeg',
+                    'Cache-Control' => 'public, max-age=31536000',
+                ]);
+            }
+        }
     }
 
     // 2. Extra local directory if set (e.g. ds-assets/ds-web)
