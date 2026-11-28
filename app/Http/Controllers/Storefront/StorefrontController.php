@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\StoreSettings;
 use App\Services\Catalog\SeoRedirectService;
 use App\Services\Storefront\CatalogBrowsingService;
@@ -71,6 +72,38 @@ class StorefrontController extends Controller
     }
 
     /**
+     * Dedicated Jaipuri Bedsheets Collection Page
+     */
+    public function jaipuriBedsheets(Request $request): View
+    {
+        $category = Category::where('slug', 'jaipuri-bedsheets')->first();
+
+        $products = Product::where('category_id', $category?->id)
+            ->where('status', \App\Enums\ProductStatus::ACTIVE)
+            ->with([
+                'category',
+                'options.values',
+                'variants.optionValues.option',
+                'variants.inventoryLevels',
+                'images',
+            ])
+            ->orderBy('ranking')
+            ->orderByDesc('id')
+            ->get();
+
+        $productCards = $this->catalogService->expandProductsForListing($products);
+
+        return view('store.jaipuri-bedsheets', [
+            'category' => $category,
+            'products' => $products,
+            'productCards' => $productCards,
+            'store' => StoreSettings::current(),
+            'seoTitle' => 'Authentic Jaipuri Pure Cotton Bedsheets | Dhansree Trends',
+            'seoDescription' => 'Shop 100% pure cotton handcrafted Jaipuri bedsheets online. Discover traditional Sanganeri & Bagru handblock prints, 210 TC softness, king & queen sizes with matching pillow covers. Free shipping & COD.',
+        ]);
+    }
+
+    /**
      * Legacy Smart Living Hub: Permanently redirect to Women's Ethnic Fashion homepage
      */
     public function smartLiving(): RedirectResponse
@@ -87,6 +120,11 @@ class StorefrontController extends Controller
         $redirect = $this->seoRedirectService->findRedirect('/' . $slug);
         if ($redirect) {
             return redirect()->to($redirect->destination_path, $redirect->status_code ?? 301);
+        }
+
+        // Dedicated handler for Jaipuri Bedsheets
+        if (in_array($slug, ['jaipuri-bedsheets', 'bedsheets', 'jaipuri-cotton-bedsheets'], true)) {
+            return $this->jaipuriBedsheets($request);
         }
 
         // 2. Redirect non-women's fashion categories to homepage (only direct product links remain accessible)

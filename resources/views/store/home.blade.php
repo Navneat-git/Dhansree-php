@@ -1001,6 +1001,145 @@
     @endif
 @endforeach
 
+<!-- Cross-Hub Spotlight Banner: Authentic Jaipuri Pure Cotton Bedsheets -->
+<section class="py-12 md:py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="rounded-3xl bg-gradient-to-br from-[#38080c] via-[#4f0c13] to-[#250407] text-white p-8 sm:p-12 lg:p-14 border border-amber-500/30 relative overflow-hidden shadow-2xl">
+        <!-- Background aesthetic accents -->
+        <div class="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-amber-500/15 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -top-24 w-96 h-96 rounded-full bg-rose-900/30 blur-3xl pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none"></div>
+
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            <!-- Left Info Column -->
+            <div class="lg:col-span-7 space-y-5">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider uppercase border border-amber-500/40 shadow-xs">
+                    <span class="text-sm">🛏️</span>
+                    <span>NEW ARRIVALS • THE JAIPUR HERITAGE LIVING</span>
+                </div>
+
+                <h2 class="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight text-white">
+                    Royal Comfort, Handcrafted in Jaipur.<br>
+                    <span class="text-amber-300 italic font-medium">100% Pure Cotton Bedsheets &amp; Pillow Sets.</span>
+                </h2>
+
+                <p class="text-sm sm:text-base text-rose-100/85 max-w-xl leading-relaxed">
+                    Transform your bedroom into a palace sanctuary with authentic Sanganeri and Bagru handblock prints. Woven from 100% breathable pure cotton with fast colors and luxurious 210+ thread count softness.
+                </p>
+
+                <!-- Value Features -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-1">
+                    <div class="bg-black/25 backdrop-blur-xs rounded-xl p-3 border border-amber-400/20">
+                        <span class="text-lg">🌿</span>
+                        <h4 class="text-xs font-bold text-white mt-1">100% Cotton</h4>
+                        <p class="text-[11px] text-amber-200/80">210 Thread Count</p>
+                    </div>
+                    <div class="bg-black/25 backdrop-blur-xs rounded-xl p-3 border border-amber-400/20">
+                        <span class="text-lg">🖨️</span>
+                        <h4 class="text-xs font-bold text-white mt-1">Handblock Prints</h4>
+                        <p class="text-[11px] text-amber-200/80">Sanganeri &amp; Bagru</p>
+                    </div>
+                    <div class="bg-black/25 backdrop-blur-xs rounded-xl p-3 border border-amber-400/20">
+                        <span class="text-lg">👑</span>
+                        <h4 class="text-xs font-bold text-white mt-1">King &amp; Queen</h4>
+                        <p class="text-[11px] text-amber-200/80">+2 Pillow Covers</p>
+                    </div>
+                    <div class="bg-black/25 backdrop-blur-xs rounded-xl p-3 border border-amber-400/20">
+                        <span class="text-lg">🚚</span>
+                        <h4 class="text-xs font-bold text-white mt-1">Free Delivery</h4>
+                        <p class="text-[11px] text-amber-200/80">Cash on Delivery</p>
+                    </div>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="pt-2 flex flex-wrap gap-4 items-center">
+                    <a href="{{ url('/jaipuri-bedsheets') }}"
+                       class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs sm:text-sm font-extrabold uppercase tracking-wider transition-all shadow-lg hover:shadow-amber-500/20 hover:-translate-y-0.5 flex items-center gap-2">
+                        <span>Explore Jaipuri Bedsheets</span>
+                        <span>➔</span>
+                    </a>
+                    <a href="{{ url('/jaipuri-bedsheets') }}"
+                       class="px-6 py-3.5 rounded-xl border border-white/30 text-white hover:text-amber-300 text-xs sm:text-sm font-semibold uppercase tracking-wider hover:bg-white/10 transition-all">
+                        Starting from ₹699
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Preview Showcase Grid -->
+            <div class="lg:col-span-5">
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <a href="{{ url('/jaipuri-bedsheets') }}" class="group relative rounded-2xl overflow-hidden border border-amber-400/30 bg-black/40 shadow-lg hover:border-amber-400 transition-all">
+                        <div class="aspect-4/3 overflow-hidden bg-rose-950">
+                            <img src="{{ asset('media/bedsheets/sanganeri_indigo.webp') }}"
+                                 alt="Sanganeri Indigo Floral Pure Cotton Bedsheet"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy">
+                        </div>
+                        <div class="p-2.5 sm:p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Sanganeri Print</span>
+                            <h4 class="text-xs font-bold text-white truncate">Indigo Floral King Bedsheet</h4>
+                            <div class="flex items-center justify-between mt-1 text-[11px]">
+                                <span class="text-amber-400 font-bold">₹799 <span class="line-through text-white/50 text-[10px]">₹1,599</span></span>
+                                <span class="text-amber-300 font-semibold text-[10px] group-hover:translate-x-0.5 transition-transform">View ➔</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ url('/jaipuri-bedsheets') }}" class="group relative rounded-2xl overflow-hidden border border-amber-400/30 bg-black/40 shadow-lg hover:border-amber-400 transition-all">
+                        <div class="aspect-4/3 overflow-hidden bg-rose-950">
+                            <img src="{{ asset('media/bedsheets/bagru_maroon.webp') }}"
+                                 alt="Bagru Crimson Maroon Pure Cotton Bedsheet"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy">
+                        </div>
+                        <div class="p-2.5 sm:p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Bagru Motif</span>
+                            <h4 class="text-xs font-bold text-white truncate">Maroon &amp; Beige Boota</h4>
+                            <div class="flex items-center justify-between mt-1 text-[11px]">
+                                <span class="text-amber-400 font-bold">₹799 <span class="line-through text-white/50 text-[10px]">₹1,599</span></span>
+                                <span class="text-amber-300 font-semibold text-[10px] group-hover:translate-x-0.5 transition-transform">View ➔</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ url('/jaipuri-bedsheets') }}" class="group relative rounded-2xl overflow-hidden border border-amber-400/30 bg-black/40 shadow-lg hover:border-amber-400 transition-all">
+                        <div class="aspect-4/3 overflow-hidden bg-rose-950">
+                            <img src="{{ asset('media/bedsheets/mughal_gold.webp') }}"
+                                 alt="Mughal Mustard Gold Pure Cotton Bedsheet"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy">
+                        </div>
+                        <div class="p-2.5 sm:p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Mughal Boota</span>
+                            <h4 class="text-xs font-bold text-white truncate">Mustard Gold &amp; Green</h4>
+                            <div class="flex items-center justify-between mt-1 text-[11px]">
+                                <span class="text-amber-400 font-bold">₹799 <span class="line-through text-white/50 text-[10px]">₹1,599</span></span>
+                                <span class="text-amber-300 font-semibold text-[10px] group-hover:translate-x-0.5 transition-transform">View ➔</span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ url('/jaipuri-bedsheets') }}" class="group relative rounded-2xl overflow-hidden border border-amber-400/30 bg-black/40 shadow-lg hover:border-amber-400 transition-all">
+                        <div class="aspect-4/3 overflow-hidden bg-rose-950">
+                            <img src="{{ asset('media/bedsheets/jaipur_pink.webp') }}"
+                                 alt="Jaipur Pink Gulab Pure Cotton Bedsheet"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy">
+                        </div>
+                        <div class="p-2.5 sm:p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                            <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Sanganeri Jaal</span>
+                            <h4 class="text-xs font-bold text-white truncate">Pink Rose &amp; Mint Jaal</h4>
+                            <div class="flex items-center justify-between mt-1 text-[11px]">
+                                <span class="text-amber-400 font-bold">₹799 <span class="line-through text-white/50 text-[10px]">₹1,599</span></span>
+                                <span class="text-amber-300 font-semibold text-[10px] group-hover:translate-x-0.5 transition-transform">View ➔</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 @if(!$quickLinksRendered)
     @include('store.partials.quick-links')
     @php $quickLinksRendered = true; @endphp

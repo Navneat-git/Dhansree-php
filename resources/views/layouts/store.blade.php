@@ -305,6 +305,11 @@
                     <a href="{{ url('/women-fashion') }}" class="text-xs uppercase tracking-wider font-semibold hover:text-maroon-800 transition-colors py-2 border-b-2 {{ request()->is('women-fashion*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
                         All Ethnic Wear
                     </a>
+                    <a href="{{ url('/jaipuri-bedsheets') }}" class="text-xs uppercase tracking-wider font-bold hover:text-maroon-800 transition-colors py-2 border-b-2 flex items-center gap-1.5 {{ request()->is('jaipuri-bedsheets*') || request()->is('bedsheets*') ? 'border-maroon-800 text-maroon-800' : 'border-transparent text-rich-black/80 hover:border-maroon-800/40' }}">
+                        <span>🛏️</span>
+                        <span>Jaipuri Bedsheets</span>
+                        <span class="text-[9px] uppercase tracking-wider font-extrabold bg-amber-600 text-white px-1.5 py-0.5 rounded-full">New</span>
+                    </a>
                     <a href="{{ url('/catalogue') }}" class="text-xs uppercase tracking-wider font-bold hover:text-maroon-800 transition-colors py-2 border-b-2 flex items-center gap-1.5 {{ request()->is('catalogue*') || request()->is('catalog*') ? 'border-amber-600 text-amber-700' : 'border-transparent text-amber-700 hover:border-amber-700/60' }}">
                         <span>📖</span>
                         <span>Digital Catalogue</span>
@@ -362,6 +367,13 @@
                         <a href="{{ url('/women-suit-set') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Suit Sets</a>
                         <a href="{{ url('/anarkali-kurta-sets') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">Anarkali Sets</a>
                         <a href="{{ url('/women-fashion') }}" class="block text-sm text-rich-black hover:text-maroon-800 font-medium">All Ethnic Collections</a>
+                        <a href="{{ url('/jaipuri-bedsheets') }}" class="flex items-center justify-between text-sm text-maroon-900 hover:text-maroon-800 font-bold bg-amber-50/70 px-3 py-2 rounded-xl border border-amber-200/80 shadow-2xs">
+                            <span class="flex items-center gap-1.5">
+                                <span>🛏️</span>
+                                <span>Jaipuri Pure Cotton Bedsheets</span>
+                            </span>
+                            <span class="text-[9.5px] uppercase tracking-wider font-extrabold bg-amber-600 text-white px-2 py-0.5 rounded-full">New</span>
+                        </a>
                         <a href="{{ url('/catalogue') }}" class="flex items-center justify-between text-sm text-amber-900 hover:text-maroon-800 font-bold bg-amber-50 px-3 py-2 rounded-xl border border-amber-200/80 shadow-2xs">
                             <span class="flex items-center gap-1.5">
                                 <span>📖</span>
@@ -972,6 +984,7 @@
                         <li><a href="{{ url('/women-suit-set') }}" class="hover:text-maroon-800 transition-colors">Suit Sets with Dupatta</a></li>
                         <li><a href="{{ url('/anarkali-kurta-sets') }}" class="hover:text-maroon-800 transition-colors">Anarkali Sets</a></li>
                         <li><a href="{{ url('/women-fashion') }}" class="hover:text-maroon-800 transition-colors">All Ethnic Wear</a></li>
+                        <li><a href="{{ url('/jaipuri-bedsheets') }}" class="font-bold text-amber-900 hover:text-maroon-800 transition-colors flex items-center gap-1.5"><span>🛏️</span> <span>Jaipuri Bedsheets (100% Cotton)</span></a></li>
                         <li><a href="{{ url('/catalogue') }}" class="font-bold text-amber-800 hover:text-maroon-800 transition-colors flex items-center gap-1.5"><span>📖</span> <span>Digital Catalogue (Prices &amp; COD)</span></a></li>
                     </ul>
                 </div>

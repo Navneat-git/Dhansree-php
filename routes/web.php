@@ -16,6 +16,8 @@ Route::get('/catalogue', [CatalogueController::class, 'index'])->name('store.cat
 Route::get('/catalog', [CatalogueController::class, 'index']);
 Route::get('/women-catalogue', [CatalogueController::class, 'index']);
 Route::post('/catalogue/check-pincode', [CatalogueController::class, 'checkPincode'])->name('store.catalogue.pincode');
+Route::get('/jaipuri-bedsheets', [StorefrontController::class, 'jaipuriBedsheets'])->name('store.jaipuri-bedsheets');
+Route::get('/bedsheets', [StorefrontController::class, 'jaipuriBedsheets']);
 Route::get('/smart-living', [StorefrontController::class, 'smartLiving'])->name('store.smart-living');
 
 // ─── Shopping Bag / Cart ───────────────────────────────────────────────────
