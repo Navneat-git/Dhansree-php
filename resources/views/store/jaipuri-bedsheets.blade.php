@@ -36,57 +36,60 @@
 }">
 
     {{-- ─── SECTION 1: TOP BANNER (JAIPURI THEME) ─── --}}
-    <section class="relative overflow-hidden bg-gradient-to-b from-[#2d0508] via-[#480c12] to-[#1e0305] text-white">
+    <section class="relative overflow-hidden text-white" style="background-color: #180305;">
         <!-- Background Hero Image with Jaipuri Palace Bedroom Aesthetic -->
         <div class="absolute inset-0 z-0">
-            <picture class="w-full h-full">
+            <picture class="w-full h-full block">
                 <source srcset="{{ asset('media/bedsheets/banner.webp') }}" type="image/webp">
                 <img src="{{ asset('media/bedsheets/banner.jpg') }}"
                      alt="Authentic Jaipuri Pure Cotton Bedsheets on Royal King Bed"
-                     class="w-full h-full object-cover object-center opacity-30 md:opacity-35 scale-105 transform motion-safe:transition-transform motion-safe:duration-1000">
+                     class="w-full h-full object-cover object-center"
+                     style="opacity: 0.6; filter: contrast(1.15) brightness(0.9);">
             </picture>
-            <!-- Gradient Overlay for Contrast & Readability -->
-            <div class="absolute inset-0 bg-gradient-to-r from-[#200305]/95 via-[#38080c]/85 to-[#200305]/90"></div>
+            <!-- Deep Royal Maroon Gradient Overlay for High Contrast & Crystal Clear Text -->
+            <div class="absolute inset-0" style="background: linear-gradient(180deg, rgba(20, 2, 4, 0.82) 0%, rgba(38, 5, 10, 0.86) 50%, rgba(16, 2, 4, 0.96) 100%);"></div>
+            <!-- Radial Center Focus Overlay -->
+            <div class="absolute inset-0" style="background: radial-gradient(circle at center, rgba(30, 4, 8, 0.4) 0%, rgba(16, 2, 4, 0.88) 100%);"></div>
             <!-- Traditional Rajasthani Block Print Dot Pattern Grid -->
-            <div class="absolute inset-0 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:28px_28px] opacity-15 pointer-events-none"></div>
-            <!-- Decorative Glow Accents -->
-            <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-amber-500/20 blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-rose-800/30 blur-3xl pointer-events-none"></div>
+            <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(#d4af37 1px, transparent 1px); background-size: 28px 28px; opacity: 0.12;"></div>
+            <!-- Palace Lantern Glow Accents -->
+            <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%); filter: blur(50px);"></div>
+            <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); filter: blur(50px);"></div>
         </div>
 
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-24 text-center">
             <!-- Jaipuri Heritage Eyebrow Badge -->
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-bold tracking-widest uppercase shadow-md mb-6 backdrop-blur-xs">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-amber-300 text-xs sm:text-sm font-bold tracking-widest uppercase shadow-lg mb-6" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.55); backdrop-filter: blur(8px);">
                 <span>🛏️</span>
                 <span>AUTHENTIC JAIPUR TEXTILE ARTISTRY • 100% PURE COMBED COTTON</span>
             </div>
 
             <!-- Grand Headline with Jaipuri Serif Charm -->
-            <h1 class="font-serif text-3xl sm:text-5xl md:text-6xl font-normal tracking-tight text-white max-w-4xl mx-auto leading-tight">
+            <h1 class="font-serif text-3xl sm:text-5xl md:text-6xl font-normal tracking-tight text-white max-w-4xl mx-auto leading-tight" style="text-shadow: 0 4px 18px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9);">
                 Authentic Jaipuri<br class="hidden sm:inline">
-                <span class="text-amber-300 italic font-medium">Pure Cotton Bedsheets</span>
+                <span class="text-amber-300 italic font-medium" style="text-shadow: 0 4px 18px rgba(0, 0, 0, 0.95), 0 0 25px rgba(245, 158, 11, 0.4);">Pure Cotton Bedsheets</span>
             </h1>
 
             <!-- Heritage Tagline -->
-            <p class="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-rose-100/90 max-w-2xl mx-auto font-light leading-relaxed">
+            <p class="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-rose-100 max-w-2xl mx-auto font-normal leading-relaxed" style="text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);">
                 Handcrafted with timeless Sanganeri and Bagru handblock prints. Breathable 210+ thread count cotton for regal bedrooms and deep, restful sleep.
             </p>
 
             <!-- Key Feature Badges Strip -->
-            <div class="mt-8 flex flex-wrap justify-center items-center gap-2.5 sm:gap-4 max-w-4xl mx-auto text-xs sm:text-sm font-medium text-amber-200">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-amber-400/30 shadow-xs">
+            <div class="mt-8 flex flex-wrap justify-center items-center gap-2.5 sm:gap-4 max-w-4xl mx-auto text-xs sm:text-sm font-medium text-amber-100">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg shadow-md" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); backdrop-filter: blur(6px); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
                     <span class="text-amber-400">🌿</span> 100% Breathable Cotton (210 TC)
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-amber-400/30 shadow-xs">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg shadow-md" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); backdrop-filter: blur(6px); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
                     <span class="text-amber-400">🖨️</span> Sanganeri &amp; Bagru Block Prints
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-amber-400/30 shadow-xs">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg shadow-md" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); backdrop-filter: blur(6px); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
                     <span class="text-amber-400">👑</span> King (108"×108") &amp; Queen (90"×100")
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-amber-400/30 shadow-xs">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg shadow-md" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); backdrop-filter: blur(6px); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
                     <span class="text-amber-400">✨</span> Includes 2 Matching Pillow Covers
                 </span>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-amber-400/30 shadow-xs">
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg shadow-md" style="background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); backdrop-filter: blur(6px); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
                     <span class="text-amber-400">🚚</span> Free Shipping &amp; COD Available
                 </span>
             </div>
@@ -94,18 +97,19 @@
             <!-- Price Guarantee & Quick Anchor CTA -->
             <div class="mt-8 flex flex-wrap justify-center items-center gap-4">
                 <a href="#collection-grid"
-                   class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs sm:text-sm font-extrabold uppercase tracking-wider transition-all shadow-xl hover:shadow-amber-500/20 hover:-translate-y-0.5 flex items-center gap-2">
+                   class="px-8 py-3.5 rounded-xl text-slate-950 text-xs sm:text-sm font-extrabold uppercase tracking-wider transition-all shadow-xl hover:-translate-y-0.5 flex items-center gap-2"
+                   style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35);">
                     <span>Explore Bedsheet Designs</span>
                     <span>↓</span>
                 </a>
-                <span class="text-xs text-rose-200/80 font-medium">
-                    Special Introductory Price: Starting at <strong>₹699</strong> (MRP ₹1,399)
+                <span class="text-xs text-amber-200/90 font-medium px-3.5 py-2 rounded-lg" style="background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(245, 158, 11, 0.3); text-shadow: 0 1px 3px rgba(0,0,0,0.7);">
+                    Special Introductory Price: Starting at <strong class="text-amber-300">₹699</strong> (MRP ₹1,399)
                 </span>
             </div>
         </div>
 
         <!-- Decorative Bottom Jharokha Wave Border -->
-        <div class="h-4 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 opacity-80"></div>
+        <div class="h-2" style="background: linear-gradient(90deg, #d97706 0%, #fbbf24 50%, #d97706 100%);"></div>
     </section>
 
     {{-- ─── SECTION 2: BROWSE & FILTER BAR ─── --}}
@@ -155,8 +159,10 @@
                 @endphp
 
                 <div class="bg-white rounded-2xl overflow-hidden border border-light-gold/80 hover:border-maroon-800/40 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
-                    <!-- Product Image Container -->
-                    <div class="relative aspect-4/3 overflow-hidden bg-warm-beige/30">
+                    <!-- Clickable Product Image Container -->
+                    <a href="{{ url('/product/' . $product->slug) }}"
+                       class="block relative aspect-4/3 overflow-hidden bg-warm-beige/30 cursor-pointer group/img"
+                       title="View {{ $product->name }}">
                         @if($primaryImg)
                             <img src="{{ $primaryImg->url }}"
                                  alt="{{ $primaryImg->alt_text ?: $product->name }}"
@@ -180,7 +186,7 @@
                             <span>🛏️ 1 Bedsheet + 2 Pillow Covers</span>
                             <span class="text-amber-300 font-bold">210 TC</span>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Product Card Content -->
                     <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
@@ -292,74 +298,80 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto items-stretch">
                 <!-- King Size Card -->
-                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-light-gold shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-maroon-50 text-maroon-800 text-xs font-bold uppercase tracking-wider border border-maroon-200">
-                            <span>👑</span> King Size Bedsheet
+                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-light-gold shadow-sm flex flex-col justify-between h-full space-y-5 hover:shadow-md transition-shadow">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between pb-1">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-maroon-50 text-maroon-800 text-xs font-bold uppercase tracking-wider border border-maroon-200">
+                                <span>👑</span> King Size Bedsheet
+                            </div>
+                            <span class="text-xs font-bold text-maroon-800">Most Popular</span>
                         </div>
-                        <span class="text-xs font-bold text-maroon-800">Most Popular</span>
-                    </div>
 
-                    <div class="space-y-2 text-sm text-rich-black/85">
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Bedsheet Dimensions:</span>
-                            <span class="font-mono text-xs font-bold">108" × 108" (274 × 274 cm)</span>
-                        </div>
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Pillow Covers (2 Pcs):</span>
-                            <span class="font-mono text-xs font-bold">18" × 27" (46 × 69 cm)</span>
-                        </div>
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Best Suited Bed Size:</span>
-                            <span class="text-xs font-medium">6 ft × 6 ft, 6 ft × 6.5 ft, 6.5 ft × 6.5 ft King Bed</span>
-                        </div>
-                        <div class="flex justify-between py-1.5">
-                            <span class="font-semibold">Mattress Thickness:</span>
-                            <span class="text-xs font-medium">Up to 8–10 inches deep</span>
+                        <div class="space-y-0 text-sm text-rich-black/85">
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Bedsheet Dimensions:</span>
+                                <span class="font-mono text-xs sm:text-sm font-bold text-rich-black whitespace-nowrap">108" × 108" (274 × 274 cm)</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Pillow Covers (2 Pcs):</span>
+                                <span class="font-mono text-xs sm:text-sm font-bold text-rich-black whitespace-nowrap">18" × 27" (46 × 69 cm)</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Best Suited Bed Size:</span>
+                                <span class="text-xs sm:text-sm font-medium text-rich-black/90 whitespace-nowrap">6×6 ft, 6×6.5 ft, 6.5×6.5 ft King Bed</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Mattress Thickness:</span>
+                                <span class="text-xs sm:text-sm font-medium text-rich-black/90 whitespace-nowrap">Up to 8–10 inches deep</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="pt-2 text-center">
-                        <a href="{{ url('/jaipuri-bedsheets?size=king') }}"
-                           class="inline-block w-full py-2.5 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-bold uppercase tracking-wider hover:bg-maroon-800 hover:text-white transition-colors">
+                        <a href="#collection-grid"
+                           @click="activeSize = 'king'"
+                           class="inline-block w-full py-3 rounded-xl border border-maroon-800 text-maroon-800 text-xs font-bold uppercase tracking-wider hover:bg-maroon-800 hover:text-white transition-colors shadow-2xs">
                             Explore King Size Sets (₹799)
                         </a>
                     </div>
                 </div>
 
                 <!-- Queen Size Card -->
-                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-light-gold shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-bold uppercase tracking-wider border border-amber-200">
-                            <span>🛏️</span> Queen Size Bedsheet
+                <div class="bg-white rounded-2xl p-6 sm:p-8 border border-light-gold shadow-sm flex flex-col justify-between h-full space-y-5 hover:shadow-md transition-shadow">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between pb-1">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-bold uppercase tracking-wider border border-amber-200">
+                                <span>🛏️</span> Queen Size Bedsheet
+                            </div>
+                            <span class="text-xs font-semibold text-rich-black/60">Standard Double Bed</span>
                         </div>
-                        <span class="text-xs font-semibold text-rich-black/60">Standard Double Bed</span>
-                    </div>
 
-                    <div class="space-y-2 text-sm text-rich-black/85">
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Bedsheet Dimensions:</span>
-                            <span class="font-mono text-xs font-bold">90" × 100" (228 × 254 cm)</span>
-                        </div>
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Pillow Covers (2 Pcs):</span>
-                            <span class="font-mono text-xs font-bold">18" × 27" (46 × 69 cm)</span>
-                        </div>
-                        <div class="flex justify-between py-1.5 border-b border-light-gold/40">
-                            <span class="font-semibold">Best Suited Bed Size:</span>
-                            <span class="text-xs font-medium">5 ft × 6 ft, 5 ft × 6.5 ft Queen Bed</span>
-                        </div>
-                        <div class="flex justify-between py-1.5">
-                            <span class="font-semibold">Mattress Thickness:</span>
-                            <span class="text-xs font-medium">Up to 6–8 inches deep</span>
+                        <div class="space-y-0 text-sm text-rich-black/85">
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Bedsheet Dimensions:</span>
+                                <span class="font-mono text-xs sm:text-sm font-bold text-rich-black whitespace-nowrap">90" × 100" (228 × 254 cm)</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Pillow Covers (2 Pcs):</span>
+                                <span class="font-mono text-xs sm:text-sm font-bold text-rich-black whitespace-nowrap">18" × 27" (46 × 69 cm)</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 border-b border-light-gold/40 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Best Suited Bed Size:</span>
+                                <span class="text-xs sm:text-sm font-medium text-rich-black/90 whitespace-nowrap">5×6 ft, 5×6.5 ft Queen Bed</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2.5 min-h-[44px]">
+                                <span class="font-semibold text-xs sm:text-sm">Mattress Thickness:</span>
+                                <span class="text-xs sm:text-sm font-medium text-rich-black/90 whitespace-nowrap">Up to 6–8 inches deep</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="pt-2 text-center">
-                        <a href="{{ url('/jaipuri-bedsheets?size=queen') }}"
-                           class="inline-block w-full py-2.5 rounded-lg border border-maroon-800 text-maroon-800 text-xs font-bold uppercase tracking-wider hover:bg-maroon-800 hover:text-white transition-colors">
+                        <a href="#collection-grid"
+                           @click="activeSize = 'queen'"
+                           class="inline-block w-full py-3 rounded-xl border border-maroon-800 text-maroon-800 text-xs font-bold uppercase tracking-wider hover:bg-maroon-800 hover:text-white transition-colors shadow-2xs">
                             Explore Queen Size Sets (₹699)
                         </a>
                     </div>
