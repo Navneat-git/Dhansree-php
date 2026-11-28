@@ -27,160 +27,74 @@
         <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white ml-2 text-lg leading-none">&times;</button>
     </div>
 
-    <!-- 1. Hero & Header Banner -->
-    <section class="relative bg-gradient-to-b from-maroon-900 via-maroon-800 to-maroon-900 text-white pt-10 pb-12 px-4 sm:px-6 lg:px-8 border-b-4 border-gold-400/80 shadow-md print:hidden">
-        <div class="max-w-7xl mx-auto text-center space-y-4">
+    <!-- 1. Ultra-Compact Top Header Banner -->
+    <section class="relative bg-gradient-to-r from-maroon-950 via-maroon-900 to-maroon-950 text-white px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 border-b-2 border-gold-400/60 shadow-xs print:hidden">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
             
-            <!-- Badge -->
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-400/20 border border-gold-400/40 text-gold-200 text-xs font-semibold tracking-wider uppercase">
-                <span>✨ Official Digital Lookbook &amp; Catalogue</span>
-                <span>•</span>
-                <span>Jaipur Handcrafted</span>
+            <!-- Left: Title & Count Badge -->
+            <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <h1 class="text-sm sm:text-base font-serif font-bold tracking-tight text-white flex items-center gap-1.5">
+                    <span>📖</span>
+                    <span>Women's Fashion Digital Catalogue</span>
+                </h1>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-400/20 border border-gold-400/40 text-gold-200 text-[10px] font-semibold tracking-wider">
+                    <span>✨ {{ $totalCount }} Styles</span>
+                    <span class="hidden sm:inline">• All Colors &amp; Sizes</span>
+                </span>
             </div>
 
-            <!-- Title -->
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-tight text-white">
-                Women's Ethnic &amp; Festive Collection
-            </h1>
-
-            <p class="text-sm sm:text-base text-ivory/80 max-w-2xl mx-auto font-sans leading-relaxed">
-                Explore our complete range of Pure Cotton Anarkali Sets, Designer Suit Sets, Kurta Palazzo Sets &amp; Two-Piece Co-ords with transparent pricing, delivery options, and instant one-click ordering.
-            </p>
-
-            <!-- Delivery & Service Highlights Bar -->
-            <div class="pt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto text-left">
-                <div class="bg-white/10 backdrop-blur-xs border border-white/15 rounded-xl p-3 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-gold-400/20 text-gold-300 flex items-center justify-center shrink-0 text-xl">
-                        🚚
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-white">FREE Home Delivery</div>
-                        <div class="text-[11px] text-ivory/70">Across all India</div>
-                    </div>
-                </div>
-
-                <div class="bg-white/10 backdrop-blur-xs border border-white/15 rounded-xl p-3 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0 text-xl">
-                        💵
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-white">Cash on Delivery</div>
-                        <div class="text-[11px] text-ivory/70">Pay when you receive</div>
-                    </div>
-                </div>
-
-                <div class="bg-white/10 backdrop-blur-xs border border-white/15 rounded-xl p-3 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center shrink-0 text-xl">
-                        ⚡
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-white">Fast Delhivery Courier</div>
-                        <div class="text-[11px] text-ivory/70">Delivered in 3–5 Days</div>
-                    </div>
-                </div>
-
-                <div class="bg-white/10 backdrop-blur-xs border border-white/15 rounded-xl p-3 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-blue-400/20 text-blue-300 flex items-center justify-center shrink-0 text-xl">
-                        🔄
-                    </div>
-                    <div>
-                        <div class="text-xs font-bold text-white">7-Day Easy Exchange</div>
-                        <div class="text-[11px] text-ivory/70">100% Quality Guaranteed</div>
-                    </div>
-                </div>
+            <!-- Center: Inline Trust Badges (Hidden on Small Mobile) -->
+            <div class="hidden lg:flex items-center gap-2.5 text-[11px] text-ivory/80">
+                <span class="flex items-center gap-1"><span class="text-gold-300">🚚</span> Free Home Delivery</span>
+                <span class="text-white/20">•</span>
+                <span class="flex items-center gap-1"><span class="text-emerald-300">💵</span> COD Available</span>
+                <span class="text-white/20">•</span>
+                <span class="flex items-center gap-1"><span class="text-amber-300">⚡</span> Delhivery 3–5 Days</span>
+                <span class="text-white/20">•</span>
+                <span class="flex items-center gap-1"><span class="text-blue-300">🔄</span> 7-Day Exchange</span>
             </div>
 
-            <!-- Top Action Buttons (WhatsApp Share & Pincode Checker) -->
-            <div class="pt-4 flex flex-wrap items-center justify-center gap-3">
+            <!-- Right: Compact Action Buttons -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
                 <a :href="shareCatalogueUrl"
                    target="_blank"
                    rel="noopener noreferrer"
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all">
-                    <svg class="size-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.821 2.791.821 3.181 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.767-5.768-5.767zm0 10.427c-.89 0-1.666-.25-2.422-.727l-.173-.109-1.58.414.422-1.541-.118-.188c-.521-.828-.795-1.58-.795-2.51 0-2.614 2.127-4.741 4.742-4.741 2.614 0 4.741 2.127 4.741 4.741 0 2.615-2.127 4.741-4.741 4.741zm6.969-4.661c-.04-.066-.145-.106-.304-.185-.158-.079-.937-.462-1.082-.515-.145-.053-.251-.079-.356.079-.106.158-.409.515-.502.621-.092.106-.185.119-.343.04-.158-.079-.669-.247-1.274-.786-.471-.42-.789-.939-.882-1.097-.092-.158-.01-.244.069-.323.071-.071.158-.185.238-.277.079-.092.106-.158.158-.264.053-.106.026-.198-.013-.277-.04-.079-.356-.859-.488-1.176-.129-.308-.26-.266-.356-.271-.092-.005-.198-.006-.304-.006s-.277.04-.422.198c-.145.158-.555.542-.555 1.321 0 .779.568 1.532.647 1.638.079.106 1.118 1.708 2.709 2.395.378.163.674.261.904.334.38.121.726.104 1.001.063.305-.046.937-.383 1.069-.753.132-.37.132-.687.092-.753z"/>
-                    </svg>
-                    <span>Share on WhatsApp</span>
+                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shadow-xs transition-colors">
+                    <svg class="size-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.821 2.791.821 3.181 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.767-5.768-5.767zm0 10.427c-.89 0-1.666-.25-2.422-.727l-.173-.109-1.58.414.422-1.541-.118-.188c-.521-.828-.795-1.58-.795-2.51 0-2.614 2.127-4.741 4.742-4.741 2.614 0 4.741 2.127 4.741 4.741 0 2.615-2.127 4.741-4.741 4.741zm6.969-4.661c-.04-.066-.145-.106-.304-.185-.158-.079-.937-.462-1.082-.515-.145-.053-.251-.079-.356.079-.106.158-.409.515-.502.621-.092.106-.185.119-.343.04-.158-.079-.669-.247-1.274-.786-.471-.42-.789-.939-.882-1.097-.092-.158-.01-.244.069-.323.071-.071.158-.185.238-.277.079-.092.106-.158.158-.264.053-.106.026-.198-.013-.277-.04-.079-.356-.859-.488-1.176-.129-.308-.26-.266-.356-.271-.092-.005-.198-.006-.304-.006s-.277.04-.422.198c-.145.158-.555.542-.555 1.321 0 .779.568 1.532.647 1.638.079.106 1.118 1.708 2.709 2.395.378.163.674.261.904.334.38.121.726.104 1.001.063.305-.046.937-.383 1.069-.753.132-.37.132-.687.092-.753z"/></svg>
+                    <span>WhatsApp</span>
                 </a>
 
                 <button type="button"
                         @click="copyCatalogueLink()"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-xs transition-all">
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-                    </svg>
-                    <span>Copy Catalogue Link</span>
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                    <span class="hidden sm:inline">Copy Link</span>
                 </button>
 
                 <button type="button"
                         @click="window.print()"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold uppercase tracking-wider backdrop-blur-xs transition-all">
-                    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.641-2.085-1.17-3.003a7.48 7.48 0 0 0-1.9-2.072A7.502 7.502 0 0 0 1.5 7.5v-3A2.25 2.25 0 0 1 3.75 2.25h16.5A2.25 2.25 0 0 1 22.5 4.5v3a7.5 7.5 0 0 0-2.15 1.254c-.65.578-1.18 1.288-1.55 2.075-.53.918-.93 1.927-1.17 3.003H6.72ZM3.75 9h16.5M6 16.5h12M7.5 19.5h9" />
-                    </svg>
-                    <span>Print / Save PDF</span>
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.641-2.085-1.17-3.003a7.48 7.48 0 0 0-1.9-2.072A7.502 7.502 0 0 0 1.5 7.5v-3A2.25 2.25 0 0 1 3.75 2.25h16.5A2.25 2.25 0 0 1 22.5 4.5v3a7.5 7.5 0 0 0-2.15 1.254c-.65.578-1.18 1.288-1.55 2.075-.53.918-.93 1.927-1.17 3.003H6.72ZM3.75 9h16.5M6 16.5h12M7.5 19.5h9" /></svg>
+                    <span class="hidden sm:inline">PDF</span>
                 </button>
             </div>
         </div>
     </section>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <!-- Main Container (Tight spacing so products display without scrolling) -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-2.5 sm:pt-3.5 pb-12 space-y-3">
 
-        <!-- 2. Interactive Delivery Pincode Check Bar -->
-        <div class="bg-white rounded-2xl p-4 sm:p-5 border border-light-gold/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 text-amber-800 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-sm font-bold text-slate-900">Check Delivery Timeline to Your City</h2>
-                    <p class="text-xs text-slate-500">Enter your 6-digit delivery pincode to check Delhivery Express courier serviceability</p>
-                </div>
-            </div>
-
-            <form @submit.prevent="checkPincode()" class="w-full md:w-auto flex items-center gap-2">
-                <div class="relative w-full md:w-48">
-                    <input type="text"
-                           x-model="pincodeInput"
-                           maxlength="6"
-                           placeholder="Enter Pincode (e.g. 560064)"
-                           class="w-full text-xs font-mono font-semibold rounded-xl border border-slate-300 px-3 py-2.5 focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 uppercase tracking-wider"
-                           required>
-                </div>
-                <button type="submit"
-                        :disabled="pincodeLoading"
-                        class="px-4 py-2.5 rounded-xl bg-maroon-800 hover:bg-maroon-900 text-white text-xs font-bold shrink-0 transition-colors disabled:opacity-50">
-                    <span x-show="!pincodeLoading">Check</span>
-                    <span x-show="pincodeLoading" class="animate-pulse">Checking...</span>
-                </button>
-            </form>
-        </div>
-
-        <!-- Pincode Alert Message -->
-        <div x-show="pincodeResult.message"
-             x-cloak
-             x-transition
-             :class="pincodeResult.serviceable ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'"
-             class="p-4 rounded-xl border text-xs font-medium flex items-center justify-between gap-3 shadow-2xs print:hidden">
-            <div class="flex items-center gap-2">
-                <span x-text="pincodeResult.serviceable ? '✅' : '⚠️'" class="text-base"></span>
-                <span x-text="pincodeResult.message"></span>
-            </div>
-            <button type="button" @click="pincodeResult.message = ''" class="text-slate-400 hover:text-slate-700 text-sm font-bold">&times;</button>
-        </div>
-
-        <!-- 3. Filter, Search & Layout Controls -->
-        <div class="bg-white rounded-2xl border border-light-gold/80 p-5 shadow-xs space-y-4 print:hidden">
-            <!-- Category Pills -->
-            <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 flex-wrap">
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+        <!-- 2. Unified Compact Filter, Pincode & Layout Bar -->
+        <div class="bg-white rounded-xl border border-light-gold/80 p-3 sm:p-3.5 shadow-2xs space-y-2.5 print:hidden">
+            
+            <!-- Row 1: Categories & Quick Inline Pincode Checker -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <!-- Category Pills -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 max-w-full">
                     <button type="button"
                             @click="selectedCategory = 'all'"
                             :class="selectedCategory === 'all' ? 'bg-maroon-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors">
+                            class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors">
                         All Styles ({{ $totalCount }})
                     </button>
 
@@ -188,79 +102,111 @@
                         <button type="button"
                                 @click="selectedCategory = '{{ $cat['slug'] }}'"
                                 :class="selectedCategory === '{{ $cat['slug'] }}' ? 'bg-maroon-800 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                                class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors">
+                                class="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors">
                             {{ $cat['name'] }} ({{ $cat['count'] }})
                         </button>
                     @endforeach
                 </div>
 
-                <!-- View Layout Switcher -->
-                <div class="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                    <button type="button"
-                            @click="viewMode = 'grid'"
-                            :class="viewMode === 'grid' ? 'bg-white text-maroon-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-900'"
-                            class="px-2.5 py-1 text-xs rounded-lg transition-colors flex items-center gap-1">
-                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm10 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V6zM4 16a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2zm10 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2z"/></svg>
-                        <span>Grid</span>
+                <!-- Compact Pincode Check Form -->
+                <form @submit.prevent="checkPincode()" class="flex items-center gap-1.5 shrink-0 ml-auto">
+                    <span class="text-[11px] font-semibold text-slate-500 hidden sm:inline">📍 Pincode:</span>
+                    <input type="text"
+                           x-model="pincodeInput"
+                           maxlength="6"
+                           placeholder="Pincode (e.g. 302001)"
+                           class="w-28 text-xs font-mono font-bold rounded-lg border border-slate-300 px-2 py-1 focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 uppercase"
+                           required>
+                    <button type="submit"
+                            :disabled="pincodeLoading"
+                            class="px-2.5 py-1 rounded-lg bg-maroon-800 hover:bg-maroon-900 text-white text-xs font-bold shrink-0 transition-colors disabled:opacity-50">
+                        <span x-show="!pincodeLoading">Check</span>
+                        <span x-show="pincodeLoading" class="animate-pulse">...</span>
                     </button>
-                    <button type="button"
-                            @click="viewMode = 'lookbook'"
-                            :class="viewMode === 'lookbook' ? 'bg-white text-maroon-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-900'"
-                            class="px-2.5 py-1 text-xs rounded-lg transition-colors flex items-center gap-1">
-                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                        <span>Lookbook</span>
-                    </button>
-                </div>
+                </form>
             </div>
 
-            <!-- Size Pills & Search -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <!-- Dismissible Pincode Alert Notice -->
+            <div x-show="pincodeResult.message"
+                 x-cloak
+                 x-transition
+                 :class="pincodeResult.serviceable ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-rose-50 border-rose-300 text-rose-900'"
+                 class="p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between gap-2 shadow-2xs">
+                <div class="flex items-center gap-2">
+                    <span x-text="pincodeResult.serviceable ? '✅' : '⚠️'" class="text-sm"></span>
+                    <span x-text="pincodeResult.message"></span>
+                </div>
+                <button type="button" @click="pincodeResult.message = ''" class="text-slate-400 hover:text-slate-700 text-sm font-bold">&times;</button>
+            </div>
+
+            <!-- Row 2: Size Pills, Search, Grid/Lookbook View & Sort -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <!-- Size Filter -->
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 mr-1">Filter by Size:</span>
+                <div class="flex items-center gap-1 flex-wrap">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">Size:</span>
                     <button type="button"
                             @click="selectedSize = 'all'"
                             :class="selectedSize === 'all' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors">
-                        All Sizes
+                            class="px-2 py-0.5 rounded-md text-xs font-semibold transition-colors">
+                        All
                     </button>
                     <template x-for="sz in ['M', 'L', 'XL', 'XXL', '3XL']" :key="sz">
                         <button type="button"
                                 @click="selectedSize = (selectedSize === sz ? 'all' : sz)"
                                 :class="selectedSize === sz ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
-                                class="px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors"
+                                class="px-2 py-0.5 rounded-md text-xs font-semibold transition-colors"
                                 x-text="sz">
                         </button>
                     </template>
                 </div>
 
-                <!-- Search Input -->
-                <div class="relative w-full sm:w-64">
-                    <input type="text"
-                           x-model="searchQuery"
-                           placeholder="Search colour, fabric, style..."
-                           class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-8 py-2 focus:bg-white focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 transition-colors">
-                    <svg class="size-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                    <button type="button"
-                            x-show="searchQuery"
-                            @click="searchQuery = ''"
-                            class="text-slate-400 hover:text-slate-600 absolute right-2.5 top-2 text-sm leading-none">&times;</button>
+                <!-- Right Controls: Search, View Mode & Sort -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Search Input -->
+                    <div class="relative w-full sm:w-48">
+                        <input type="text"
+                               x-model="searchQuery"
+                               placeholder="Search color, style, SKU..."
+                               class="w-full text-xs rounded-lg border border-slate-200 bg-slate-50/50 pl-7 pr-7 py-1 focus:bg-white focus:border-maroon-800 focus:ring-1 focus:ring-maroon-800 transition-colors">
+                        <svg class="size-3 text-slate-400 absolute left-2 top-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                        <button type="button"
+                                x-show="searchQuery"
+                                @click="searchQuery = ''"
+                                class="text-slate-400 hover:text-slate-600 absolute right-2 top-1.5 text-xs leading-none">&times;</button>
+                    </div>
+
+                    <!-- View Layout Switcher -->
+                    <div class="hidden sm:flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
+                        <button type="button"
+                                @click="viewMode = 'grid'"
+                                :class="viewMode === 'grid' ? 'bg-white text-maroon-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-2 py-0.5 text-xs rounded transition-colors flex items-center gap-1">
+                            <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zm10 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V6zM4 16a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2zm10 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2z"/></svg>
+                            <span>Grid</span>
+                        </button>
+                        <button type="button"
+                                @click="viewMode = 'lookbook'"
+                                :class="viewMode === 'lookbook' ? 'bg-white text-maroon-800 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-900'"
+                                class="px-2 py-0.5 text-xs rounded transition-colors flex items-center gap-1">
+                            <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            <span>Lookbook</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 4. Active Count / Filter Summary -->
-        <div class="flex items-center justify-between text-xs text-slate-600 px-1 print:hidden">
+        <!-- 3. Active Count / Sort Summary Line -->
+        <div class="flex items-center justify-between text-[11px] text-slate-500 px-1 print:hidden">
             <div>
-                Showing <strong class="text-slate-900" x-text="filteredProducts.length"></strong> of {{ $totalCount }} products in catalogue
+                Showing <strong class="text-slate-900" x-text="filteredProducts.length"></strong> of {{ $totalCount }} styles
                 <span x-show="selectedCategory !== 'all'" class="text-maroon-800 font-semibold" x-text="'• ' + selectedCategory"></span>
                 <span x-show="selectedSize !== 'all'" class="text-amber-700 font-semibold" x-text="'• Size ' + selectedSize"></span>
             </div>
 
-            <!-- Sort By -->
-            <div class="flex items-center gap-1.5">
-                <span class="text-slate-400">Sort:</span>
-                <select x-model="sortBy" class="text-xs rounded-lg border-slate-200 py-1 pl-2 pr-6 bg-white text-slate-800 focus:border-maroon-800 focus:ring-maroon-800">
+            <div class="flex items-center gap-1">
+                <span>Sort:</span>
+                <select x-model="sortBy" class="text-[11px] font-semibold bg-transparent border-0 text-slate-800 focus:ring-0 p-0 cursor-pointer">
                     <option value="featured">Featured Collection</option>
                     <option value="price_asc">Price: Low to High</option>
                     <option value="price_desc">Price: High to Low</option>
@@ -297,6 +243,13 @@
                                     <span x-text="product.discount_percentage + '% OFF'"></span>
                                 </span>
                             </template>
+                            <!-- Color Badge -->
+                            <template x-if="product.color_name">
+                                <span class="px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-slate-900 border border-slate-200 text-[10px] font-bold shadow-2xs flex items-center gap-1.5 pointer-events-auto">
+                                    <span class="size-2 rounded-full border border-black/15 shrink-0" :style="'background-color: ' + (product.color_hex || '#8b4513')"></span>
+                                    <span x-text="product.color_name"></span>
+                                </span>
+                            </template>
                             <span class="px-2 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-maroon-900 border border-light-gold text-[9.5px] font-bold shadow-2xs">
                                 Pure Cotton
                             </span>
@@ -325,18 +278,21 @@
                     </div>
 
                     <!-- PRODUCT DETAILS CONTAINER -->
-                    <div class="p-4 sm:p-5 flex flex-col justify-between flex-1 space-y-4">
-                        <div class="space-y-3">
+                    <div class="p-3.5 sm:p-4 flex flex-col justify-between flex-1 space-y-3">
+                        <div class="space-y-2.5">
                             
-                            <!-- Category & Brand -->
+                            <!-- Category, Color & SKU -->
                             <div class="flex items-center justify-between text-[11px] text-slate-500">
                                 <span class="font-bold tracking-wider uppercase text-amber-700" x-text="product.category_name"></span>
-                                <span class="font-medium">SKU: <span x-text="'DS-' + product.id"></span></span>
+                                <span class="font-mono font-medium text-[10px] text-slate-400" x-text="product.sku || ('DS-' + product.product_id)"></span>
                             </div>
 
-                            <!-- Product Title -->
-                            <h3 class="text-sm sm:text-base font-semibold text-slate-900 leading-snug line-clamp-2 hover:text-maroon-800 transition-colors">
-                                <a :href="product.url" x-text="product.name"></a>
+                            <!-- Product Title with Color -->
+                            <h3 class="text-xs sm:text-sm font-semibold text-slate-900 leading-snug line-clamp-2 hover:text-maroon-800 transition-colors">
+                                <a :href="product.url">
+                                    <span x-text="product.name"></span>
+                                    <span x-show="product.color_name" class="font-bold text-maroon-800" x-text="' (' + product.color_name + ')'"></span>
+                                </a>
                             </h3>
 
                             <!-- PRICING BOX (Transparent Price & MRP) -->
@@ -514,7 +470,14 @@
                 <div class="flex items-start justify-between pb-2 border-b border-slate-100">
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Select Size to Order</span>
-                        <h4 class="text-sm font-bold text-slate-900 line-clamp-1" x-text="sizeModal.product?.name"></h4>
+                        <h4 class="text-sm font-bold text-slate-900 line-clamp-1">
+                            <span x-text="sizeModal.product?.name"></span>
+                            <span x-show="sizeModal.product?.color_name" class="text-maroon-800 font-bold" x-text="' (' + sizeModal.product?.color_name + ')'"></span>
+                        </h4>
+                        <div x-show="sizeModal.product?.color_name" class="flex items-center gap-1.5 mt-0.5">
+                            <span class="size-2 rounded-full border border-black/15 shrink-0" :style="'background-color: ' + (sizeModal.product?.color_hex || '#8b4513')"></span>
+                            <span class="text-[11px] font-semibold text-slate-600" x-text="'Color: ' + sizeModal.product?.color_name"></span>
+                        </div>
                     </div>
                     <button type="button" @click="sizeModal.open = false" class="text-slate-400 hover:text-slate-700 text-lg">&times;</button>
                 </div>
@@ -636,9 +599,11 @@ function dhansreeCatalogueHub() {
                     const q = this.searchQuery.toLowerCase().trim();
                     const nameMatch = p.name.toLowerCase().includes(q);
                     const catMatch = p.category_name.toLowerCase().includes(q);
-                    const colorMatch = p.colors.some(c => c.name.toLowerCase().includes(q));
+                    const colorMatch = (p.color_name && p.color_name.toLowerCase().includes(q))
+                        || (p.colors && p.colors.some(c => c.name.toLowerCase().includes(q)));
                     const sizeMatch = p.sizes.some(s => s.name.toLowerCase().includes(q));
-                    if (!nameMatch && !catMatch && !colorMatch && !sizeMatch) {
+                    const skuMatch = p.sku && p.sku.toLowerCase().includes(q);
+                    if (!nameMatch && !catMatch && !colorMatch && !sizeMatch && !skuMatch) {
                         return false;
                     }
                 }
@@ -713,9 +678,12 @@ function dhansreeCatalogueHub() {
         generateWhatsAppUrl(product, sizeObj) {
             if (!product) return 'https://wa.me/' + this.cleanPhone;
             const sizeStr = sizeObj ? (' • Size: *' + sizeObj.name + '*') : '';
+            const colorTitle = product.color_name ? (' (' + product.color_name + ')') : '';
+            const colorLine = product.color_name ? ('🎨 *Color:* ' + product.color_name + '\n') : '';
             const msg = "Namaste Dhansree! 🌸\n\n"
                 + "I would like to order this item from your catalogue:\n\n"
-                + "🛍️ *" + product.name + "*\n"
+                + "🛍️ *" + product.name + colorTitle + "*\n"
+                + colorLine
                 + "💰 *Price:* " + product.formatted_price + (product.formatted_mrp ? " (MRP: " + product.formatted_mrp + " • " + product.discount_percentage + "% OFF)" : "") + sizeStr + "\n"
                 + "🚚 *Delivery:* Free Home Delivery | Cash on Delivery (COD) Available\n"
                 + "🔗 *Product Link:* " + product.url + "\n\n"

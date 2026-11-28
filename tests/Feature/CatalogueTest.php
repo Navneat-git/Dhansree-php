@@ -79,13 +79,12 @@ class CatalogueTest extends TestCase
         $response = $this->get('/catalogue');
 
         $response->assertStatus(200);
-        $response->assertSee("Women's Ethnic &amp; Festive Collection", false);
-        $response->assertSee('FREE Home Delivery');
-        $response->assertSee('Cash on Delivery');
+        $response->assertSee("Women's Fashion Digital Catalogue", false);
+        $response->assertSee('Free Home Delivery');
+        $response->assertSee('COD Available');
         $response->assertSee('Delhivery');
         $response->assertSee('Buy Now');
-        $response->assertSee('Share on WhatsApp');
-        $response->assertSee('Check Delivery Timeline');
+        $response->assertSee('WhatsApp');
         $response->assertSee('₹1,499.00');
         $response->assertSee('₹2,499.00');
         $response->assertSee($this->product->name);
@@ -95,11 +94,11 @@ class CatalogueTest extends TestCase
     {
         $resp1 = $this->get('/catalog');
         $resp1->assertStatus(200);
-        $resp1->assertSee("Women's Ethnic &amp; Festive Collection", false);
+        $resp1->assertSee("Women's Fashion Digital Catalogue", false);
 
         $resp2 = $this->get('/women-catalogue');
         $resp2->assertStatus(200);
-        $resp2->assertSee("Women's Ethnic &amp; Festive Collection", false);
+        $resp2->assertSee("Women's Fashion Digital Catalogue", false);
     }
 
     public function test_catalogue_pincode_check_endpoint(): void
