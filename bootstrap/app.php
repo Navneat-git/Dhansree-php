@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'api/*',
             'webhooks/*',
+            'catalogue/check-pincode',
         ]);
 
         $middleware->web(append: [
