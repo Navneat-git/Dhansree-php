@@ -27,57 +27,92 @@
         <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white ml-2 text-lg leading-none">&times;</button>
     </div>
 
-    <!-- 1. Ultra-Compact Top Header Banner -->
-    <section class="relative bg-gradient-to-r from-maroon-950 via-maroon-900 to-maroon-950 text-white px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 border-b-2 border-gold-400/60 shadow-xs print:hidden">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+    <!-- 1. Top Header & High-Visibility Delivery Option Bar -->
+    <section class="relative text-white border-b-2 border-amber-400/50 shadow-md print:hidden"
+             style="background: #2D0505; background: linear-gradient(135deg, #240404 0%, #3D0808 50%, #240404 100%);">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 space-y-2">
             
-            <!-- Left: Title & Count Badge -->
-            <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <h1 class="text-sm sm:text-base font-serif font-bold tracking-tight text-white flex items-center gap-1.5">
-                    <span>📖</span>
-                    <span>Women's Fashion Digital Catalogue</span>
-                </h1>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold-400/20 border border-gold-400/40 text-gold-200 text-[10px] font-semibold tracking-wider">
-                    <span>✨ {{ $totalCount }} Styles</span>
-                    <span class="hidden sm:inline">• All Colors &amp; Sizes</span>
-                </span>
+            <!-- Top Row: Catalogue Title, Style Count Badge & Action Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-2.5">
+                <!-- Left: Title & Count Badge -->
+                <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <h1 class="text-sm sm:text-base font-serif font-bold tracking-tight text-white flex items-center gap-1.5 drop-shadow-xs">
+                        <span>📖</span>
+                        <span>Women's Fashion Digital Catalogue</span>
+                    </h1>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-maroon-950 text-[11px] font-bold tracking-wide shadow-xs">
+                        <span>✨ {{ $totalCount }} Styles</span>
+                        <span class="hidden sm:inline">• All Colors &amp; Sizes</span>
+                    </span>
+                </div>
+
+                <!-- Right: Action Buttons (WhatsApp, Copy Link, PDF) -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <a :href="shareCatalogueUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold shadow-xs transition-all">
+                        <svg class="size-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.821 2.791.821 3.181 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.767-5.768-5.767zm0 10.427c-.89 0-1.666-.25-2.422-.727l-.173-.109-1.58.414.422-1.541-.118-.188c-.521-.828-.795-1.58-.795-2.51 0-2.614 2.127-4.741 4.742-4.741 2.614 0 4.741 2.127 4.741 4.741 0 2.615-2.127 4.741-4.741 4.741zm6.969-4.661c-.04-.066-.145-.106-.304-.185-.158-.079-.937-.462-1.082-.515-.145-.053-.251-.079-.356.079-.106.158-.409.515-.502.621-.092.106-.185.119-.343.04-.158-.079-.669-.247-1.274-.786-.471-.42-.789-.939-.882-1.097-.092-.158-.01-.244.069-.323.071-.071.158-.185.238-.277.079-.092.106-.158.158-.264.053-.106.026-.198-.013-.277-.04-.079-.356-.859-.488-1.176-.129-.308-.26-.266-.356-.271-.092-.005-.198-.006-.304-.006s-.277.04-.422.198c-.145.158-.555.542-.555 1.321 0 .779.568 1.532.647 1.638.079.106 1.118 1.708 2.709 2.395.378.163.674.261.904.334.38.121.726.104 1.001.063.305-.046.937-.383 1.069-.753.132-.37.132-.687.092-.753z"/></svg>
+                        <span>WhatsApp</span>
+                    </a>
+
+                    <button type="button"
+                            @click="copyCatalogueLink()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 active:scale-95 text-white text-xs font-semibold transition-all">
+                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                        <span class="hidden sm:inline">Copy Link</span>
+                    </button>
+
+                    <button type="button"
+                            @click="window.print()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 active:scale-95 text-white text-xs font-semibold transition-all">
+                        <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.641-2.085-1.17-3.003a7.48 7.48 0 0 0-1.9-2.072A7.502 7.502 0 0 0 1.5 7.5v-3A2.25 2.25 0 0 1 3.75 2.25h16.5A2.25 2.25 0 0 1 22.5 4.5v3a7.5 7.5 0 0 0-2.15 1.254c-.65.578-1.18 1.288-1.55 2.075-.53.918-.93 1.927-1.17 3.003H6.72ZM3.75 9h16.5M6 16.5h12M7.5 19.5h9" /></svg>
+                        <span class="hidden sm:inline">PDF</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Center: Inline Trust Badges (Hidden on Small Mobile) -->
-            <div class="hidden lg:flex items-center gap-2.5 text-[11px] text-ivory/80">
-                <span class="flex items-center gap-1"><span class="text-gold-300">🚚</span> Free Home Delivery</span>
-                <span class="text-white/20">•</span>
-                <span class="flex items-center gap-1"><span class="text-emerald-300">💵</span> COD Available</span>
-                <span class="text-white/20">•</span>
-                <span class="flex items-center gap-1"><span class="text-amber-300">⚡</span> Delhivery 3–5 Days</span>
-                <span class="text-white/20">•</span>
-                <span class="flex items-center gap-1"><span class="text-blue-300">🔄</span> 7-Day Exchange</span>
+            <!-- Bottom Row: PROMINENT DELIVERY OPTIONS BAR (Visible & Crystal Clear on All Devices) -->
+            <div class="pt-2 border-t border-white/15 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <div class="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
+                    <!-- Delivery Option 1: Free Delivery -->
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/45 border border-amber-400/50 text-white text-xs font-semibold shadow-xs">
+                        <span class="text-sm">🚚</span>
+                        <span><strong class="text-amber-300 font-extrabold">FREE</strong> Home Delivery</span>
+                    </div>
+
+                    <!-- Delivery Option 2: COD Available -->
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/45 border border-emerald-400/50 text-white text-xs font-semibold shadow-xs">
+                        <span class="text-sm">💵</span>
+                        <span><strong class="text-emerald-300 font-extrabold">COD</strong> Available</span>
+                    </div>
+
+                    <!-- Delivery Option 3: Delhivery 3-5 Days -->
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/45 border border-amber-400/50 text-white text-xs font-semibold shadow-xs">
+                        <span class="text-sm">⚡</span>
+                        <span>Delhivery <strong class="text-amber-300 font-extrabold">3–5 Days</strong></span>
+                    </div>
+
+                    <!-- Delivery Option 4: 7-Day Exchange -->
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/45 border border-sky-400/50 text-white text-xs font-semibold shadow-xs">
+                        <span class="text-sm">🔄</span>
+                        <span><strong class="text-sky-300 font-extrabold">7-Day</strong> Easy Exchange</span>
+                    </div>
+
+                    <!-- Delivery Option 5: Jaipur Handcrafted -->
+                    <div class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/45 border border-white/20 text-white text-xs font-semibold shadow-xs">
+                        <span class="text-sm">📍</span>
+                        <span>Dispatched Directly from <strong class="text-amber-200">Jaipur</strong></span>
+                    </div>
+                </div>
+
+                <!-- Right Quick Trust Note -->
+                <div class="hidden lg:flex items-center gap-1.5 text-xs text-amber-200/90 font-medium shrink-0 ml-auto">
+                    <span>🛡️</span>
+                    <span>100% Genuine Jaipur Ethnic Wear</span>
+                </div>
             </div>
 
-            <!-- Right: Compact Action Buttons -->
-            <div class="flex items-center gap-1.5 sm:gap-2">
-                <a :href="shareCatalogueUrl"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shadow-xs transition-colors">
-                    <svg class="size-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.54 1.771.821 2.791.821 3.181 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.767-5.768-5.767zm0 10.427c-.89 0-1.666-.25-2.422-.727l-.173-.109-1.58.414.422-1.541-.118-.188c-.521-.828-.795-1.58-.795-2.51 0-2.614 2.127-4.741 4.742-4.741 2.614 0 4.741 2.127 4.741 4.741 0 2.615-2.127 4.741-4.741 4.741zm6.969-4.661c-.04-.066-.145-.106-.304-.185-.158-.079-.937-.462-1.082-.515-.145-.053-.251-.079-.356.079-.106.158-.409.515-.502.621-.092.106-.185.119-.343.04-.158-.079-.669-.247-1.274-.786-.471-.42-.789-.939-.882-1.097-.092-.158-.01-.244.069-.323.071-.071.158-.185.238-.277.079-.092.106-.158.158-.264.053-.106.026-.198-.013-.277-.04-.079-.356-.859-.488-1.176-.129-.308-.26-.266-.356-.271-.092-.005-.198-.006-.304-.006s-.277.04-.422.198c-.145.158-.555.542-.555 1.321 0 .779.568 1.532.647 1.638.079.106 1.118 1.708 2.709 2.395.378.163.674.261.904.334.38.121.726.104 1.001.063.305-.046.937-.383 1.069-.753.132-.37.132-.687.092-.753z"/></svg>
-                    <span>WhatsApp</span>
-                </a>
-
-                <button type="button"
-                        @click="copyCatalogueLink()"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors">
-                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
-                    <span class="hidden sm:inline">Copy Link</span>
-                </button>
-
-                <button type="button"
-                        @click="window.print()"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-medium transition-colors">
-                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24-1.076-.641-2.085-1.17-3.003a7.48 7.48 0 0 0-1.9-2.072A7.502 7.502 0 0 0 1.5 7.5v-3A2.25 2.25 0 0 1 3.75 2.25h16.5A2.25 2.25 0 0 1 22.5 4.5v3a7.5 7.5 0 0 0-2.15 1.254c-.65.578-1.18 1.288-1.55 2.075-.53.918-.93 1.927-1.17 3.003H6.72ZM3.75 9h16.5M6 16.5h12M7.5 19.5h9" /></svg>
-                    <span class="hidden sm:inline">PDF</span>
-                </button>
-            </div>
         </div>
     </section>
 
@@ -315,43 +350,49 @@
                             </div>
 
                             <!-- DELIVERY OPTIONS BOX (Specifically required by customer) -->
-                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
-                                <div class="font-bold text-[11px] uppercase tracking-wider text-slate-700 flex items-center justify-between">
-                                    <span>Delivery &amp; Courier Details</span>
-                                    <span class="text-emerald-700 text-[10px]">● All-India Service</span>
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                                <div class="font-bold text-[11px] uppercase tracking-wider text-slate-800 flex items-center justify-between pb-1 border-b border-slate-200/80">
+                                    <span class="flex items-center gap-1.5 text-maroon-900 font-extrabold">
+                                        <span>🚚</span>
+                                        <span>Delivery &amp; Courier Details</span>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                        <span class="size-1.5 rounded-full bg-emerald-600"></span>
+                                        <span>Pan-India Service</span>
+                                    </span>
                                 </div>
 
-                                <div class="space-y-1 text-slate-600 text-[11px]">
+                                <div class="space-y-1.5 text-[11px]">
                                     <div class="flex items-center justify-between">
-                                        <span class="flex items-center gap-1.5">
-                                            <span>🚚</span>
+                                        <span class="text-slate-600 flex items-center gap-1.5">
+                                            <span>📦</span>
                                             <span>Delivery Charge:</span>
                                         </span>
-                                        <strong class="text-emerald-700">FREE Home Delivery</strong>
+                                        <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">FREE Home Delivery</span>
                                     </div>
 
                                     <div class="flex items-center justify-between">
-                                        <span class="flex items-center gap-1.5">
+                                        <span class="text-slate-600 flex items-center gap-1.5">
                                             <span>💵</span>
                                             <span>Payment Modes:</span>
                                         </span>
-                                        <strong class="text-slate-900">Cash on Delivery (COD) / UPI</strong>
+                                        <strong class="text-slate-900 font-bold">Cash on Delivery (COD) / UPI</strong>
                                     </div>
 
                                     <div class="flex items-center justify-between">
-                                        <span class="flex items-center gap-1.5">
-                                            <span>⏱️</span>
+                                        <span class="text-slate-600 flex items-center gap-1.5">
+                                            <span>⚡</span>
                                             <span>Estimated Time:</span>
                                         </span>
-                                        <strong class="text-slate-900">3 to 5 Days (Delhivery Express)</strong>
+                                        <strong class="text-slate-900 font-bold">3–5 Days (Delhivery Express)</strong>
                                     </div>
 
                                     <div class="flex items-center justify-between">
-                                        <span class="flex items-center gap-1.5">
+                                        <span class="text-slate-600 flex items-center gap-1.5">
                                             <span>📍</span>
                                             <span>Ships From:</span>
                                         </span>
-                                        <span class="text-slate-600">Jaipur Main Warehouse</span>
+                                        <span class="font-semibold text-slate-700">Jaipur Main Warehouse</span>
                                     </div>
                                 </div>
                             </div>
